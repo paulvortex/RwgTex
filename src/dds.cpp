@@ -60,6 +60,7 @@ char outdir[MAX_DDSPATH];
 double inputsize;
 double outputsize;
 double compressionweight;
+bool nomips;
 
 // console stuff
 void Print(char *str, ...)
@@ -189,7 +190,7 @@ typedef struct
 }
 ScanFile;
 
-vector<ScanFile> files;
+vector<ScanFile> textures;
 
 bool FindDir(char *pattern)
 {
@@ -279,9 +280,9 @@ void ScanFiles(char *basepath, char *singlefile, char *addpath)
 		if (!strncmp(path, "cubemaps/", 9) || !strncmp(path, "screenshots/", 12) || !strncmp(path, "video/", 6) || !strncmp(path, "dds/", 4) || !strncmp(path, "data/", 5))
 			continue;
 		// dont compress cubemaps at the moment
-		// only supply tga or jpeg (unless custom file are given)
+		// only supply tga/jpeg/png (unless custom file are given)
 		if (!singlefile)
-			if (strncmp(ext, "tga", 3) && strncmp(ext, "jpg", 3))
+			if (strncmp(ext, "tga", 3) && strncmp(ext, "jpg", 3) && strncmp(ext, "png", 3))
 				continue;
 		// add file
 		ScanFile NF;
@@ -289,7 +290,7 @@ void ScanFiles(char *basepath, char *singlefile, char *addpath)
 		NF.name = name;
 		NF.ext = ext;
 		NF.suf = suf;
-		files.push_back(NF);
+		textures.push_back(NF);
 	}
 	while(FindNextFile(hFile, &n_file) != 0);
 	FindClose(hFile);
@@ -583,6 +584,8 @@ bool GenerateDDS(ScanFile *file, LoadedImage *image)
 		options.mipFilterType = kMipFilterSinc;
 		options.GenerateMIPMaps(0);
 	}
+	if (nomips)
+		options.DoNotGenerateMIPMaps();
 
 	// make other options
 	options.user_data = f;
@@ -634,7 +637,7 @@ void GenerateDDS_ThreadWork(int threadnum)
 		Pacifier(" file %i of %i", work + 1, numthreadwork);
 
 		// load image
-		ScanFile *file = &files[work];
+		ScanFile *file = &textures[work];
 		sprintf(filename, "%s%s%s.%s", dir, file->path.c_str(), file->name.c_str(), file->ext.c_str());
 		if (!strcmp(file->ext.c_str(), "spr32"))
 			LoadImage_SPR32(filename, file, &image);
@@ -654,8 +657,10 @@ int Help_Main();
 int DDS_Main(int argc, char **argv)
 {
 	double timeelapsed;
+	int i;
 
 	// launched without parms, try to find kain.exe
+	i = 0;
 	strcpy(dir, "");
 	strcpy(filemask, "");
 	strcpy(outdir, "");
@@ -693,6 +698,7 @@ int DDS_Main(int argc, char **argv)
 	else
 	{
 		strcpy(dir, argv[0]);
+		i++;
 		// get output path
 		// if dragged file to exe, there is no output path
 		if (argc < 2)
@@ -705,16 +711,29 @@ int DDS_Main(int argc, char **argv)
 		{
 			strcpy(outdir, argv[1]);
 			waitforkey = true;
+			i++;
 		}
 	}
 	AddSlash(dir);
 	AddSlash(outdir);
 
+	// parameters
+	nomips = false;
+	for (; i < argc; i++)
+	{
+		if (!strcmp(argv[i], "-nomips")) // disable caption
+		{
+			nomips = true;
+			Print("Option: not generating mipmaps\n");
+			continue;
+		}
+	}
+
 	// find files
 	Print("entering \"%s%s\"\n", dir, filemask);
-	files.clear();
+	textures.clear();
 	ScanFiles(dir, filemask, NULL);
-	if (!files.size())
+	if (!textures.size())
 		Error("No files to convert!");
 
 	// process
@@ -722,13 +741,13 @@ int DDS_Main(int argc, char **argv)
 	outputsize = 0;
 	compressionweight = 0;
 	Print("generating to \"%s\"\n", outdir);
-	timeelapsed = RunThreads(files.size(), GenerateDDS_ThreadWork);
+	timeelapsed = RunThreads(textures.size(), GenerateDDS_ThreadWork);
 	Print("Conversion finished:\n");
 	Print("       time elapsed: %i minutes\n", (int)(timeelapsed / 60));
 	Print("         files size: %.2f mb\n", inputsize);
 	Print("     DDS files size: %.2f mb\n", outputsize);
 	Print("  compression ratio: %.0f%%\n", (outputsize / (inputsize + 0.01f)) * 100.0f);
-	Print("    video RAM saved: %.0f%%\n", (1.0f - (float)(compressionweight / (float)files.size())) * 100.0f);
+	Print("    video RAM saved: %.0f%%\n", (1.0f - (float)(compressionweight / (float)textures.size())) * 100.0f);
 	return 0;
 }
 
