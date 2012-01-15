@@ -1,0 +1,19 @@
+echo copying rwgdds-ati.exe...
+copy ..\rwgdds.exe ..\rwgdds-ati.exe /Y >> garbage
+
+echo copying rwgdds-nv.exe...
+copy ..\rwgdds.exe ..\rwgdds-nv.exe /Y >> garbage
+
+echo copying rwgdds-w.exe...
+copy ..\rwgdds.exe ..\rwgdds.exe /Y >> garbage
+
+echo copying rwgdds-nomip.exe...
+copy ..\rwgdds.exe ..\rwgdds-nomip.exe /Y >> garbage
+
+echo copying rwgdds-npot.exe...
+copy ..\rwgdds.exe ..\rwgdds-npot.exe /Y >> garbage
+
+echo copying rwgdds-nomip-npot-2x.exe...
+copy ..\rwgdds.exe ..\rwgdds-nomip-npot-2x.exe /Y >> garbage
+
+del garbage /Q

@@ -31,9 +31,8 @@
 
 // Win32 specific
 #ifdef WIN32
-# include <windows.h>
+#include <windows.h>
 typedef HMODULE dllhandle_t;
-
 // Other platforms
 #else
   typedef void* dllhandle_t;

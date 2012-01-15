@@ -58,22 +58,22 @@ void ThreadInit(void)
 	}
 }
 
-void ThreadLock(void)
+void ThreadLock2(char *file, int line)
 {
 	if (!threaded)
 		return;
 	EnterCriticalSection(&crit);
 	if (enter)
-		Error("Recursive ThreadLock");
+		Error("Recursive ThreadLock on %s:%i", file, line);
 	enter = 1;
 }
 
-void ThreadUnlock(void)
+void ThreadUnlock2(char *file, int line)
 {
 	if (!threaded)
 		return;
 	if (!enter)
-		Error ("ThreadUnlock without lock");
+		Error ("ThreadUnlock without lock on %s:%i", file, line);
 	enter = 0;
 	LeaveCriticalSection(&crit);
 }

@@ -4,6 +4,7 @@
 	Version="9,00"
 	Name="rwgdds"
 	ProjectGUID="{EF16070B-8F0A-4A84-9A80-1F9E2C56E460}"
+	RootNamespace="rwgdds"
 	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
@@ -23,12 +24,15 @@
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			CharacterSet="2"
+			ManagedExtensions="0"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
+				CommandLine="postbuild.bat&#x0D;&#x0A;"
+				Outputs="../rwgdds-ati.exe"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -45,7 +49,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories=".\nvlibs\inc;.\devil\include"
+				FavorSizeOrSpeed="0"
+				EnableFiberSafeOptimizations="false"
+				WholeProgramOptimization="false"
+				AdditionalIncludeDirectories=".\nvlibs\inc;.\devil\include;.\aticompress\inc;.\zlib\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -75,10 +82,111 @@
 				OutputFile="../rwgdds.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".\nvlibs\lib\release;.\devil\lib"
+				AdditionalLibraryDirectories=".\nvlibs\lib\release;.\devil\lib;.\aticompress\lib;.\zlib\lib"
 				GenerateDebugInformation="false"
 				ProgramDatabaseFile="Release/rwgdds.pdb"
 				GenerateMapFile="false"
+				SubSystem="1"
+				LargeAddressAware="2"
+				OptimizeForWindows98="0"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+				SuppressStartupBanner="true"
+				OutputFile=".\Release/rwgdds.bsc"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+				CommandLine="postbuild.bat&#x0D;&#x0A;"
+				Outputs="../rwgdds-ati.exe"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TypeLibraryName=".\Release/rwgdds.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="2"
+				AdditionalIncludeDirectories=".\nvlibs\inc;.\devil\include;.\aticompress\inc;.\zlib\include"
+				PreprocessorDefinitions="WIN32;DEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE"
+				StringPooling="true"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="true"
+				PrecompiledHeaderFile=".\Release/rwgdds.pch"
+				AssemblerListingLocation=".\Debug/"
+				ObjectFile=".\Debug/"
+				ProgramDataBaseFileName=".\Debug/"
+				WarningLevel="3"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1049"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/IGNORE:4089"
+				AdditionalDependencies="winmm.lib"
+				OutputFile="../rwgdds.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories=".\nvlibs\lib\release;.\devil\lib;.\aticompress\lib;.\zlib\lib"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="../rwgdds.pdb"
+				GenerateMapFile="true"
+				MapFileName="../rwgdds.map"
+				MapExports="true"
 				SubSystem="1"
 				LargeAddressAware="2"
 				RandomizedBaseAddress="1"
@@ -118,6 +226,10 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
+				RelativePath=".\arc.cpp"
+				>
+			</File>
+			<File
 				RelativePath="cmd.h"
 				>
 			</File>
@@ -138,6 +250,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\scale2x.h"
+				>
+			</File>
+			<File
 				RelativePath=".\thread.h"
 				>
 			</File>
@@ -146,6 +262,10 @@
 			Name="Source Files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
+			<File
+				RelativePath=".\arc.h"
+				>
+			</File>
 			<File
 				RelativePath="cmd.cpp"
 				>
@@ -160,6 +280,10 @@
 			</File>
 			<File
 				RelativePath="mem.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\scale2x.cpp"
 				>
 			</File>
 			<File

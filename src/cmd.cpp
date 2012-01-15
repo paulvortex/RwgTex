@@ -14,6 +14,12 @@
 
 #include "mem.h"
 #include "dds.h"
+#include "thread.h"
+
+// console stuff
+bool verbose;
+bool noprint;
+bool solidpacifier;
 
 // set these before calling CheckParm
 int myargc;
@@ -106,6 +112,118 @@ strlcpy(char *dst, const char *src, size_t siz)
 
 /*
 =================
+console stuff
+=================
+*/
+
+void Print(char *str, ...)
+{
+	va_list argptr;
+
+	if (noprint)
+		return;
+
+	va_start(argptr, str);
+	vprintf(str, argptr);
+	va_end(argptr);
+}
+
+void Verbose(char *str, ...)
+{
+	va_list argptr;
+
+	if (!verbose || noprint)
+		return;
+
+	va_start(argptr, str);
+	vprintf(str, argptr);
+	va_end(argptr);
+}
+
+// flush out after that string 
+void PercentPacifier(char *str, ...)
+{
+	va_list argptr;
+
+	ThreadLock();
+	va_start(argptr, str);
+	if (solidpacifier)
+	{
+		vprintf(str, argptr);
+		printf("\n");
+		va_end(argptr);
+		Sleep(20);
+	}
+	else
+	{
+		printf("\r");
+		vprintf(str, argptr);
+		printf("%\r");
+		va_end(argptr);
+	}
+	fflush(stdout);
+	ThreadUnlock();
+}
+
+void Pacifier(char *str, ...)
+{
+	va_list argptr;
+
+	//if (noprint)
+	//	return;
+
+	ThreadLock();
+	va_start(argptr, str);
+	printf("\r");
+	vprintf(str, argptr);
+	printf("                                        ");
+	printf("\r");
+	va_end(argptr);
+	fflush(stdout);
+	ThreadUnlock();
+}
+
+char SimplePacifierChars[5] = "-\\|/";
+int SimplePacifierCharNum = 0;
+void SimplePacifier()
+{
+	if (noprint)
+		return;
+
+	printf("\r");
+	SimplePacifierCharNum++;
+	if (SimplePacifierCharNum >= 4)
+		SimplePacifierCharNum = 0;
+	printf("  %c", SimplePacifierChars[SimplePacifierCharNum]);
+	printf("                                        ");
+	printf("\r");
+	fflush(stdout);
+}
+
+void PacifierEnd() 
+{
+	if (noprint)
+		return;
+
+	ThreadLock();
+	printf("\n");
+	ThreadUnlock();
+}
+
+void Warning(char *str, ...)
+{
+	va_list argptr;
+
+	va_start(argptr, str);
+	printf("Warning: ");
+	vprintf(str, argptr);
+	va_end(argptr);
+	printf("\n");
+}
+
+
+/*
+=================
 Error
 
 For abnormal program terminations
@@ -137,7 +255,7 @@ void Error (char *error, ...)
 		}
 	}
 #if _MSC_VER
-	if (waitforkey || error_waitforkey)
+	if (waitforkey)
 	{
 		printf("press any key\n");
 		getchar();
@@ -551,20 +669,38 @@ Checks for the given parameter in the program's command line arguments
 Returns the argument number (1 to argc-1) or 0 if not present
 =================
 */
-int CheckParm (char *check)
+bool CheckParm(char *check)
 {
-  int             i;
+	char *str, *next, parm[64];
+	int i;
 
-  for (i = 1;i<myargc;i++)
-    {
-      if ( !Q_strcasecmp(check, myargv[i]) )
-	return i;
-    }
-
-  return 0;
+	// check exe name
+	str = strstr(progname, "-");
+	if (!strcmp(check, "-"))
+		return (str == NULL) ? false : true;
+	while(str)
+	{
+		next = strstr(str + 1, "-");
+		if (next)
+		{
+			strncpy(parm, str, (int)(next - str));
+			parm[(int)(next - str)] = 0;
+		}
+		else
+		{
+			strcpy(parm, str);
+			parm[strlen(str)] = 0;
+		}
+		if (!Q_strcasecmp(check, parm))
+			return true;
+		str = next;
+	}
+	// check commandline parms
+	for (i = 1;i < myargc;i++)
+		if (!Q_strcasecmp(check, myargv[i]))
+			return true;
+	return 0;
 }
-
-
 
 /*
 ================
@@ -572,7 +708,7 @@ Q_filelength
 ================
 */
 
-int Q_filelength (FILE *f)
+unsigned int Q_filelength (FILE *f)
 {
   int		pos;
   int		end;
@@ -631,18 +767,18 @@ LoadFile
 ==============
 */
 
-int    LoadFile (char *filename, void **bufferptr)
+int LoadFile(char *filename, byte **bufferptr)
 {
-  FILE	*f;
-  int    length;
-  void    *buffer;
+  FILE *f;
+  int length;
+  byte *buffer;
 
   f = SafeOpen(filename, "rb");
-  length = Q_filelength (f);
-  buffer = qmalloc (length+1);
+  length = Q_filelength(f);
+  buffer = (byte *)qmalloc(length+1);
   ((char *)buffer)[length] = 0;
   SafeRead (f, buffer, length);
-  fclose (f);
+  fclose(f);
 
   *bufferptr = buffer;
   return length;
@@ -655,21 +791,20 @@ LoadFileUnsafe
 ==============
 */
 
-int LoadFileUnsafe(char *filename, void **bufferptr)
+int LoadFileUnsafe(char *filename, byte **bufferptr)
 {
-  FILE	*f;
-  int    length;
-  void    *buffer;
+  FILE *f;
+  int length;
+  byte *buffer;
 
   f = fopen(filename, "rb");
   if (!f)
 	  return -1;
   length = Q_filelength (f);
-  buffer = qmalloc (length+1);
+  buffer = (byte *)qmalloc(length+1);
   ((char *)buffer)[length] = 0;
   SafeRead (f, buffer, length);
-  fclose (f);
-
+  fclose(f);
   *bufferptr = buffer;
   return length;
 }
@@ -785,9 +920,26 @@ void ExtractFileName(char *path, char *dest)
   *dest = 0;
 }
 
+void ExtractFileSuffix(char *path, char *dest, char suffix_sym)
+{
+	char *src;
+
+	src = path + strlen(path) - 1;
+	// back up until a _ or the start
+	while (src != path && *(src-1) != suffix_sym)
+		src--;
+	if (src == path)
+	{
+		*dest = 0;
+		return;
+	}
+	strcpy(dest, src);
+}
+
 void StripFileExtension(char *path, char *dest)
 {
 	int l;
+
 
 	l = strlen(path) - 1;
 	while(path[l] != '.')
@@ -850,29 +1002,26 @@ ParseNum / ParseHex
 */
 int ParseHex (char *hex)
 {
-  char    *str;
-  int    num;
+	char *str;
+	int num;
 
-  num = 0;
-  str = hex;
-
-  while (*str)
-    {
-      num <<= 4;
-      if (*str >= '0' && *str <= '9')
-	num += *str-'0';
-      else if (*str >= 'a' && *str <= 'f')
-	num += 10 + *str-'a';
-      else if (*str >= 'A' && *str <= 'F')
-	num += 10 + *str-'A';
-      else
-	Error ("Bad hex number: %s",hex);
-      str++;
-    }
-
-  return num;
+	num = 0;
+	str = hex;
+	while (*str && *str != '\n')
+	{
+		num <<= 4;
+		if (*str >= '0' && *str <= '9')
+			num += *str-'0';
+		else if (*str >= 'a' && *str <= 'f')
+			num += 10 + *str-'a';
+		else if (*str >= 'A' && *str <= 'F')
+			num += 10 + *str-'A';
+		else
+			Error ("Bad hex number: '%s'", hex);
+		str++;
+	}
+	return num;
 }
-
 
 int ParseNum (char *str)
 {
@@ -1034,11 +1183,166 @@ float	BigFloat (float l)
 
 #endif
 
-
+//=======================================================
+// File wrapping routines
+// used to write files into temporary place and query their contents afterwards
 //=======================================================
 
+#define FILE_START_SIZE 1048576 // 1 meg
+bool wrapfilestomem;
 
-// FIXME: byte swap?
+// wrapped file struct
+typedef struct wrapfile_s
+{
+	char realname[MAX_DDSPATH];
+	unsigned int filesize;
+	struct wrapfile_s *next;
+	FILE *f;
+}wrapfile_t;
+
+// wrapped file linkchain
+wrapfile_t *wrapfiles = NULL;
+
+// free all wrapped file buffers
+void FreeWrappedFiles()
+{
+	wrapfile_t *current, *next;
+
+	current = wrapfiles;
+	while(current != NULL)
+	{
+		next = current->next;
+		fclose(current->f);
+		qfree(current);
+		current = next;
+	}
+	wrapfiles = NULL;
+}
+
+// return count of wrapped files
+int CountWrappedFiles()
+{
+	wrapfile_t *wrapf;
+	int c = 0;
+
+	for (wrapf = wrapfiles; wrapf != NULL; wrapf = wrapf->next)
+		c++;
+	return c;
+}
+
+// retrieve contents of wrapped file
+int LoadWrappedFile(int wrapnum, byte **bufferptr, char **realfilename)
+{
+	wrapfile_t *wrapf;
+	byte *buffer;
+	int c = 0;
+
+	// find wrapfile
+	for (wrapf = wrapfiles; wrapf != NULL; wrapf = wrapf->next, c++)
+		if (c == wrapnum)
+			break;
+
+	// if not found - generate error
+	if (wrapf == NULL)
+		Error("LoadWrappedFile: can open file on index %i", wrapnum);
+
+	// open file
+	buffer = (byte *)qmalloc(wrapf->filesize+1);
+	fseek(wrapf->f, 0, SEEK_SET);
+	SafeRead(wrapf->f, buffer, wrapf->filesize);
+	((char *)buffer)[wrapf->filesize] = 0;
+	*bufferptr = buffer;
+	*realfilename = wrapf->realname;
+	return wrapf->filesize;
+}
+
+// setup fiels wrapping
+void WrapFileWritesToMemory()
+{
+	FreeWrappedFiles();
+	wrapfilestomem = true;
+}
+
+// open file stream for writing
+FILE *SafeOpenWrite (char *filename)
+{
+	FILE		*f;
+	wrapfile_t	*wrapf, *current;
+	char path[MAX_DDSPATH];
+
+	// check if opening file that was wrapped
+	for (wrapf = wrapfiles; wrapf != NULL; wrapf = wrapf->next)
+		if (!strcmp(filename, wrapf->realname))
+			return wrapf->f;
+
+	// automatically make dir structure
+	ExtractFilePath(filename, path);
+	// open file or stream
+	if (!wrapfilestomem)
+	{
+		CreatePath(path);
+		f = fopen(filename, "wb");
+		if (!f)
+			Error("Error opening real file %s: %s",filename,strerror(errno));
+	}
+	else
+	{
+		// link to chain
+		wrapf = (wrapfile_t *)qmalloc(sizeof(wrapfile_t));
+		wrapf->filesize = 0;
+		wrapf->next = NULL;
+		strcpy(wrapf->realname, filename);
+		if (!wrapfiles)
+			wrapfiles = wrapf;
+		else
+		{
+			current = wrapfiles;
+			while(current->next != NULL)
+				current = current->next;
+			current->next = wrapf;
+		}
+		// return a tempfile
+		wrapf->f = tmpfile();
+		f = wrapf->f;
+		if (!f)
+			Error("Error opening temp file %s: %s",filename,strerror(errno));
+	}
+	return f;
+}
+
+// open stream  for readind and writing
+FILE *OpenReadWrite(char *filename)
+{
+	wrapfile_t	*wrapf;
+
+	// check if opening file that was wrapped
+	for (wrapf = wrapfiles; wrapf != NULL; wrapf = wrapf->next)
+		if (!strcmp(filename, wrapf->realname))
+			return wrapf->f;
+
+	// open normal
+	return fopen(filename, "r+b");
+}
+
+// wrapped fclose function, as wrapped files should not be closed on fclose, but once wrapping code received them
+// also read the filesize on wrapped close
+void WriteClose(FILE *f)
+{
+	wrapfile_t	*wrapf;
+
+	// find in wrapped chain and bail if it is in
+	for (wrapf = wrapfiles; wrapf != NULL; wrapf = wrapf->next)
+	{
+		if (wrapf->f == f)
+		{
+			wrapf->filesize = ftell(f);
+			return;
+		}
+	}
+	fclose(f);
+}
+
+//=======================================================
 
 // this is a 16 bit, non-reflected CRC using the polynomial 0x1021
 // and the initial and final xor values shown below...  in other words, the
@@ -1097,7 +1401,6 @@ unsigned short CRC_Value(unsigned short crcvalue)
 {
   return crcvalue ^ CRC_XOR_VALUE;
 }
-
 
 //=======================================================
 

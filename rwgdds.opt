@@ -1,0 +1,71 @@
+########################################
+# RwgDDS options for Quake 1
+########################################
+
+# BASE OPTIONS
+[options]
+basepath=id1
+ddspath=dds
+binaryalpha=auto
+binaryalpha_0=40
+binaryalpha_1=215
+waitforkey=yes
+
+# INPUT LIST
+# this files will be added to conversion and whats excluded
+# rules are processed linearly, checking stopped once entry got first match
+[input]
+path!=cubemaps/
+path!=screenshots/
+path!=video/
+path!=dds/
+path!=data/
+ext=tga
+ext=jpg
+ext=jpeg
+ext=png
+ext=spr32
+
+# this file is opened as archives containing many files
+# currently only ZIP archives are supported
+[archives]
+ext=pk3
+
+# NO MIPMAPS
+# this files will have no mipmap generated
+[nomip]
+path=gfx/
+
+# NORMALMAPS
+# this files will be compressed as normalmaps
+[is_normalmap]
+suffix=norm
+
+# HEIGHTMAPS
+# this files will be compressed as grayscale heightmaps
+[is_heightmap]
+suffix=bump
+
+# FORCE COMPRESSION
+# this files will be forced to compress on certain types
+[force_dxt1]
+[force_dxt1a]
+[force_dxt3]
+[force_dxt5]
+
+# FORCE COMPRESSOR
+# this files will be forced to use certain compression lib
+# only works in hybrid mode
+# nv = nvDXTlib, ati = ATI Compressor
+[force_nv]
+[force_ati]
+
+# PREMODULATE COLOR
+# this files will have color premodulated by alpha
+[premodulate_color]
+path=particles/particlefont
+path=particlefont
+
+# SCALE2X
+# this textures will be scaled by 200% using scale2x effect
+[scale_2x]

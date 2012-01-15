@@ -5,13 +5,13 @@
 #define __CMDLIB__
 
 #include <stdio.h>
+#include <io.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <ctype.h>
 #include <time.h>
 #include <stdarg.h>
-//#include <unistd.h>
 
 #ifndef __BYTEBOOL__
 #define __BYTEBOOL__
@@ -47,6 +47,18 @@ void ListAdd(list_t *list, const char *str, unsigned char x);
 extern int myargc;
 extern char **myargv;
 
+// consol stuff
+extern bool verbose;
+extern bool noprint;
+extern bool solidpacifier;
+void Print (char *str, ...);
+void Verbose (char *str, ...);
+void Warning (char *str, ...);
+void Pacifier(char *str, ...);
+void PercentPacifier(char *str, ...);
+void SimplePacifier();
+void PacifierEnd();
+
 extern char *Q_strupr (char *in);
 extern char *Q_strlower (char *in);
 extern int Q_strncasecmp (char *s1, char *s2, int n);
@@ -58,7 +70,7 @@ char *ConvDot(char *start);
 size_t strlcat(char *dst, const char *src, size_t siz);
 size_t strlcpy(char *dst, const char *src, size_t siz);
 
-extern int Q_filelength (FILE *f);
+extern unsigned int Q_filelength (FILE *f);
 size_t FileSize(char *filename);
 extern int	FileTime (char *path);
 void TempFileName(char *out);
@@ -76,14 +88,14 @@ extern double I_DoubleTime (void);
 
 extern void Error (char *error, ...);
 
-extern int CheckParm (char *check);
+extern bool CheckParm (char *check);
 
 extern FILE *SafeOpen (char *filename, char mode[]);
 extern void SafeRead (FILE *f, void *buffer, int count);
 extern void SafeWrite (FILE *f, void *buffer, int count);
 
-extern int LoadFile (char *filename, void **bufferptr);
-extern int LoadFileUnsafe (char *filename, void **bufferptr);
+extern int LoadFile (char *filename, byte **bufferptr);
+extern int LoadFileUnsafe (char *filename, byte **bufferptr);
 
 extern void DefaultPath (char *path, char *basepath);
 extern void ReplaceExtension (char *path, char *oldextension, char *replacementextension, char *missingextension);
@@ -94,6 +106,7 @@ extern void ExtractFileBase (char *path, char *dest);
 extern void ExtractFileName (char *path, char *dest);
 extern void StripFileExtension (char *path, char *dest);
 extern void ExtractFileExtension (char *path, char *dest);
+extern void ExtractFileSuffix(char *path, char *dest, char suffix_sym);
 void AddSuffix(char *outpath, char *inpath, char *suffix);
 extern bool FileExists(char *filename);
 
@@ -127,12 +140,13 @@ extern unsigned short CRC_Value(unsigned short crcvalue);
 unsigned int crc32(unsigned char *block, unsigned int length);
 
 extern void COM_CreatePath (char *path);
+extern void crc32_init();
 
 // file writing and wrapping
 #define __CMDLIB_WRAPFILES__
 void FreeWrappedFiles();
 int CountWrappedFiles();
-int LoadWrappedFile(int wrapnum, void **bufferptr, void **realfilename);
+int LoadWrappedFile(int wrapnum, byte **bufferptr, char **realfilename);
 void WrapFileWritesToMemory();
 FILE *SafeOpenWrite (char *filename);
 FILE *OpenReadWrite(char *filename);
