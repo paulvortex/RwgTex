@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////////
 //
-// RWGDDS - dll management
-// scrapped from Darkplaces Engine sourcecode
-//
+// RWGTEX
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -20,7 +18,7 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ////////////////////////////////
 
-#include "dds.h"
+#include "main.h"
 
 #define SUPPORTDLL
 #ifdef WIN32
@@ -76,7 +74,7 @@ bool LoadDll (const char** dllnames, dllhandle_t* handle, const dllfunction_t *f
 #ifdef SUPPORTDLL
 	const dllfunction_t *func;
 	dllhandle_t dllhandle = 0;
-	char dllpath[MAX_DDSPATH];
+	char dllpath[MAX_FPATH];
 	unsigned int i;
 
 	if (handle == NULL)

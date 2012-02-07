@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rwgdds", "rwgdds.vcproj", "{EF16070B-8F0A-4A84-9A80-1F9E2C56E460}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rwgtex", "rwgtex.vcproj", "{EF16070B-8F0A-4A84-9A80-1F9E2C56E460}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

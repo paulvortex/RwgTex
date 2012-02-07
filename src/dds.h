@@ -1,14 +1,24 @@
-#include "cmd.h"
-#include "dll.h"
+// dds.h
+#pragma once
 
-#ifndef RWGDDS_VERSION
-#define RWGDDS_VERSION "v1.1"
-#define MAX_DDSPATH 1024
-#endif
+int DDS_Main(int argc, char **argv);
+void DDS_PrintModules(void);
 
-extern bool waitforkey;
-extern bool memstats;
-extern bool errorlog;
+// supporter compressors
+typedef enum
+{
+	COMPRESSOR_AUTOSELECT,
+	COMPRESSOR_INTERNAL,
+	COMPRESSOR_NVIDIA,
+	COMPRESSOR_NVIDIA_TT,
+	COMPRESSOR_ATI,
+}
+TOOL;
 
-extern char progname[MAX_DDSPATH];
-extern char progpath[MAX_DDSPATH];
+// supported formats
+#define FORMAT_DXT1 MAKEFOURCC('D','X','T','1')
+#define FORMAT_DXT2 MAKEFOURCC('D','X','T','2')
+#define FORMAT_DXT3 MAKEFOURCC('D','X','T','3')
+#define FORMAT_DXT4 MAKEFOURCC('D','X','T','4')
+#define FORMAT_DXT5 MAKEFOURCC('D','X','T','5')
+#define FORMAT_BGRA MAKEFOURCC('B','G','R','A')

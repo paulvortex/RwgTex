@@ -1,14 +1,16 @@
 // mem.h
-// parts of code picked from Darkplaces hmap2
 
-#ifndef __MEM_H__
-#define __MEM_H__
+#pragma once
 
-void Q_InitMem( void );
-void Q_PrintMem( void );
-void Q_ShutdownMem( bool printstats );
+void Mem_Init(void);
+void Mem_Shutdown(void);
 
-void *qmalloc( size_t size );
-void qfree( void *data );
+void _mem_free( void *data, char *file, int line);
+#define mem_free(data) _mem_free(data, __FILE__, __LINE__)
+void *_mem_alloc( size_t size, char *file, int line);
+#define mem_alloc(size) _mem_alloc(size, __FILE__, __LINE__)
 
-#endif
+void _mem_sentinel(char *name, void *ptr, size_t size, char *file, int line);
+#define mem_sentinel(name, ptr, size) _mem_sentinel(name, ptr, size, __FILE__, __LINE__)
+bool _mem_sentinel_free(char *name, void *ptr, char *file, int line);
+#define mem_sentinel_free(name, ptr) _mem_sentinel_free(name, ptr, __FILE__, __LINE__)

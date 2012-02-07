@@ -49,8 +49,11 @@ suffix=bump
 # FORCE COMPRESSION
 # this files will be forced to compress on certain types
 [force_dxt1]
-[force_dxt1a]
+[force_dxt2]
 [force_dxt3]
+[force_dxt4]
+path=particles/particlefont
+path=particlefont
 [force_dxt5]
 
 # FORCE COMPRESSOR
@@ -59,12 +62,6 @@ suffix=bump
 # nv = nvDXTlib, ati = ATI Compressor
 [force_nv]
 [force_ati]
-
-# PREMODULATE COLOR
-# this files will have color premodulated by alpha
-[premodulate_color]
-path=particles/particlefont
-path=particlefont
 
 # SCALE2X
 # this textures will be scaled by 200% using scale2x effect

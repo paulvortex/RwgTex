@@ -20,8 +20,7 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ////////////////////////////////
 
-#ifndef __DLL__
-#define __DLL__
+#pragma once
 
 #include "cmd.h"
 
@@ -53,6 +52,3 @@ dllfunction_t;
 bool LoadDll (const char** dllnames, dllhandle_t* handle, const dllfunction_t *fcts, bool verbose);
 void UnloadDll (dllhandle_t* handle);
 void* DllGetProcAddress (dllhandle_t handle, const char* name);
-
-#endif
-

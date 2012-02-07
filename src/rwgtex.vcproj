@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="rwgdds"
+	Name="rwgtex"
 	ProjectGUID="{EF16070B-8F0A-4A84-9A80-1F9E2C56E460}"
-	RootNamespace="rwgdds"
+	RootNamespace="rwgtex"
 	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
@@ -32,7 +32,7 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				CommandLine="postbuild.bat&#x0D;&#x0A;"
-				Outputs="../rwgdds-ati.exe"
+				Outputs="../rwgtex-dds-ati.exe"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -42,22 +42,22 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\Release/rwgdds.tlb"
+				TypeLibraryName=".\Release/rwgtex.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				FavorSizeOrSpeed="0"
+				FavorSizeOrSpeed="1"
 				EnableFiberSafeOptimizations="false"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories=".\nvlibs\inc;.\devil\include;.\aticompress\inc;.\zlib\include"
+				AdditionalIncludeDirectories=".\nvlibs\inc;.\aticompress\inc;.\freeimage"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/rwgdds.pch"
+				PrecompiledHeaderFile=".\Release/rwgtex.pch"
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
@@ -79,12 +79,12 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/IGNORE:4089"
 				AdditionalDependencies="winmm.lib"
-				OutputFile="../rwgdds.exe"
+				OutputFile="../rwgtex.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".\nvlibs\lib\release;.\devil\lib;.\aticompress\lib;.\zlib\lib"
+				AdditionalLibraryDirectories=".\nvlibs\lib\release;.\aticompress\lib;.\freeimage"
 				GenerateDebugInformation="false"
-				ProgramDatabaseFile="Release/rwgdds.pdb"
+				ProgramDatabaseFile="Release/rwgtex.pdb"
 				GenerateMapFile="false"
 				SubSystem="1"
 				LargeAddressAware="2"
@@ -105,7 +105,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/rwgdds.bsc"
+				OutputFile=".\Release/rwgtex.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -133,7 +133,7 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				CommandLine="postbuild.bat&#x0D;&#x0A;"
-				Outputs="../rwgdds-ati.exe"
+				Outputs="../rwgtex-ati.exe"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -143,19 +143,20 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\Release/rwgdds.tlb"
+				TypeLibraryName=".\Release/rwgtex.tlb"
 				HeaderFileName=""
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories=".\nvlibs\inc;.\devil\include;.\aticompress\inc;.\zlib\include"
+				AdditionalIncludeDirectories=".\nvlibs\inc;.\aticompress\inc;.\freeimage"
 				PreprocessorDefinitions="WIN32;DEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
+				BasicRuntimeChecks="0"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Release/rwgdds.pch"
+				PrecompiledHeaderFile=".\Release/rwgtex.pch"
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
@@ -177,15 +178,14 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/IGNORE:4089"
-				AdditionalDependencies="winmm.lib"
-				OutputFile="../rwgdds.exe"
+				OutputFile="../rwgtex.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories=".\nvlibs\lib\release;.\devil\lib;.\aticompress\lib;.\zlib\lib"
+				AdditionalLibraryDirectories=".\nvlibs\lib\release;.\aticompress\lib;.\freeimage"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="../rwgdds.pdb"
+				ProgramDatabaseFile="../rwgtex.pdb"
 				GenerateMapFile="true"
-				MapFileName="../rwgdds.map"
+				MapFileName="../rwgtex.map"
 				MapExports="true"
 				SubSystem="1"
 				LargeAddressAware="2"
@@ -205,7 +205,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/rwgdds.bsc"
+				OutputFile=".\Release/rwgtex.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -226,11 +226,11 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath=".\arc.cpp"
+				RelativePath="cmd.h"
 				>
 			</File>
 			<File
-				RelativePath="cmd.h"
+				RelativePath=".\crc32.h"
 				>
 			</File>
 			<File
@@ -242,11 +242,31 @@
 				>
 			</File>
 			<File
+				RelativePath=".\freeimage.h"
+				>
+			</File>
+			<File
+				RelativePath=".\fs.h"
+				>
+			</File>
+			<File
+				RelativePath=".\image.h"
+				>
+			</File>
+			<File
+				RelativePath=".\main.h"
+				>
+			</File>
+			<File
 				RelativePath="mem.h"
 				>
 			</File>
 			<File
 				RelativePath=".\resource.h"
+				>
+			</File>
+			<File
+				RelativePath=".\resource1.h"
 				>
 			</File>
 			<File
@@ -257,17 +277,21 @@
 				RelativePath=".\thread.h"
 				>
 			</File>
+			<File
+				RelativePath=".\unzip.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath=".\arc.h"
+				RelativePath="cmd.cpp"
 				>
 			</File>
 			<File
-				RelativePath="cmd.cpp"
+				RelativePath=".\crc32.cpp"
 				>
 			</File>
 			<File
@@ -276,6 +300,22 @@
 			</File>
 			<File
 				RelativePath="dll.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\freeimage.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\fs.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\image.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\main.cpp"
 				>
 			</File>
 			<File
@@ -290,14 +330,95 @@
 				RelativePath=".\thread.cpp"
 				>
 			</File>
-		</Filter>
-		<Filter
-			Name="Resources"
-			>
 			<File
-				RelativePath=".\rwgdds.rc"
+				RelativePath=".\unzip.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\zip.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\zip.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Additional"
+			>
+			<File
+				RelativePath=".\postbuild.bat"
+				>
+			</File>
+			<File
+				RelativePath=".\rwgtex.rc"
+				>
+			</File>
+			<Filter
+				Name="nvDXT"
+				ParseFiles="false"
+				>
+				<File
+					RelativePath=".\nvlibs\inc\dds\ConvertColor.h"
+					>
+				</File>
+				<File
+					RelativePath=".\nvlibs\inc\dds\ddsTypes.h"
+					>
+				</File>
+				<File
+					RelativePath=".\nvlibs\inc\dxtlib\dxtlib.h"
+					>
+				</File>
+				<File
+					RelativePath=".\nvlibs\inc\dds\nvdxt_options.h"
+					>
+				</File>
+				<File
+					RelativePath=".\nvlibs\inc\dds\nvErrorCodes.h"
+					>
+				</File>
+				<File
+					RelativePath=".\nvlibs\inc\dds\tPixel.h"
+					>
+				</File>
+				<File
+					RelativePath=".\nvlibs\inc\dds\tVector.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="nvTT"
+				>
+				<File
+					RelativePath=".\nvlibs\inc\nvtt.h"
+					>
+				</File>
+				<File
+					RelativePath=".\nvlibs\inc\nvtt_wrapper.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="atiTC"
+				>
+				<File
+					RelativePath=".\aticompress\inc\ATI_Compress.h"
+					>
+				</File>
+				<File
+					RelativePath=".\aticompress\inc\ATI_Compress_Test_Helpers.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="FreeImage"
+				>
+				<File
+					RelativePath=".\freeimage\FreeImage.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 	</Files>
 	<Globals>

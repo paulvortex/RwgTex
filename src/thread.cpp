@@ -1,31 +1,24 @@
 // thread.h
-// parts of code picked from q3map2 sourcecode
+// based on q3map2's thread manager
 
 #include "thread.h"
-#include "dds.h"
+#include "main.h"
 #include "cmd.h"
 
-
-// parts of code picked from q3map2 sourcecode
-
-int	dispatch;
-int	numthreadwork;
-bool threaded;
-
-// get a free work num for thread
-int	GetWorkForThread(void)
+// get a new work for thread
+int	GetWorkForThread(ThreadData *thread)
 {
 	int	r;
 
-	ThreadLock();
-	if (dispatch == numthreadwork)
+	WaitForSingleObject(thread->pool->work_mutex, INFINITE);
+	if (thread->pool->work_pending >= thread->pool->work_num)
+		r = -1;
+	else
 	{
-		ThreadUnlock();
-		return -1;
+		r = thread->pool->work_pending;
+		thread->pool->work_pending++;
 	}
-	r = dispatch;
-	dispatch++;
-	ThreadUnlock();
+	ReleaseMutex(thread->pool->work_mutex);
 	return r;
 }
 
@@ -41,72 +34,92 @@ WIN32
 
 #include <windows.h>
 
-int	numthreads = -1;
-CRITICAL_SECTION crit;
-static int enter;
+int	num_cpu_cores = -1;
 
-void ThreadInit(void)
+void Thread_Init(void)
 {
 	SYSTEM_INFO info;
 
-	if (numthreads == -1) // not set manually
-	{
-		GetSystemInfo(&info);
-		numthreads = info.dwNumberOfProcessors;
-		if (numthreads < 1 || numthreads > 32)
-			numthreads = 1;
-	}
+	GetSystemInfo(&info);
+	num_cpu_cores = info.dwNumberOfProcessors;
+	if (num_cpu_cores < 1 || num_cpu_cores > 32)
+		num_cpu_cores = 1;
 }
 
-void ThreadLock2(char *file, int line)
+void Thread_Shutdown(void)
 {
-	if (!threaded)
-		return;
-	EnterCriticalSection(&crit);
-	if (enter)
+}
+
+// thread synchronization
+void _ThreadLock(ThreadData *thread, char *file, int line)
+{
+	EnterCriticalSection(&thread->pool->crit);
+	if (thread->pool->crit_entered)
 		Error("Recursive ThreadLock on %s:%i", file, line);
-	enter = 1;
+	thread->pool->crit_entered = true;
 }
 
-void ThreadUnlock2(char *file, int line)
+void _ThreadUnlock(ThreadData *thread, char *file, int line)
 {
-	if (!threaded)
-		return;
-	if (!enter)
+	if (!thread->pool->crit_entered)
 		Error ("ThreadUnlock without lock on %s:%i", file, line);
-	enter = 0;
-	LeaveCriticalSection(&crit);
+	thread->pool->crit_entered = false;
+	LeaveCriticalSection(&thread->pool->crit);
 }
 
-double RunThreads(int workcnt, void(*func)(int))
+// run thread in parallel
+double RunThreads(int num_threads, int work_count, void *common_data, void(*thread_func)(ThreadData *thread), void(*thread_start)(ThreadData *thread), void(*thread_finish)(ThreadData *thread))
 {
-	int	threadid[MAX_THREADS];
-	HANDLE threadhandle[MAX_THREADS];
 	double start;
+	ThreadPool pool;
+	ThreadData *threads;
 	int	i;
 
 	start = I_DoubleTime();
-	dispatch = 0;
-	numthreadwork = workcnt;
-	threaded = true;
 
-	if (numthreads == -1)
-		ThreadInit();
+	// init threading system
+	if (num_cpu_cores == -1)
+		Thread_Init();
 
-	// run threads in parallel
-	InitializeCriticalSection(&crit);
-	if (numthreads == 1)
-		func(0);
-	else
+	// create thread pool
+	pool.work_num = work_count;
+	pool.work_pending = 0;
+	pool.work_mutex = CreateMutex(NULL, FALSE, NULL);
+	pool.threads_num = min(num_threads, work_count);
+	pool.threads = mem_alloc(sizeof(ThreadData) * pool.threads_num);
+	memset(pool.threads, 0, sizeof(ThreadData) * pool.threads_num);
+#ifdef WIN32
+	InitializeCriticalSection(&pool.crit);
+	pool.crit_entered = false;
+#endif
+	pool.data = common_data;
+
+	//  start threads
+	threads = (ThreadData *)pool.threads;
+	for (i = 0; i < pool.threads_num; i++)
 	{
-		for (i = 0; i < numthreads; i++)
-			threadhandle[i] = CreateThread(NULL, (4096 * 1024), (LPTHREAD_START_ROUTINE)func, (LPVOID)i, 0, (LPDWORD)&threadid[i]);
-		for (i = 0; i < numthreads; i++)
-			WaitForSingleObject(threadhandle[i], INFINITE);
+		threads[i].num = i;
+		threads[i].pool = &pool;
+		if (thread_start)
+			thread_start(&threads[i]);
 	}
-	DeleteCriticalSection(&crit);
-	threaded = false;
 
+	// run works
+	for (i = 0; i < pool.threads_num; i++)
+		threads[i].handle = CreateThread(NULL, THREAD_STACK_SIZE, (LPTHREAD_START_ROUTINE)thread_func, (LPVOID)&threads[i], 0, (LPDWORD)&threads[i].id);
+	for (i = 0; i < pool.threads_num; i++)
+		WaitForSingleObject(threads[i].handle, INFINITE);
+
+	// finish threads
+	if (thread_finish)
+		for (i = 0; i < pool.threads_num; i++)
+			thread_finish(&threads[i]);
+
+	// delete thread pool
+	DeleteCriticalSection(&pool.crit);
+	mem_free(pool.threads);
+
+	// return whole time
 	return I_DoubleTime() - start;
 }
 

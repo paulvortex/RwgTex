@@ -1,9 +1,7 @@
 // cmdlib.h
 // parts of code picked from Darkplaces hmap2
 
-#ifndef __CMDLIB__
-#define __CMDLIB__
-
+#pragma once
 #include <stdio.h>
 #include <io.h>
 #include <string.h>
@@ -11,7 +9,8 @@
 #include <errno.h>
 #include <ctype.h>
 #include <time.h>
-#include <stdarg.h>
+#include <string>
+using namespace std;
 
 #ifndef __BYTEBOOL__
 #define __BYTEBOOL__
@@ -71,13 +70,15 @@ size_t strlcat(char *dst, const char *src, size_t siz);
 size_t strlcpy(char *dst, const char *src, size_t siz);
 
 extern unsigned int Q_filelength (FILE *f);
-size_t FileSize(char *filename);
+size_t FileSize(const char *filename);
 extern int	FileTime (char *path);
 void TempFileName(char *out);
 
 extern void	Q_mkdir (char *path);
 
 void AddSlash(char *path);
+void AddSlash(string &path);
+
 void CreatePath (char *path);
 void ChangeDirectory (char *path);
 void GetDirectory(char *path, int size_bytes);
@@ -151,5 +152,3 @@ void WrapFileWritesToMemory();
 FILE *SafeOpenWrite (char *filename);
 FILE *OpenReadWrite(char *filename);
 void WriteClose(FILE *f);
-
-#endif

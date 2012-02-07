@@ -13,7 +13,7 @@
 #include "cmd.h"
 
 #include "mem.h"
-#include "dds.h"
+#include "main.h"
 #include "thread.h"
 
 // console stuff
@@ -140,47 +140,31 @@ void Verbose(char *str, ...)
 	va_end(argptr);
 }
 
-// flush out after that string 
 void PercentPacifier(char *str, ...)
 {
 	va_list argptr;
+	char msg[10000];
 
-	ThreadLock();
 	va_start(argptr, str);
-	if (solidpacifier)
-	{
-		vprintf(str, argptr);
-		printf("\n");
-		va_end(argptr);
-		Sleep(20);
-	}
+	vsprintf(msg, str, argptr);
+	va_end(argptr);
+	if (!solidpacifier)
+		printf("\r%s%%\r", msg);
 	else
-	{
-		printf("\r");
-		vprintf(str, argptr);
-		printf("%\r");
-		va_end(argptr);
-	}
+		printf("\r%s%%                                      \r", msg);
 	fflush(stdout);
-	ThreadUnlock();
 }
 
 void Pacifier(char *str, ...)
 {
 	va_list argptr;
+	char msg[10000];
 
-	//if (noprint)
-	//	return;
-
-	ThreadLock();
 	va_start(argptr, str);
-	printf("\r");
-	vprintf(str, argptr);
-	printf("                                        ");
-	printf("\r");
+	vsprintf(msg, str, argptr);
 	va_end(argptr);
+	printf("\r%s                                        \r", msg);
 	fflush(stdout);
-	ThreadUnlock();
 }
 
 char SimplePacifierChars[5] = "-\\|/";
@@ -190,13 +174,10 @@ void SimplePacifier()
 	if (noprint)
 		return;
 
-	printf("\r");
 	SimplePacifierCharNum++;
 	if (SimplePacifierCharNum >= 4)
 		SimplePacifierCharNum = 0;
-	printf("  %c", SimplePacifierChars[SimplePacifierCharNum]);
-	printf("                                        ");
-	printf("\r");
+	printf("\r  %c                                        \r", SimplePacifierChars[SimplePacifierCharNum]);
 	fflush(stdout);
 }
 
@@ -205,20 +186,18 @@ void PacifierEnd()
 	if (noprint)
 		return;
 
-	ThreadLock();
 	printf("\n");
-	ThreadUnlock();
 }
 
 void Warning(char *str, ...)
 {
 	va_list argptr;
+	char msg[10000];
 
 	va_start(argptr, str);
-	printf("Warning: ");
-	vprintf(str, argptr);
+	vsprintf(msg, str, argptr);
 	va_end(argptr);
-	printf("\n");
+	printf("Warning: %s\n", msg);
 }
 
 
@@ -232,17 +211,14 @@ For abnormal program terminations
 void Error (char *error, ...)
 {
 	va_list argptr;
-	char logfile[MAX_DDSPATH], err[10384];
+	char logfile[MAX_FPATH], msgstr[10384];
 	FILE *f;
 
 	va_start(argptr, error);
-	vsprintf(err, error, argptr);
+	vsprintf(msgstr, error, argptr);
 	va_end(argptr);
-
-	printf("\n*** ERROR ***\n");
-	printf(err);
-	printf ("\n");
-
+	printf("\n*** ERROR ***\n%s\n", msgstr);
+	
 	// write error log
 	if (errorlog)
 	{
@@ -250,7 +226,7 @@ void Error (char *error, ...)
 		f = fopen(logfile, "wb");
 		if (f)
 		{
-			fwrite(err, strlen(err), 1, f);
+			fwrite(msgstr, strlen(msgstr), 1, f);
 			fclose(f);
 		}
 	}
@@ -261,7 +237,7 @@ void Error (char *error, ...)
 		getchar();
 	}
 #endif
-	exit (1);
+	exit(1);
 }
 
 /*
@@ -336,10 +312,23 @@ void AddSlash(char *path)
 	path[l+2] = 0;
 }
 
+
+void AddSlash(string &path)
+{
+	int l;
+
+	l = strlen(path.c_str()) - 1;
+	if (l < 0)
+		return;
+	if (path.c_str()[l] == '/' || path.c_str()[l] == '\\')
+		return;
+	path.append("/");
+}
+
 void CreatePath (char *createpath)
 {
 	char *ofs, save, *opath;
-	char path[MAX_DDSPATH];
+	char path[MAX_FPATH];
 
 	strncpy(path, createpath, sizeof(path)); 
 	opath = path;
@@ -357,8 +346,8 @@ void CreatePath (char *createpath)
 				#else
 				  if (mkdir (path, 0777) != -1)
 				#endif
-				if (errno != EEXIST)
-					Error ("CreatePath '%s': %s", opath, strerror(errno));
+				if (errno != 0 && errno != EEXIST)
+					Error ("CreatePath '%s': %s %i", opath, strerror(errno), errno);
 			}
 			*ofs = save;
 		}
@@ -385,8 +374,8 @@ void GetDirectory(char *path, int size_bytes)
 }
 void GetRealPath(char *outpath, char *inpath)
 {
-	char cdir[MAX_DDSPATH];
-	_getcwd(cdir, MAX_DDSPATH);
+	char cdir[MAX_FPATH];
+	_getcwd(cdir, MAX_FPATH);
 	if (cdir[strlen(cdir)-1] == '/' || cdir[strlen(cdir)-1] == '\\' )
 		sprintf(outpath, "%s%s", cdir, inpath);
 	else
@@ -401,11 +390,11 @@ get temp directory
 */
 void TempFileName(char *out)
 {
-	char tempdir[MAX_DDSPATH], tempfile[MAX_DDSPATH];
+	char tempdir[MAX_FPATH], tempfile[MAX_FPATH];
 	int l;
 
 #ifdef WIN32
-	l = GetTempPath(MAX_DDSPATH, tempdir);
+	l = GetTempPath(MAX_FPATH, tempdir);
 	tmpnam(tempfile);
 	if (!l)
 		Error("TempFileName: error %s", strerror(GetLastError()));
@@ -721,7 +710,7 @@ unsigned int Q_filelength (FILE *f)
   return end;
 }
 
-size_t FileSize(char *filename)
+size_t FileSize(const char *filename)
 {
 	FILE *f;
 	size_t s;
@@ -775,7 +764,7 @@ int LoadFile(char *filename, byte **bufferptr)
 
   f = SafeOpen(filename, "rb");
   length = Q_filelength(f);
-  buffer = (byte *)qmalloc(length+1);
+  buffer = (byte *)mem_alloc(length+1);
   ((char *)buffer)[length] = 0;
   SafeRead (f, buffer, length);
   fclose(f);
@@ -801,7 +790,7 @@ int LoadFileUnsafe(char *filename, byte **bufferptr)
   if (!f)
 	  return -1;
   length = Q_filelength (f);
-  buffer = (byte *)qmalloc(length+1);
+  buffer = (byte *)mem_alloc(length+1);
   ((char *)buffer)[length] = 0;
   SafeRead (f, buffer, length);
   fclose(f);
@@ -974,7 +963,7 @@ void ExtractFileExtension (char *path, char *dest)
 
 void AddSuffix(char *outpath, char *inpath, char *suffix)
 {
-	char basename[MAX_DDSPATH], ext[128];
+	char basename[MAX_FPATH], ext[128];
 
 	StripFileExtension(inpath, basename);
 	ExtractFileExtension(inpath, ext);
@@ -1194,7 +1183,7 @@ bool wrapfilestomem;
 // wrapped file struct
 typedef struct wrapfile_s
 {
-	char realname[MAX_DDSPATH];
+	char realname[MAX_FPATH];
 	unsigned int filesize;
 	struct wrapfile_s *next;
 	FILE *f;
@@ -1213,7 +1202,7 @@ void FreeWrappedFiles()
 	{
 		next = current->next;
 		fclose(current->f);
-		qfree(current);
+		mem_free(current);
 		current = next;
 	}
 	wrapfiles = NULL;
@@ -1247,7 +1236,7 @@ int LoadWrappedFile(int wrapnum, byte **bufferptr, char **realfilename)
 		Error("LoadWrappedFile: can open file on index %i", wrapnum);
 
 	// open file
-	buffer = (byte *)qmalloc(wrapf->filesize+1);
+	buffer = (byte *)mem_alloc(wrapf->filesize+1);
 	fseek(wrapf->f, 0, SEEK_SET);
 	SafeRead(wrapf->f, buffer, wrapf->filesize);
 	((char *)buffer)[wrapf->filesize] = 0;
@@ -1268,14 +1257,14 @@ FILE *SafeOpenWrite (char *filename)
 {
 	FILE		*f;
 	wrapfile_t	*wrapf, *current;
-	char path[MAX_DDSPATH];
+	char path[MAX_FPATH];
 
 	// check if opening file that was wrapped
 	for (wrapf = wrapfiles; wrapf != NULL; wrapf = wrapf->next)
 		if (!strcmp(filename, wrapf->realname))
 			return wrapf->f;
 
-	// automatically make dir structure
+	// automatically make directory structure
 	ExtractFilePath(filename, path);
 	// open file or stream
 	if (!wrapfilestomem)
@@ -1288,7 +1277,7 @@ FILE *SafeOpenWrite (char *filename)
 	else
 	{
 		// link to chain
-		wrapf = (wrapfile_t *)qmalloc(sizeof(wrapfile_t));
+		wrapf = (wrapfile_t *)mem_alloc(sizeof(wrapfile_t));
 		wrapf->filesize = 0;
 		wrapf->next = NULL;
 		strcpy(wrapf->realname, filename);
