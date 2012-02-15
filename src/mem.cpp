@@ -1,5 +1,4 @@
 // memory management
-// coded by Forest [LordHavoc] Hale
 
 #include "main.h"
 
