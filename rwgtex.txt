@@ -61,7 +61,7 @@ Trick: can drag&drop files and directories to .exe
 
  -mem       : show memory usage stats at end
 
- -threads X : manuallt sets the number of threads
+ -threads X : manually sets the number of threads
 
  -cd X      : change to this dir once started
 
