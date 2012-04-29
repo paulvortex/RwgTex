@@ -640,7 +640,7 @@ size_t GenerateDDS(FS_File *file, LoadedImage *image)
 		if (outzip)
 		{
 			WaitForSingleObject(zipMutex, INFINITE);
-			sprintf(outfile, "%s%s%s.dds", opt_archivePath.c_str(), file->path.c_str(), image->texname[0] ? image->texname : file->name.c_str());
+			sprintf(outfile, "%s%s%s.dds", opt_archivePath.c_str(), file->path.c_str(), image->useTexname ? image->texname : file->name.c_str());
 			ZRESULT zr = ZipAdd(outzip, outfile, data, datasize);
 			if (zr != ZR_OK)
 				Warning("GenerateDDS(%s): failed to pack DDS into ZIP - error code 0x%08X", file->fullpath.c_str(), zr);
@@ -648,13 +648,13 @@ size_t GenerateDDS(FS_File *file, LoadedImage *image)
 		}
 		else
 		{
-			sprintf(outfile, "%s%s%s.dds", opt_destPath, file->path.c_str(), image->texname[0] ? image->texname : file->name.c_str());
+			sprintf(outfile, "%s%s%s.dds", opt_destPath, file->path.c_str(), image->useTexname ? image->texname : file->name.c_str());
 			// write file
 			CreatePath(outfile);
 			FILE *f = fopen(outfile, "wb");
 			if (!f || !fwrite(data, datasize, 1, f))
 			{
-				Warning("NvDXTlib : %s - cannot write file (%s)", outfile, strerror(errno));
+				Warning("GenerateDDS(%s): cannot write file (%s)", outfile, strerror(errno));
 				return false;
 			}
 			fclose(f);

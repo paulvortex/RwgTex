@@ -38,12 +38,6 @@ typedef struct
 // get a new work for thread
 int	GetWorkForThread(ThreadData *thread);
 
-// thread synchronization
-void _ThreadLock(ThreadData *thread, char *file, int line);
-#define ThreadLock(thread) _ThreadLock(thread, __FILE__, __LINE__)
-void _ThreadUnlock(ThreadData *thread, char *file, int line);
-#define ThreadUnlock(thread) _ThreadUnlock(thread, __FILE__, __LINE__)
-
 // run thread in parallel
 double RunThreads(int num_threads, int work_count, void *common_data, void(*thread_func)(ThreadData *thread), void(*thread_start)(ThreadData *thread) = NULL, void(*thread_finish)(ThreadData *thread) = NULL);
 

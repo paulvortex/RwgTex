@@ -1,3 +1,6 @@
+echo copying rwgtex-dds.exe...
+copy ..\rwgtex.exe ..\rwgtex-dds.exe /Y >> garbage
+
 echo copying rwgtex-dds-ati.exe...
 copy ..\rwgtex.exe ..\rwgtex-dds-ati.exe /Y >> garbage
 

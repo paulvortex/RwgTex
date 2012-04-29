@@ -50,23 +50,6 @@ void Thread_Shutdown(void)
 {
 }
 
-// thread synchronization
-void _ThreadLock(ThreadData *thread, char *file, int line)
-{
-	EnterCriticalSection(&thread->pool->crit);
-	if (thread->pool->crit_entered)
-		Error("Recursive ThreadLock on %s:%i", file, line);
-	thread->pool->crit_entered = true;
-}
-
-void _ThreadUnlock(ThreadData *thread, char *file, int line)
-{
-	if (!thread->pool->crit_entered)
-		Error ("ThreadUnlock without lock on %s:%i", file, line);
-	thread->pool->crit_entered = false;
-	LeaveCriticalSection(&thread->pool->crit);
-}
-
 // run thread in parallel
 double RunThreads(int num_threads, int work_count, void *common_data, void(*thread_func)(ThreadData *thread), void(*thread_start)(ThreadData *thread), void(*thread_finish)(ThreadData *thread))
 {

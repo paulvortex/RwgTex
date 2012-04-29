@@ -38,6 +38,7 @@ typedef struct LoadedImage_s
 	// special
 	MipMap   *mipMaps;       // generated mipmaps
 	char      texname[128];  // null if there is no custom texture name
+	bool      useTexname;
 
 	// set by DDS exporter
 	DWORD    formatCC;

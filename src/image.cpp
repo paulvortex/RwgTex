@@ -61,6 +61,8 @@ void ClearImage(LoadedImage *image)
 {
 	FreeImageBitmap(image);
 	FreeImageMipmaps(image);
+	memset(image->texname, 0, 128); 
+	image->useTexname = false;
 }
 
 LoadedImage *Image_Create(void)
@@ -562,6 +564,7 @@ void LoadImage_QuakeSprite(FS_File *file, byte *filedata, size_t filesize, Loade
 			if (*(unsigned int *)(buf) == 1) 
 				buf += *(unsigned int *)(buf + 4) * 4 + 4;
 			// fill data
+			frame->useTexname = true;
 			sprintf(frame->texname, "%s.%s_%i", file->name.c_str(), file->ext.c_str(), framenum);
 			frame->width  = *(unsigned int *)(buf + 12);
 			frame->height = *(unsigned int *)(buf + 16);
@@ -609,6 +612,7 @@ void LoadImage_QuakeBSP(FS_File *file, byte *filedata, size_t filesize, LoadedIm
 				fiLoadDataRaw(texwidth, texheight, 1, (byte *)(buf + textureoffsets[texnum] + texmipofs), texwidth * texheight, quake_palette, false, tex);
 				if (texname[0] == '*')
 					texname[0] = '#';
+				tex->useTexname = true;
 				sprintf(tex->texname, "%s/%s", file->name.c_str(), texname);
 				LoadFinish(tex);
 				// set next texture
