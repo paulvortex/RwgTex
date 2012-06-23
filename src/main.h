@@ -61,6 +61,6 @@ extern string opt_archivePath;
 extern FCLIST opt_scale;
 extern SCALER opt_scaler;
 extern TOOL   opt_compressor;
-
+extern int    opt_zipMemory;
 
 void Help(void);

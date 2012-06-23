@@ -56,6 +56,7 @@ bool   opt_forceNoMipmaps;
 bool   opt_allowNonPowerOfTwoDDS;
 bool   opt_forceScale2x;
 SCALER opt_scaler;
+int    opt_zipMemory;
 DWORD  opt_forceFormat;
 TOOL   opt_compressor;
 
@@ -109,6 +110,7 @@ void LoadOptions(char *filename)
 	opt_forceFormat = 0;
 	opt_compressor = COMPRESSOR_AUTOSELECT;
 	opt_scaler = IMAGE_SCALER_SUPER2X;
+	opt_zipMemory = 0;
 	
 	// parse file
 	sprintf(line, "%s%s", progpath, filename);
@@ -280,6 +282,13 @@ void LoadOptions(char *filename)
 				opt_archivePath = myargv[i];
 				AddSlash(opt_archivePath);
 			}
+			continue;
+		}
+		if (!stricmp(myargv[i], "-zipmem"))
+		{
+			i++;
+			if (i < myargc)
+				opt_zipMemory = atoi(myargv[i]);
 			continue;
 		}
 	}

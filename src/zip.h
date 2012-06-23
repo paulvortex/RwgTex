@@ -76,6 +76,9 @@ ZRESULT ZipGetMemory(HZIP hz, void **buf, unsigned long *len);
 // buf will receive a pointer to its start, and len its length.
 // Note: you can't add any more after calling this.
 
+unsigned int ZipGetMemoryWritten(HZIP hz);
+// ZipGetMemoryWritten - return how much memory has been written already
+
 ZRESULT CloseZip(HZIP hz);
 // CloseZip - the zip handle must be closed with this function.
 

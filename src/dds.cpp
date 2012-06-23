@@ -40,21 +40,6 @@ char opt_srcDir[MAX_FPATH];
 char opt_srcFile[MAX_FPATH];
 char opt_destPath[MAX_FPATH];
 
-HZIP outzip = NULL;
-HANDLE zipMutex = NULL;
-
-typedef struct DDS_Stats_s
-{
-	size_t  num_dds_files;
-	double size_dds_headerdata;
-	double size_dds_texturedata;
-	double size_dds_mipdata;
-	size_t  num_original_files;
-	double size_original_textures;
-	double size_original_files;
-}DDS_Stats_t;
-DDS_Stats_t GenerateDDS_Stats;
-
 char *getCompressionFormatString(DWORD formatCC)
 {
 	if (formatCC == FORMAT_DXT1) return "DXT1";
@@ -537,9 +522,8 @@ void DDS_PrintModules(void)
 	Print(" ATI Compress %i.%i\n", ATI_COMPRESS_VERSION_MAJOR, ATI_COMPRESS_VERSION_MINOR);
 }
 
-size_t GenerateDDS(FS_File *file, LoadedImage *image)
+byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 {
-	char outfile[MAX_FPATH];
 	bool isNormalmap;
 	bool isHeightmap;
 	bool premodulateColor;
@@ -548,7 +532,7 @@ size_t GenerateDDS(FS_File *file, LoadedImage *image)
 	bool res;
 
 	if (!image->bitmap)
-		return false;
+		return NULL;
 
 	// detect special texture types
 	isNormalmap = FS_FileMatchList(file, opt_isNormal);
@@ -634,41 +618,53 @@ size_t GenerateDDS(FS_File *file, LoadedImage *image)
 	else
 		Error("bad compression tool!\n");
 
-	// write
-	if (res)
-	{
-		if (outzip)
-		{
-			WaitForSingleObject(zipMutex, INFINITE);
-			sprintf(outfile, "%s%s%s.dds", opt_archivePath.c_str(), file->path.c_str(), image->useTexname ? image->texname : file->name.c_str());
-			ZRESULT zr = ZipAdd(outzip, outfile, data, datasize);
-			if (zr != ZR_OK)
-				Warning("GenerateDDS(%s): failed to pack DDS into ZIP - error code 0x%08X", file->fullpath.c_str(), zr);
-			ReleaseMutex(zipMutex);
-		}
-		else
-		{
-			sprintf(outfile, "%s%s%s.dds", opt_destPath, file->path.c_str(), image->useTexname ? image->texname : file->name.c_str());
-			// write file
-			CreatePath(outfile);
-			FILE *f = fopen(outfile, "wb");
-			if (!f || !fwrite(data, datasize, 1, f))
-			{
-				Warning("GenerateDDS(%s): cannot write file (%s)", outfile, strerror(errno));
-				return false;
-			}
-			fclose(f);
-		}
-	}
-	mem_free(data);
-	return res;
+	*outdatasize = datasize;
+	return data;
 }
 
-void GenerateDDS_ThreadWork(ThreadData *thread)
+typedef struct writeDDS_s
+{
+	char        outfile[MAX_FPATH];
+	byte       *data;
+	size_t      datasize;
+	writeDDS_s *next;
+} writeDDS_t;
+
+typedef struct
+{
+	// stats
+	size_t     num_dds_files;
+	double     size_dds_headerdata;
+	double     size_dds_texturedata;
+	double     size_dds_mipdata;
+	size_t     num_original_files;
+	double     size_original_textures;
+	double     size_original_files;
+
+	// zip file in memory
+	void *zip_data;
+	size_t zip_len;
+	size_t zip_maxlen;
+	bool zip_warning;
+
+	// write chain
+	writeDDS_t *writeDDS;
+	int num_write_files;
+	int num_writen_files;
+} GenerateDDS_t;
+
+
+void GenerateDDS_Thread(ThreadData *thread)
 {
 	LoadedImage *image, *frame;
+	GenerateDDS_t *SharedData;
+	writeDDS_t *WriteData;
 	FS_File *file;
+	byte *data;
+	size_t datasize;
 	int work;
+
+	SharedData = (GenerateDDS_t *)thread->data;
 
 	image = Image_Create();
 	while(1)
@@ -677,16 +673,6 @@ void GenerateDDS_ThreadWork(ThreadData *thread)
 		if (work == -1)
 			break;
 
-		// pacifier
-		if (!noprint)
-			Pacifier(" file %i of %i", GenerateDDS_Stats.num_original_files, thread->pool->work_num);
-		else
-		{
-			int p = (int)(((float)(GenerateDDS_Stats.num_original_files) / (float)thread->pool->work_num)*100);
-			PercentPacifier("%i", p);
-		}
-
-		
 		file = &textures[work];
 
 		// load image
@@ -703,30 +689,180 @@ void GenerateDDS_ThreadWork(ThreadData *thread)
 		size_t numdds    = 0;
 		for (frame = image; frame != NULL; frame = frame->next)
 		{
-			GenerateDDS(file, frame);
+			data = GenerateDDS(file, frame, &datasize);
 
+			// save for saving thread
+			WriteData = (writeDDS_t *)mem_alloc(sizeof(writeDDS_t));
+			memset(WriteData, 0, sizeof(writeDDS_t));
+			sprintf(WriteData->outfile, "%s%s.dds", file->path.c_str(), image->useTexname ? image->texname : file->name.c_str());
+			WriteData->data = data;
+			WriteData->datasize = datasize;
+			WriteData->next = SharedData->writeDDS;
+			SharedData->writeDDS = WriteData;
+			SharedData->num_write_files++;
+			
 			// stats
-			dds_headsize  += (double)CompressedSize(frame, frame->formatCC,  true, false, false) / (1024.0f * 1024.0f);
-			dds_texsize   += (double)CompressedSize(frame, frame->formatCC, false,  true, false) / (1024.0f * 1024.0f);
-			dds_mipsize   += (double)CompressedSize(frame, frame->formatCC, false, false,  true) / (1024.0f * 1024.0f); 
-			org_filesize  += (double)frame->filesize / (1024.0f * 1024.0f);
-			org_texsize   += (double)((frame->width*frame->height*frame->bpp)/frame->scale) / (1024.0f * 1024.0f);
+			dds_headsize += (double)CompressedSize(frame, frame->formatCC,  true, false, false) / (1024.0f * 1024.0f);
+			dds_texsize  += (double)CompressedSize(frame, frame->formatCC, false,  true, false) / (1024.0f * 1024.0f);
+			dds_mipsize  += (double)CompressedSize(frame, frame->formatCC, false, false,  true) / (1024.0f * 1024.0f); 
+			org_filesize += (double)frame->filesize / (1024.0f * 1024.0f);
+			org_texsize  += (double)((frame->width*frame->height*frame->bpp)/frame->scale) / (1024.0f * 1024.0f);
 			numdds++;
 		}
 		
 		// add to global stats
-		GenerateDDS_Stats.num_original_files++;
-		GenerateDDS_Stats.size_original_files    += org_filesize;
-		GenerateDDS_Stats.size_original_textures += org_texsize;
-		GenerateDDS_Stats.num_dds_files          += numdds;
-		GenerateDDS_Stats.size_dds_headerdata    += dds_headsize;
-		GenerateDDS_Stats.size_dds_texturedata   += dds_texsize;
-		GenerateDDS_Stats.size_dds_mipdata       += dds_mipsize;
+		SharedData->num_original_files++;
+		SharedData->size_original_files    += org_filesize;
+		SharedData->size_original_textures += org_texsize;
+		SharedData->num_dds_files          += numdds;
+		SharedData->size_dds_headerdata    += dds_headsize;
+		SharedData->size_dds_texturedata   += dds_texsize;
+		SharedData->size_dds_mipdata       += dds_mipsize;
 
 		// delete image
 		Image_Unload(image);
 	}
 	Image_Delete(image);
+}
+
+void GenerateDDS_MainThread(ThreadData *thread)
+{
+	HZIP outzip = NULL;
+	GenerateDDS_t *SharedData;
+	writeDDS_t *WriteData, *PrevData;
+	void *zipdata;
+	unsigned long zipdatalen;
+	char outfile[MAX_FPATH];
+
+	SharedData = (GenerateDDS_t *)thread->data;
+
+	// check if dest path is an archive
+	if (!FS_FileMatchList(opt_destPath, opt_archiveFiles))
+	{
+		Print("Generating to \"%s\"\n", opt_destPath);
+		AddSlash(opt_destPath);
+	}
+	else
+	{
+		if (opt_zipMemory <= 0)
+			outzip = CreateZip(opt_destPath, "");
+		else
+		{
+			SharedData->zip_maxlen = 1024 * 1024 * opt_zipMemory;
+			SharedData->zip_data = mem_alloc(SharedData->zip_maxlen);
+			outzip = CreateZip(SharedData->zip_data, SharedData->zip_maxlen, "");
+		}
+		if (!outzip)
+		{
+			thread->pool->stop = true;
+			Print("Failed to create output archive file %s\n", opt_destPath);
+			return;
+		}
+		Print("Generating to \"%s\" (ZIP archive)\n", opt_destPath);
+		if (opt_zipMemory > 0)
+			Print("Generating ZIP in memory (max size %i MBytes)\n", opt_zipMemory);
+		if (opt_archivePath.c_str()[0])
+			Print("Archive inner path \"%s\"\n", opt_archivePath.c_str());
+	}
+	thread->pool->started = true;
+
+	// write files
+	while(1)
+	{
+		// print pacifier
+		if (!noprint)
+			Pacifier(" file %i of %i", SharedData->num_original_files, thread->pool->work_num /*, SharedData->num_write_files, SharedData->num_writen_files*/);
+		else
+		{
+			int p = (int)(((float)(SharedData->num_original_files) / (float)thread->pool->work_num)*100);
+			PercentPacifier("%i", p);
+		}
+
+		// check if files to write, thats because they havent been added it, or we are finished
+		if (!SharedData->writeDDS)
+		{
+			if (thread->pool->finished == true)
+				break;
+			// todo: do some help?
+			Sleep(1);
+		}
+		else
+		{
+			// get a last file from chain
+			PrevData = NULL;
+			for (WriteData = SharedData->writeDDS; WriteData->next; WriteData = WriteData->next)
+				PrevData = WriteData;
+			if (!PrevData)
+			{
+				WriteData = SharedData->writeDDS;
+				SharedData->writeDDS = NULL;
+			}
+			else
+			{
+				WriteData = PrevData->next;
+				PrevData->next = NULL;
+			}
+			SharedData->num_write_files--;
+			SharedData->num_writen_files++;
+
+			// write
+			if (outzip)
+			{
+				sprintf(outfile, "%s%s", opt_archivePath.c_str(), WriteData->outfile);
+				zipdatalen = ZipGetMemoryWritten(outzip);
+				if (!SharedData->zip_warning && (float)((float)zipdatalen / (float)SharedData->zip_maxlen) > 0.9)
+				{
+					Warning("GenerateDDS: there is less than 10%% of free ZIP memory, program may crash!\n");
+					SharedData->zip_warning = true;
+				}
+				ZRESULT zr = ZipAdd(outzip, outfile, WriteData->data, WriteData->datasize);
+				if (zr != ZR_OK)
+					Warning("GenerateDDS(%s): failed to pack DDS into ZIP - error code 0x%08X", outfile, zr);
+			}
+			else
+			{
+				sprintf(outfile, "%s%s.dds", opt_destPath, WriteData->outfile);
+				// write file
+				CreatePath(outfile);
+				FILE *f = fopen(outfile, "wb");
+				if (!f)
+					Warning("GenerateDDS(%s): cannot open file (%s) for writing", outfile, strerror(errno));
+				else
+				{
+					if (!fwrite(WriteData->data, WriteData->datasize, 1, f))
+						Warning("GenerateDDS(%s): cannot write file (%s)", outfile, strerror(errno));
+					fclose(f);
+				}
+			}
+			mem_free(WriteData->data);
+			mem_free(WriteData);
+		}
+	}
+
+	// close zip
+	if (outzip)
+	{
+		if (SharedData->zip_data)
+		{
+			ZRESULT zr = ZipGetMemory(outzip, &zipdata, &zipdatalen);
+			if (zr != ZR_OK)
+				Warning("GenerateDDS(%s): ZipGetMemory failed - error code 0x%08X", outfile, zr);
+			else
+			{
+				FILE *f = fopen(opt_destPath, "wb");
+				if (!f)
+					Warning("GenerateDDS(%s): cannot open ZIP file (%s) for writing", opt_destPath, strerror(errno));
+				else
+				{
+					if (!fwrite(zipdata, zipdatalen, 1, f))
+						Warning("GenerateDDS(%s): cannot write ZIP file (%s)", opt_destPath, strerror(errno));
+					fclose(f);
+				}
+				mem_free(SharedData->zip_data);
+			}
+		}
+		CloseZip(outzip);
+	}
 }
 
 void DDS_Help(void)
@@ -758,7 +894,9 @@ void DDS_Help(void)
 	"      -dxt5: force DXT5 compression\n"
 	"      -bgra: force BGRA format (no compression)\n"
 	"        -2x: apply 2x scale (Scale2X)\n"
-	"  -scaler X: set a filter to be used for scaling\n"
+	"   scaler X: set a filter to be used for scaling\n"
+	"  -zipmem X: keep zip file in memory until end\n"
+	"             this avoids many file writes\n"
 	"\n"
 	"scalers:\n"
 	"        box: nearest\n"
@@ -796,7 +934,7 @@ int DDS_Main(int argc, char **argv)
 				for (int j = 0; j < i; j++)
 					strcat(find, "../");
 				strcat(find, opt_basedir.c_str());
-				if (FS_FindDir(find))
+
 				{
 					found_dir = true;
 					break;
@@ -950,47 +1088,26 @@ int DDS_Main(int argc, char **argv)
 		return 0;
 	}
 
-	// check if dest path is an archive
-	outzip = NULL;
-	if (!FS_FileMatchList(opt_destPath, opt_archiveFiles))
-	{
-		Print("Generating to \"%s\"\n", opt_destPath);
-		AddSlash(opt_destPath);
-	}
-	else
-	{
-		outzip = CreateZip(opt_destPath, "");
-		if (!outzip)
-			Error("Failed to create output archive file %s", opt_destPath);
-		Print("Generating to \"%s\" (ZIP archive)\n", opt_destPath);
-		if (opt_archivePath.c_str()[0])
-			Print("Archive inner path \"%s\"\n", opt_archivePath.c_str());
-		zipMutex = CreateMutex(NULL, FALSE, NULL);
-	}
-
 	// run DDS conversion
-	memset(&GenerateDDS_Stats, 0, sizeof(GenerateDDS_Stats));
-	timeelapsed = RunThreads(numthreads, textures.size(), NULL, GenerateDDS_ThreadWork);
+	GenerateDDS_t SharedData;
+	memset(&SharedData, 0, sizeof(GenerateDDS_t));
+	timeelapsed = ParallelThreads(numthreads, textures.size(), &SharedData, GenerateDDS_Thread, GenerateDDS_MainThread);
 
 	// save cache file
 	if (opt_useFileCache)
 		FS_SaveCache(cachefile);
 
-	// close zip
-	if (outzip)
-		CloseZip(outzip);
-
 	// show stats
-	double outputsize = GenerateDDS_Stats.size_dds_headerdata + GenerateDDS_Stats.size_dds_mipdata + GenerateDDS_Stats.size_dds_texturedata;
+	double outputsize = SharedData.size_dds_headerdata + SharedData.size_dds_mipdata + SharedData.size_dds_texturedata;
 	Print("Conversion finished!\n");
 	Print("--------\n");
-	Print("  files exported: %i\n", GenerateDDS_Stats.num_dds_files);
+	Print("  files exported: %i\n", SharedData.num_dds_files);
 	Print("    time elapsed: %i:%02.0f\n", (int)(timeelapsed / 60), (timeelapsed - ((int)(timeelapsed / 60)*60)));
-	Print("     input files: %.2f mb\n", GenerateDDS_Stats.size_original_files);
-	Print("  input textures: %.2f mb\n", GenerateDDS_Stats.size_original_textures);
-	Print("       DDS files: %.2f mb\n", GenerateDDS_Stats.size_dds_headerdata + GenerateDDS_Stats.size_dds_mipdata + GenerateDDS_Stats.size_dds_texturedata);
-	Print("     inc mipmaps: %.2f mb\n", GenerateDDS_Stats.size_dds_mipdata);
-	Print("   space economy: %.0f%%\n", (1.0 - (outputsize / GenerateDDS_Stats.size_original_files)) * 100.0f);
-	Print("    VRAM economy: %.0f%%\n", (1.0 - (GenerateDDS_Stats.size_dds_texturedata / GenerateDDS_Stats.size_original_textures)) * 100.0f);
+	Print("     input files: %.2f mb\n", SharedData.size_original_files);
+	Print("  input textures: %.2f mb\n", SharedData.size_original_textures);
+	Print("       DDS files: %.2f mb\n", SharedData.size_dds_headerdata + SharedData.size_dds_mipdata + SharedData.size_dds_texturedata);
+	Print("     inc mipmaps: %.2f mb\n", SharedData.size_dds_mipdata);
+	Print("   space economy: %.0f%%\n", (1.0 - (outputsize / SharedData.size_original_files)) * 100.0f);
+	Print("    VRAM economy: %.0f%%\n", (1.0 - (SharedData.size_dds_texturedata / SharedData.size_original_textures)) * 100.0f);
 	return 0;
 }

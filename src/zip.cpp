@@ -2256,6 +2256,7 @@ class TZip
   unsigned int write(const char *buf,unsigned int size);
   bool oseek(unsigned int pos);
   ZRESULT GetMemory(void **pbuf, unsigned long *plen);
+  unsigned long TZip::GetMemoryWritten();
   ZRESULT Close();
 
   // some variables to do with the file currently being read:
@@ -2391,6 +2392,11 @@ ZRESULT TZip::GetMemory(void **pbuf, unsigned long *plen)
   if (plen!=NULL) *plen=writ;
   if (obuf==NULL) return ZR_NOTMMAP;
   return ZR_OK;
+}
+
+unsigned long TZip::GetMemoryWritten()
+{
+  return writ;
 }
 
 ZRESULT TZip::Close()
@@ -2804,6 +2810,15 @@ ZRESULT ZipGetMemory(HZIP hz, void **buf, unsigned long *len)
   lasterrorZ = zip->GetMemory(buf,len);
   return lasterrorZ;
 }
+
+unsigned int ZipGetMemoryWritten(HZIP hz)
+{ if (hz==0) {lasterrorZ=ZR_ARGS;return 0;}
+  TZipHandleData *han = (TZipHandleData*)hz;
+  if (han->flag!=2) {lasterrorZ=ZR_ZMODE;return 0;}
+  TZip *zip = han->zip;
+  return zip->GetMemoryWritten();
+}
+
 
 ZRESULT CloseZipZ(HZIP hz)
 { if (hz==0) {lasterrorZ=ZR_ARGS;return ZR_ARGS;}
