@@ -694,7 +694,7 @@ void GenerateDDS_Thread(ThreadData *thread)
 			// save for saving thread
 			WriteData = (writeDDS_t *)mem_alloc(sizeof(writeDDS_t));
 			memset(WriteData, 0, sizeof(writeDDS_t));
-			sprintf(WriteData->outfile, "%s%s.dds", file->path.c_str(), image->useTexname ? image->texname : file->name.c_str());
+			sprintf(WriteData->outfile, "%s%s.dds", file->path.c_str(), frame->useTexname ? frame->texname : file->name.c_str());
 			WriteData->data = data;
 			WriteData->datasize = datasize;
 			WriteData->next = SharedData->writeDDS;
