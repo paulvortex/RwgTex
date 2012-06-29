@@ -812,6 +812,7 @@ void GenerateDDS_MainThread(ThreadData *thread)
 				zipdatalen = ZipGetMemoryWritten(outzip);
 				if (!SharedData->zip_warning && (float)((float)zipdatalen / (float)SharedData->zip_maxlen) > 0.9)
 				{
+
 					Warning("GenerateDDS: there is less than 10%% of free ZIP memory, program may crash!\n");
 					SharedData->zip_warning = true;
 				}
@@ -821,7 +822,7 @@ void GenerateDDS_MainThread(ThreadData *thread)
 			}
 			else
 			{
-				sprintf(outfile, "%s%s.dds", opt_destPath, WriteData->outfile);
+				sprintf(outfile, "%s%s", opt_destPath, WriteData->outfile);
 				// write file
 				CreatePath(outfile);
 				FILE *f = fopen(outfile, "wb");

@@ -74,7 +74,7 @@ double ParallelThreads(int num_threads, int work_count, void *common_data, void(
 	pool.work_num = work_count;
 	pool.work_pending = 0;
 	pool.work_mutex = CreateMutex(NULL, FALSE, NULL);
-	pool.threads_num = min(num_threads, work_count);
+	pool.threads_num = max(2, min(num_threads, work_count));
 	pool.threads = mem_alloc(sizeof(ThreadData) * pool.threads_num);
 	memset(pool.threads, 0, sizeof(ThreadData) * pool.threads_num);
 	pool.finished = false;
