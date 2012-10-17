@@ -2,18 +2,59 @@
 # RwgDDS options for Quake 1
 ########################################
 
+########################################
 # BASE OPTIONS
+########################################
+
 [options]
+# basepath of your game (a directory which contains game files)
 basepath=id1
+# path to DDS files inside basepath
 ddspath=dds
-binaryalpha=auto
+
+# binary alpha - check and force DXT1 compression if found
+binaryalpha=yes
+
+# alpha lesser than this value this will be 0
 binaryalpha_0=40
+
+# alpha begger than this value will be 1
 binaryalpha_1=215
+
+# a technique to compress normalmaps (see [is_normalmap] below)
+#  default : standart color compression
+#     rxgb : Doom 3 RXGB format (DXT5, red channel being stored in alpha)
+normalmapcompression=default
+
+# wait for key press once finished
 waitforkey=yes
 
-# INPUT LIST
+# this scaler will be used for 2x upscale effect (see [scale_2x] below)
+# valid scalers:
+#   nearest    : box filter
+#   bilinear   : bilinear interpolation
+#   bicubic    : cubic Mitchell filter
+#   bspline    : cubic b-spline
+#   catmullrom : Catmull-Rom spline
+#   lanczos    : Lanczos/Sinc filter
+#   scale2x    : Scale2x filter (default one)
+#   super2x    : Scale4x filter with lanczos backscale to 2x
+scaler=scale2x
+
+########################################
+# FILE MASKS
+########################################
+
 # this files will be added to conversion and whats excluded
 # rules are processed linearly, checking stopped once entry got first match
+# valid parms:
+#   path   : path beginning with this
+#   suffix : file suffix match this (example: "foo_bar.tga"'s suffix is "bar")
+#   name   : file name match this
+#   ext    : file extension match this
+# valid operators:
+#    = : equal
+#   != : nor equal
 [input]
 path!=cubemaps/
 path!=screenshots/
@@ -55,6 +96,7 @@ suffix=bump
 path=particles/particlefont
 path=particlefont
 [force_dxt5]
+[force_rxgb]
 
 # FORCE COMPRESSOR
 # this files will be forced to use certain compression lib
@@ -64,5 +106,5 @@ path=particlefont
 [force_ati]
 
 # SCALE2X
-# this textures will be scaled by 200% using scale2x effect
-[scale_2x]
+# this textures will be scaled by 200%
+[scale]

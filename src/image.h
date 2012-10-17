@@ -17,36 +17,15 @@ typedef struct MipMap_s
 	MipMap_s *nextmip;
 }MipMap;
 
-typedef struct LoadedImage_s
+// internal color conversion
+typedef enum
 {
-	// load-time parameters
-	size_t	  filesize;
-
-	// FreeImage parameters
-	FIBITMAP *bitmap;
-	int       width;
-	int       height;
-	bool      colorSwap; // BGR instead of RGB
-	bool      colorPremodulate;
-	int       scale;
-
-	// FinishLoad parameters
-	int       bpp;              // bits per pixel
-	bool      hasAlpha;         // have alpha channel
-	bool      hasGradientAlpha; // alpha channel is a gradient type (not binary)
-
-	// special
-	MipMap   *mipMaps;       // generated mipmaps
-	char      texname[128];  // null if there is no custom texture name
-	bool      useTexname;
-
-	// set by DDS exporter
-	DWORD    formatCC;
-
-	// next image's frame
-	LoadedImage_s *next;
+	IMAGE_COLORSWIZZLE_NONE,
+	IMAGE_COLORSWIZZLE_PREMODULATE,
+	IMAGE_COLORSWIZZLE_XGBR, // doom 3's RXGB
+	IMAGE_COLORSWIZZLE_AGBR // same as RXGB but alpha is saved
 }
-LoadedImage;
+COLORSWIZZLE;
 
 // scalers
 typedef enum
@@ -62,6 +41,41 @@ typedef enum
 }
 SCALER;
 
+typedef struct LoadedImage_s
+{
+	// load-time parameters
+	size_t	     filesize;
+
+	// FreeImage parameters
+	FIBITMAP    *bitmap;
+	int          width;
+	int          height;
+	bool         colorSwap; // BGR instead of RGB
+	COLORSWIZZLE colorSwizzle; // color was swizzled
+	int          scale;
+
+	// FinishLoad parameters
+	int          bpp;              // bits per pixel
+	bool         hasAlpha;         // have alpha channel
+	bool         hasGradientAlpha; // alpha channel is a gradient type (not binary)
+
+	// special
+	MipMap      *mipMaps;       // generated mipmaps
+	char         texname[128];  // null if there is no custom texture name
+	bool         useTexname;
+
+	// set by DDS exporter
+	DWORD        formatCC;
+	bool         useChannelWeighting;
+	float        weightRed;
+	float        weightGreen;
+	float        weightBlue;
+
+	// next image's frame
+	LoadedImage_s *next;
+}
+LoadedImage;
+
 LoadedImage *Image_Create(void);
 void Image_Load(FS_File *file, LoadedImage *image);
 void Image_GenerateMipmaps(LoadedImage *image);
@@ -73,7 +87,8 @@ size_t Image_GetDataSize(LoadedImage *image);
 void Image_Unload(LoadedImage *image);
 void Image_Delete(LoadedImage *image);
 
-void Image_ConvertColors(LoadedImage *image, bool swappedColor, bool premodulatedColor);
+// internal color conversion
+void Image_ConvertColorsForCompression(LoadedImage *image, bool swappedColor, COLORSWIZZLE swizzleColor);
 
 bool Image_WriteTarga(char *filename, int width, int height, int bpp, byte *data, bool flip);
 bool Image_Save(LoadedImage *image, char *filename);

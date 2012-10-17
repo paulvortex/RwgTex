@@ -22,3 +22,4 @@ TOOL;
 #define FORMAT_DXT4 MAKEFOURCC('D','X','T','4')
 #define FORMAT_DXT5 MAKEFOURCC('D','X','T','5')
 #define FORMAT_BGRA MAKEFOURCC('B','G','R','A')
+#define FORMAT_RXGB MAKEFOURCC('R','X','G','B')

@@ -111,34 +111,121 @@ void ConvertToBPP(LoadedImage *image, int bpp)
 	image->bpp = FreeImage_GetBPP(image->bitmap)/8;
 }
 
-// swap RGB->BGR
-void Image_ConvertColors(LoadedImage *image, bool swappedColor, bool premodulatedColor)
+// swap RGB->BGR, optional swizzle for smart texture formats
+// assumes that image is already in RGB/RGBA format
+void Image_ConvertColorsForCompression(LoadedImage *image, bool swappedColor, COLORSWIZZLE swizzleColor)
 {
 	byte *data, *end;
-	bool doSwap, doPremodulate;
+	bool doSwap;
 
 	if (!image->bitmap)
 		return;
-	data = FreeImage_GetBits(image->bitmap);
-	end = data + FreeImage_GetWidth(image->bitmap)*image->bpp;
+
+	// prepare colors
 	doSwap = (swappedColor != image->colorSwap);
-	doPremodulate = (premodulatedColor != image->colorPremodulate && image->bpp == 4);
-	// swap & premodulate
-	if (doSwap && doPremodulate)
+	// premodulate color requires 32-bite texture (otherwize alpha is 255)
+	if (swizzleColor == IMAGE_COLORSWIZZLE_PREMODULATE)
+		if (image->bpp != 4)
+			swizzleColor = IMAGE_COLORSWIZZLE_NONE;
+	// RXGB requires alpha to be presented
+	if (swizzleColor == IMAGE_COLORSWIZZLE_XGBR || swizzleColor == IMAGE_COLORSWIZZLE_AGBR)
 	{
-		float mod = (float)data[3] / 255.0f;
-		while(data < end)
+		if (image->bpp != 4)
 		{
-			byte saved = data[0];
-			data[0] = (byte)(data[2] * mod);
-			data[1] = (byte)(data[1] * mod);
-			data[2] = (byte)(saved   * mod);
-			data += image->bpp;
+			ConvertToBPP(image, 4);
+			image->hasAlpha = true;
 		}
 	}
-	// swap
-	else if (doSwap) 
+	// do not allow double color swizzle as it would freak thing out
+	if (image->colorSwizzle != IMAGE_COLORSWIZZLE_NONE)
+		swizzleColor = IMAGE_COLORSWIZZLE_NONE;
+	// get start & end pointers
+	data = FreeImage_GetBits(image->bitmap);
+	end  = data + FreeImage_GetWidth(image->bitmap)*FreeImage_GetHeight(image->bitmap)*image->bpp;
+
+	// process
+	if (swizzleColor == IMAGE_COLORSWIZZLE_PREMODULATE)
 	{
+		if (doSwap)
+		{
+			// swap, premodulate
+			float mod = (float)data[3] / 255.0f;
+			while(data < end)
+			{
+				byte saved = data[0];
+				data[0] = (byte)(data[2] * mod);
+				data[1] = (byte)(data[1] * mod);
+				data[2] = (byte)(saved   * mod);
+				data += image->bpp;
+			}
+		}
+		else
+		{
+			// no swap, premodulate
+			float mod = (float)data[3] / 255.0f;
+			while(data < end)
+			{
+				data[0] = (byte)(data[0] * mod);
+				data[1] = (byte)(data[1] * mod);
+				data[2] = (byte)(data[2] * mod);
+				data += image->bpp;
+			}
+		}
+	}
+	else if (swizzleColor == IMAGE_COLORSWIZZLE_XGBR)
+	{
+		if (doSwap)
+		{
+			// swap, swizzle
+			while(data < end)
+			{
+				byte saved = data[0];
+				data[0] = data[2];
+				data[2] = 0;
+				data[3] = saved;
+				data += image->bpp;
+			}
+		}
+		else
+		{
+			// no swap, swizzle
+			while(data < end)
+			{
+				data[3] = data[2];
+				data[2] = 0;
+				data += image->bpp;
+			}
+		}
+	}
+	else if (swizzleColor == IMAGE_COLORSWIZZLE_AGBR)
+	{
+		if (doSwap)
+		{
+			// swap, swizzle
+			while(data < end)
+			{
+				byte saved = data[0];
+				data[0] = data[2];
+				data[2] = data[3];
+				data[3] = saved;
+				data += image->bpp;
+			}
+		}
+		else
+		{
+			// no swap, swizzle
+			while(data < end)
+			{
+				byte saved = data[2];
+				data[2] = data[3];
+				data[3] = saved;
+				data += image->bpp;
+			}
+		}
+	}
+	else if (doSwap)
+	{
+		// swap R<>B
 		while(data < end)
 		{
 			byte saved = data[0];
@@ -147,20 +234,12 @@ void Image_ConvertColors(LoadedImage *image, bool swappedColor, bool premodulate
 			data += image->bpp;
 		}
 	}
-	// premodulate
-	else if (doPremodulate) 
+	else
 	{
-		float mod = (float)data[3] / 255.0f;
-		while(data < end)
-		{
-			data[0] = (byte)(data[0] * mod);
-			data[1] = (byte)(data[1] * mod);
-			data[2] = (byte)(data[2] * mod);
-			data += image->bpp;
-		}
+		// image already in format we want it to be
 	}
 	image->colorSwap = swappedColor;
-	image->colorPremodulate = premodulatedColor;
+	image->colorSwizzle = swizzleColor;
 }
 
 void Image_GenerateMipmaps(LoadedImage *image)

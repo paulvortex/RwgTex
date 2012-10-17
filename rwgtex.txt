@@ -20,17 +20,18 @@
 
   - multiple threads to compress
 
-  - can convert Darkplaces sprites
+  - supported input files: TGA, JPG, PNG, SPR32, Quake 1 .BSP
 
-  - can read from ZIP archives
+  - can read from .ZIP archives
 
   - wide range of options to get it run with particlular engine/mod
  
-  - can compress DXT4/DXT5
+  - supported DDS formats: BGRA, DXT1, DXT2, DXT3, DXT4, DXT5, RXGB
 
   - convert thousands of files by single click
 
   - saves a cache of files crc32 to check if they were modified (speeds up compression when run next time by only compressing files that was changed)
+
 
 ----------
  USAGE:
@@ -50,8 +51,16 @@
 Trick: can drag&drop files and directories to .exe
 
 ----------
+ GENERAL OPTIONS
+----------
+
+Options to process files are stored in .opt file. For each particular engine opt files should be tweaked to match (basedir, what normalmaps name format is used, other tricks etc.)
+
+----------
  COMMANDLINE PARMS:
 ----------
+
+ -dds       : enforces DDS file creation and texture compression, should be presented
 
  -w         : wait for key press once finished, 
               (also this behavior is forced when
@@ -67,6 +76,8 @@ Trick: can drag&drop files and directories to .exe
 
  -nomip     : do not generate any mipmaps
 
+ -opt X     : load custom option file
+
  -ati       : use ATI compressor instead of mixed mode
 
  -nv        : use Nvidia DXTlib instead of mixed mode
@@ -75,7 +86,43 @@ Trick: can drag&drop files and directories to .exe
 
  -npot      : allow non-power-of-two texture dimensions
 
+ -nm        : forces texture to be processed as normalmap
+
+ -dxt1      : forces DXT1 compression
+
+ -dxt2      : forces DXT2 compression
+
+ -dxt3      : forces DXT3 compression
+
+ -dxt4      : forces DXT4 compression
+
+ -dxt5      : forces DXT5 compression
+
+ -rxgb      : forces RXGB compression
+
+ -bgra      : forces BGRA DDS file creation
+
+ -ap X      : sets archive internal path for ZIP file creation
+
+ -zipmem X  : create ZIP file is memory (X is number of megabytes), makes compression of many files faster
+
+ -2x        : Scale texture by 2x before compression
+
+ -scaler x  : Sets scaler for 2x scaling, possible scalers: nearest, bilinear, bicubic, bspline, catmullrom, lanczos, scale2x (default), super2x (scale 4x with backscale to 2x using lanczos filter).
+
  Trick: can include commandline parms to exe name, so they become defaults. Example: rwgdds-ati-w.exe
+
+----------
+ COMPRESSION MODES
+----------
+
+ 1. Mixed mode - default mode which uses NVidia DDS tools compressor for normalmaps and ATI Compress for everything else
+
+ 2. Forced ATI - ATI Compress is forced for all textures (can be activated by option or commandline parm)
+
+ 3. Forced NVidia - NVidia DXTlib compressor is forced for all textures (can be activated by option or commandline parm)
+
+ Trick: .opt file have parms to set compression on a per-file basis using name maks.
 
 ----------
  KNOWN BUGS:
@@ -83,6 +130,36 @@ Trick: can drag&drop files and directories to .exe
 
  NVidia DXTlib compresses DXT1+alpha with worse quality that ATI Compressor because it limits DXT1+alpha to use 3 colors for palettes instead of 4 (forcing 4-color on nvDXTlib gives binary alpha that applies to whole 4x4 block, which is not useful at all).
 
- DDS file may be wrong if source image has alpha channel with all-black pixels.
-
  Archives larger than 2GB are not supported
+
+----------
+ VERSION HISTORY:
+----------
+
+1.2
+------
+ 
+ - Added support for Doom 3 RXGB compression (DXT5 with Red channel being stored in Alpha). New general options: normalmapcompression (default, rxgb), force_rxgb (file masks). New commandline parm: -rxgb.
+
+ - Added channel weights for normalmap compression with ATI Compress, gives better results
+
+ - Fixed color swapping to work right
+
+ - "-scaler" commandline parm implemented
+
+ - "-nm" commandline parm implemented - forces texture to be compressed as normalmap
+
+1.1
+------
+
+ - Can generate ZIP files in memory (speeds up compression with thousands of input files, threading likes it too)
+
+ - Fixed bug with JPG files conversion
+
+1.0
+------
+
+ Initial release
+
+
+

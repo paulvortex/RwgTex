@@ -18,7 +18,7 @@ using namespace std;
 #include "dds.h"
 #include "fs.h"
 
-#define RWGTEX_VERSION "1.1"
+#define RWGTEX_VERSION "1.2"
 #define MAX_FPATH 1024
 
 // general
@@ -37,6 +37,7 @@ extern bool   opt_useFileCache;
 extern bool   opt_allowNonPowerOfTwoDDS;
 extern bool   opt_forceNoMipmaps;
 extern bool   opt_forceScale2x;
+extern bool   opt_normalmapRXGB;
 extern FCLIST opt_include;
 extern FCLIST opt_nomip;
 extern FCLIST opt_forceDXT1;
@@ -45,7 +46,9 @@ extern FCLIST opt_forceDXT3;
 extern FCLIST opt_forceDXT4;
 extern FCLIST opt_forceDXT5;
 extern FCLIST opt_forceBGRA;
-extern DWORD  opt_forceFormat;
+extern FCLIST opt_forceRXGB;
+extern DWORD  opt_forceAllFormat;
+extern bool   opt_forceAllNormalmap;
 extern FCLIST opt_forceNvCompressor;
 extern FCLIST opt_forceATICompressor;
 extern FCLIST opt_isNormal;

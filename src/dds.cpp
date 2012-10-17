@@ -48,6 +48,7 @@ char *getCompressionFormatString(DWORD formatCC)
 	if (formatCC == FORMAT_DXT4) return "DXT4";
 	if (formatCC == FORMAT_DXT5) return "DXT5";
 	if (formatCC == FORMAT_BGRA) return "BGRA";
+	if (formatCC == FORMAT_RXGB) return "RXGB";
 	return "UNKNOWN";
 }
 
@@ -190,12 +191,20 @@ bool NvDXTlibCompress(byte *stream, FS_File *file, LoadedImage *image, DWORD for
 {
 	nvCompressionOptions options;
 	nvWriteInfo writeOptions;
+	float weights[3];
 
 	// options
 	options.SetDefaultOptions();
 	options.DoNotGenerateMIPMaps();
 	options.SetQuality(kQualityHighest, 100);
 	options.user_data = &writeOptions;
+	if (image->useChannelWeighting)
+	{
+		weights[0] = image->weightRed;
+		weights[1] = image->weightGreen;
+		weights[2] = image->weightBlue;
+		options.SetCompressionWeighting(kUserDefinedWeighting, weights);
+	}
 	if (formatCC == FORMAT_DXT1)
 	{
 		if (image->hasAlpha)
@@ -211,7 +220,7 @@ bool NvDXTlibCompress(byte *stream, FS_File *file, LoadedImage *image, DWORD for
 	}
 	else if (formatCC == FORMAT_DXT2 || formatCC == FORMAT_DXT3)
 		options.SetTextureFormat(kTextureTypeTexture2D, kDXT3);
-	else if (formatCC == FORMAT_DXT4 || formatCC == FORMAT_DXT5)
+	else if (formatCC == FORMAT_DXT4 || formatCC == FORMAT_DXT5 || formatCC == FORMAT_RXGB)
 		options.SetTextureFormat(kTextureTypeTexture2D, kDXT5);
 	else
 	{
@@ -301,6 +310,8 @@ bool NvTTlibCompress(byte *stream, FS_File *file, LoadedImage *image, DWORD form
 		inputOptions.setAlphaMode(nvtt::AlphaMode_Transparency);
 	else
 		inputOptions.setAlphaMode(nvtt::AlphaMode_None);
+	if (image->useChannelWeighting)
+		compressionOptions.setColorWeights(image->weightRed, image->weightGreen, image->weightBlue);
 	if (formatCC == FORMAT_DXT1)
 	{
 		if (image->hasAlpha)
@@ -310,7 +321,7 @@ bool NvTTlibCompress(byte *stream, FS_File *file, LoadedImage *image, DWORD form
 	}
 	else if (formatCC == FORMAT_DXT2 || formatCC == FORMAT_DXT3)
 		compressionOptions.setFormat(nvtt::Format_DXT3);
-	else if (formatCC == FORMAT_DXT4 || formatCC == FORMAT_DXT5)
+	else if (formatCC == FORMAT_DXT4 || formatCC == FORMAT_DXT5 || formatCC == FORMAT_RXGB)
 		compressionOptions.setFormat(nvtt::Format_DXT5);
 	else
 	{
@@ -398,6 +409,13 @@ bool AtiCompress(byte *stream, FS_File *file, LoadedImage *image, DWORD formatCC
 	options.bUseAdaptiveWeighting = true;
 	options.bUseChannelWeighting = false;
 	options.dwSize = sizeof(options);
+	if (image->useChannelWeighting)
+	{
+		options.bUseChannelWeighting = true;
+		options.fWeightingRed = image->weightRed;
+		options.fWeightingGreen = image->weightGreen;
+		options.fWeightingBlue = image->weightBlue;
+	}
 	if (formatCC == FORMAT_DXT1)
 	{
 		if (image->hasAlpha)
@@ -408,7 +426,7 @@ bool AtiCompress(byte *stream, FS_File *file, LoadedImage *image, DWORD formatCC
 	}
 	else if (formatCC == FORMAT_DXT2 || formatCC == FORMAT_DXT3)
 		compress = ATI_TC_FORMAT_DXT3;
-	else if (formatCC == FORMAT_DXT4 || formatCC == FORMAT_DXT5)
+	else if (formatCC == FORMAT_DXT4 || formatCC == FORMAT_DXT5 || formatCC == FORMAT_RXGB)
 		compress = ATI_TC_FORMAT_DXT5;
 	else
 	{
@@ -526,7 +544,7 @@ byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 {
 	bool isNormalmap;
 	bool isHeightmap;
-	bool premodulateColor;
+	COLORSWIZZLE colorSwizzle;
 	DWORD formatCC;
 	TOOL tool;
 	bool res;
@@ -539,15 +557,18 @@ byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 	isHeightmap = FS_FileMatchList(file, opt_isHeight);
 
 	// select compression type
-	premodulateColor = false;
+	colorSwizzle = IMAGE_COLORSWIZZLE_NONE;
 	if (isHeightmap)
 		formatCC = FORMAT_DXT1;
+	if (isNormalmap && opt_normalmapRXGB)
+		formatCC = FORMAT_RXGB;
 	else if (image->hasAlpha)
 		formatCC = image->hasGradientAlpha ? FORMAT_DXT5 : FORMAT_DXT1;
 	else
 		formatCC = FORMAT_DXT1;
-	if (opt_forceFormat)
-		formatCC = opt_forceFormat;
+
+	if (opt_forceAllFormat)
+		formatCC = opt_forceAllFormat;
 	else if (FS_FileMatchList(file, opt_forceDXT1))
 		formatCC = FORMAT_DXT1;
 	else if (FS_FileMatchList(file, opt_forceDXT2))
@@ -560,13 +581,19 @@ byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 		formatCC = FORMAT_DXT5;
 	else if (FS_FileMatchList(file, opt_forceBGRA))
 		formatCC = FORMAT_BGRA;
+	else if (FS_FileMatchList(file, opt_forceRXGB))
+		formatCC = FORMAT_RXGB;
 	if (formatCC == FORMAT_DXT4 || formatCC == FORMAT_DXT2)
-		premodulateColor = true;
+		colorSwizzle = IMAGE_COLORSWIZZLE_PREMODULATE;
 
 	// check if selected DXT3/DXT5 and image have no alpha information
 	if (!image->hasAlpha)
-		if (formatCC == FORMAT_DXT3 || formatCC == FORMAT_DXT5 )
+		if (formatCC == FORMAT_DXT3 || formatCC == FORMAT_DXT5)
 			formatCC = FORMAT_DXT1;
+
+	// check for swizzled format
+	if (formatCC == FORMAT_RXGB)
+		colorSwizzle = IMAGE_COLORSWIZZLE_XGBR;
 
 	// select compressor tool
 	tool = opt_compressor;
@@ -588,8 +615,27 @@ byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 	if (formatCC == FORMAT_BGRA)
 		tool = COMPRESSOR_INTERNAL;
 
+	// for AI compressor we set color weiting (NVidia compressor has nice automatic weighting)
+	if (tool == COMPRESSOR_ATI)
+	{
+		if (formatCC == FORMAT_RXGB)
+		{
+			image->useChannelWeighting = true;
+			image->weightRed = 0.0;
+			image->weightGreen = 0.75;
+			image->weightBlue = 0.25;
+		}
+		else if (isNormalmap)
+		{
+			image->useChannelWeighting = true;
+			image->weightRed = 0.5f;
+			image->weightGreen = 0.5f;
+			image->weightBlue = 0.0f;
+		}
+	}
+
 	// postprocess
-	Image_ConvertColors(image, true, premodulateColor); // DDS compressors expects BGR
+	Image_ConvertColorsForCompression(image, true, colorSwizzle); // DDS compressors expects BGR
 	if (FS_FileMatchList(file, opt_scale) || opt_forceScale2x)
 		Image_Scale2x(image, opt_scaler, opt_allowNonPowerOfTwoDDS ? false : true);
 	if (!opt_allowNonPowerOfTwoDDS)
@@ -598,6 +644,9 @@ byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 		Image_MakeAlphaBinary(image, 180);
 	if (!opt_forceNoMipmaps && !FS_FileMatchList(file, opt_nomip))
 		Image_GenerateMipmaps(image);
+
+if (formatCC == FORMAT_RXGB)
+		formatCC = FORMAT_DXT5;
 
 	// allocate memory for destination DDS
 	image->formatCC = formatCC;
@@ -895,7 +944,7 @@ void DDS_Help(void)
 	"      -dxt5: force DXT5 compression\n"
 	"      -bgra: force BGRA format (no compression)\n"
 	"        -2x: apply 2x scale (Scale2X)\n"
-	"   scaler X: set a filter to be used for scaling\n"
+	"  -scaler X: set a filter to be used for scaling\n"
 	"  -zipmem X: keep zip file in memory until end\n"
 	"             this avoids many file writes\n"
 	"\n"
@@ -1013,17 +1062,21 @@ int DDS_Main(int argc, char **argv)
 		Print("Using ATI compressor\n");
 	else
 		Print("Using hybrid (autoselect) compressor\n");
-	if (opt_forceFormat)
+	if (opt_forceAllFormat)
 	{
-		if (opt_forceFormat == FORMAT_DXT1)
+		if (opt_forceAllFormat == FORMAT_DXT1)
 			Print("Forcing DDS format to DXT1\n");
-		else if (opt_forceFormat == FORMAT_DXT3)
+		else if (opt_forceAllFormat == FORMAT_DXT3)
 			Print("Forcing DDS format to DXT3\n");
-		else if (opt_forceFormat == FORMAT_DXT5)
+		else if (opt_forceAllFormat == FORMAT_DXT5)
 			Print("Forcing DDS format to DXT5\n");
-		else if (opt_forceFormat == FORMAT_BGRA)
+		else if (opt_forceAllFormat == FORMAT_BGRA)
 			Print("Forcing DDS format to BGRA\n");
-	}
+		else if (opt_forceAllFormat == FORMAT_RXGB)
+			Print("Forcing DDS format to RXGB (Doom 3 DXT5 swizzled normalmap format)\n");
+	}	
+	if (opt_forceAllNormalmap)
+		Print("Forcing normalmap compression tricks\n");
 	if (opt_forceScale2x)
 	{
 		Print("Upscale images to 200%% ");

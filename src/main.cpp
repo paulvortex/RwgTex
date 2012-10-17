@@ -38,6 +38,7 @@ FCLIST opt_forceDXT3;
 FCLIST opt_forceDXT4;
 FCLIST opt_forceDXT5;
 FCLIST opt_forceBGRA;
+FCLIST opt_forceRXGB;
 FCLIST opt_forceNvCompressor;
 FCLIST opt_forceATICompressor;
 FCLIST opt_isNormal;
@@ -55,9 +56,11 @@ bool   opt_useFileCache;
 bool   opt_forceNoMipmaps;
 bool   opt_allowNonPowerOfTwoDDS;
 bool   opt_forceScale2x;
+bool   opt_normalmapRXGB;
 SCALER opt_scaler;
 int    opt_zipMemory;
-DWORD  opt_forceFormat;
+DWORD  opt_forceAllFormat;
+bool   opt_forceAllNormalmap;
 TOOL   opt_compressor;
 
 bool OptionBoolean(char *val)
@@ -94,6 +97,7 @@ void LoadOptions(char *filename)
 	opt_forceDXT4.clear();
 	opt_forceDXT5.clear();
 	opt_forceBGRA.clear();
+	opt_forceRXGB.clear();
 	opt_forceNvCompressor.clear();
 	opt_forceATICompressor.clear();
 	opt_isNormal.clear();
@@ -107,7 +111,9 @@ void LoadOptions(char *filename)
 	opt_forceNoMipmaps = false;
 	opt_allowNonPowerOfTwoDDS = false;
 	opt_forceScale2x = false;
-	opt_forceFormat = 0;
+	opt_normalmapRXGB = false;
+	opt_forceAllFormat = 0;
+	opt_forceAllNormalmap = false;
 	opt_compressor = COMPRESSOR_AUTOSELECT;
 	opt_scaler = IMAGE_SCALER_SUPER2X;
 	opt_zipMemory = 0;
@@ -191,6 +197,13 @@ void LoadOptions(char *filename)
 				opt_binaryAlphaMax = (byte)(min(max(0, atoi(val)), 255));
 			else if (!stricmp(key, "binaryalpha_center"))
 				opt_binaryAlphaCenter = (byte)(min(max(0, atoi(val)), 255));
+			else if (!stricmp(key, "normalmapcompression"))
+			{
+				if (!stricmp(val, "default"))
+					opt_normalmapRXGB = false;
+				else if (!stricmp(val, "rxgb"))
+					opt_normalmapRXGB = true;
+			}
 			else if (!stricmp(key, "scaler"))
 			{
 				if (!stricmp(val, "nearest"))
@@ -237,6 +250,7 @@ void LoadOptions(char *filename)
 				else if (!stricmp(group, "force_dxt4"))   opt_forceDXT4.push_back(O);
 				else if (!stricmp(group, "force_dxt5"))   opt_forceDXT5.push_back(O);
 				else if (!stricmp(group, "force_bgra"))   opt_forceBGRA.push_back(O);
+				else if (!stricmp(group, "force_rxgb"))   opt_forceRXGB.push_back(O);
 				else if (!stricmp(group, "force_nv"))     opt_forceNvCompressor.push_back(O);
 				else if (!stricmp(group, "force_ati"))    opt_forceATICompressor.push_back(O);
 				else if (!stricmp(group, "archives"))     opt_archiveFiles.push_back(O);
@@ -253,15 +267,16 @@ void LoadOptions(char *filename)
 	if (CheckParm("-nv"))         opt_compressor = COMPRESSOR_NVIDIA;
 	if (CheckParm("-nvtt"))       opt_compressor = COMPRESSOR_NVIDIA_TT;
 	if (CheckParm("-ati"))        opt_compressor = COMPRESSOR_ATI;
-	if (CheckParm("-dxt1"))       opt_forceFormat = FORMAT_DXT1;
-	if (CheckParm("-dxt2"))       opt_forceFormat = FORMAT_DXT2;
-	if (CheckParm("-dxt3"))       opt_forceFormat = FORMAT_DXT3;
-	if (CheckParm("-dxt4"))       opt_forceFormat = FORMAT_DXT4;
-	if (CheckParm("-dxt5"))       opt_forceFormat = FORMAT_DXT5;
-	if (CheckParm("-bgra"))       opt_forceFormat = FORMAT_BGRA;
+	if (CheckParm("-dxt1"))       opt_forceAllFormat = FORMAT_DXT1;
+	if (CheckParm("-dxt2"))       opt_forceAllFormat = FORMAT_DXT2;
+	if (CheckParm("-dxt3"))       opt_forceAllFormat = FORMAT_DXT3;
+	if (CheckParm("-dxt4"))       opt_forceAllFormat = FORMAT_DXT4;
+	if (CheckParm("-dxt5"))       opt_forceAllFormat = FORMAT_DXT5;
+	if (CheckParm("-bgra"))       opt_forceAllFormat = FORMAT_BGRA;
+	if (CheckParm("-rxgb"))       opt_forceAllFormat = FORMAT_RXGB;
+	if (CheckParm("-nm"))         opt_forceAllNormalmap = true;	
 	if (CheckParm("-2x"))         opt_forceScale2x = true; 
 	if (CheckParm("-npot"))       opt_allowNonPowerOfTwoDDS = true;
-	if (CheckParm("-nomip"))      opt_forceNoMipmaps = true;
 	if (CheckParm("-nomip"))      opt_forceNoMipmaps = true;
 	if (CheckParm("-nearest"))    opt_scaler = IMAGE_SCALER_BOX;
 	if (CheckParm("-bilinear"))   opt_scaler = IMAGE_SCALER_BILINEAR;
@@ -270,7 +285,7 @@ void LoadOptions(char *filename)
 	if (CheckParm("-catmullrom")) opt_scaler = IMAGE_SCALER_CATMULLROM;
 	if (CheckParm("-lanczos"))    opt_scaler = IMAGE_SCALER_LANCZOS;
 	if (CheckParm("-scale2x"))    opt_scaler = IMAGE_SCALER_SCALE2X;				
-	if (CheckParm("-super2x"))    opt_scaler = IMAGE_SCALER_SUPER2X;			
+	if (CheckParm("-super2x"))    opt_scaler = IMAGE_SCALER_SUPER2X;	
 	// string parameters
 	for (int i = 1; i < myargc; i++) 
 	{
@@ -289,6 +304,30 @@ void LoadOptions(char *filename)
 			i++;
 			if (i < myargc)
 				opt_zipMemory = atoi(myargv[i]);
+			continue;
+		}
+		if (!stricmp(myargv[i], "-scaler"))
+		{
+			i++;
+			if (i < myargc)
+			{
+				    if (!stricmp(myargv[i], "nearest"))
+					opt_scaler = IMAGE_SCALER_BOX;
+				else if (!stricmp(myargv[i], "bilinear"))
+					opt_scaler = IMAGE_SCALER_BILINEAR;
+				else if (!stricmp(myargv[i], "bicubic"))
+					opt_scaler = IMAGE_SCALER_BICUBIC;
+				else if (!stricmp(myargv[i], "bspline"))
+					opt_scaler = IMAGE_SCALER_BSPLINE;
+				else if (!stricmp(myargv[i], "catmullrom"))
+					opt_scaler = IMAGE_SCALER_CATMULLROM;
+				else if (!stricmp(myargv[i], "lanczos"))
+					opt_scaler = IMAGE_SCALER_LANCZOS;
+				else if (!stricmp(myargv[i], "scale2x"))
+					opt_scaler = IMAGE_SCALER_SCALE2X;
+				else if (!stricmp(myargv[i], "super2x"))
+					opt_scaler = IMAGE_SCALER_SUPER2X;
+			}
 			continue;
 		}
 	}
