@@ -645,9 +645,6 @@ byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 	if (!opt_forceNoMipmaps && !FS_FileMatchList(file, opt_nomip))
 		Image_GenerateMipmaps(image);
 
-if (formatCC == FORMAT_RXGB)
-		formatCC = FORMAT_DXT5;
-
 	// allocate memory for destination DDS
 	image->formatCC = formatCC;
 	size_t datasize = CompressedSize(image, formatCC, true, true, true);

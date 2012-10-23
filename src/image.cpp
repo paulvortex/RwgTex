@@ -149,9 +149,9 @@ void Image_ConvertColorsForCompression(LoadedImage *image, bool swappedColor, CO
 		if (doSwap)
 		{
 			// swap, premodulate
-			float mod = (float)data[3] / 255.0f;
 			while(data < end)
 			{
+				float mod = (float)data[3] / 255.0f;
 				byte saved = data[0];
 				data[0] = (byte)(data[2] * mod);
 				data[1] = (byte)(data[1] * mod);
@@ -162,9 +162,9 @@ void Image_ConvertColorsForCompression(LoadedImage *image, bool swappedColor, CO
 		else
 		{
 			// no swap, premodulate
-			float mod = (float)data[3] / 255.0f;
 			while(data < end)
 			{
+				float mod = (float)data[3] / 255.0f;
 				data[0] = (byte)(data[0] * mod);
 				data[1] = (byte)(data[1] * mod);
 				data[2] = (byte)(data[2] * mod);
