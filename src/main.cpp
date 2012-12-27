@@ -233,8 +233,8 @@ void LoadOptions(char *filename)
 		    !stricmp(group, "scale"))
 		{
 			CompareOption O;
-			if (stricmp(key, "path") && stricmp(key, "suffix") && stricmp(key, "ext") && stricmp(key, "name") &&
-				stricmp(key, "path!") && stricmp(key, "suffix!") && stricmp(key, "ext!") && stricmp(key, "name!"))
+			if (stricmp(key, "path") && stricmp(key, "suffix") && stricmp(key, "ext") && stricmp(key, "name") && stricmp(key, "match") &&
+				stricmp(key, "path!") && stricmp(key, "suffix!") && stricmp(key, "ext!") && stricmp(key, "name!") && stricmp(key, "match!"))
 				Warning("%s:%i: unknown key '%s'", filename, linenum, key);
 			else
 			{

@@ -52,6 +52,7 @@ scaler=scale2x
 #   suffix : file suffix match this (example: "foo_bar.tga"'s suffix is "bar")
 #   name   : file name match this
 #   ext    : file extension match this
+#   match  : wildcard pattern. "*" equals to any amount of symbols, "?" - to one any symbol
 # valid operators:
 #    = : equal
 #   != : nor equal
