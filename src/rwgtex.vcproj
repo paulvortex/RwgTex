@@ -150,7 +150,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories=".\nvlibs\inc;.\aticompress\inc;.\freeimage"
+				AdditionalIncludeDirectories=".\nvlibs\inc;.\aticompress\inc;.\freeimage;.\astcevaluationcodec\inc"
 				PreprocessorDefinitions="WIN32;DEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				BasicRuntimeChecks="0"
@@ -238,6 +238,26 @@
 				>
 			</File>
 			<File
+				RelativePath=".\dds_aticompress.h"
+				>
+			</File>
+			<File
+				RelativePath=".\dds_bgra.h"
+				>
+			</File>
+			<File
+				RelativePath=".\dds_gimp.h"
+				>
+			</File>
+			<File
+				RelativePath=".\dds_nvdxtlib.h"
+				>
+			</File>
+			<File
+				RelativePath=".\dds_nvtt.h"
+				>
+			</File>
+			<File
 				RelativePath="dll.h"
 				>
 			</File>
@@ -292,6 +312,26 @@
 			</File>
 			<File
 				RelativePath="dds.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\dds_aticompress.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\dds_bgra.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\dds_gimp.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\dds_nvdxtlib.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\dds_nvtt.cpp"
 				>
 			</File>
 			<File
@@ -550,6 +590,42 @@
 						>
 					</File>
 				</Filter>
+			</Filter>
+			<Filter
+				Name="GimpDDS"
+				>
+				<File
+					RelativePath=".\gimpdds\color.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\gimpdds\color.h"
+					>
+				</File>
+				<File
+					RelativePath=".\gimpdds\dds.h"
+					>
+				</File>
+				<File
+					RelativePath=".\gimpdds\ddsplugin.h"
+					>
+				</File>
+				<File
+					RelativePath=".\gimpdds\dxt.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\gimpdds\dxt.h"
+					>
+				</File>
+				<File
+					RelativePath=".\gimpdds\endian.h"
+					>
+				</File>
+				<File
+					RelativePath=".\gimpdds\imath.h"
+					>
+				</File>
 			</Filter>
 		</Filter>
 	</Files>

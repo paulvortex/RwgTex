@@ -1,6 +1,8 @@
 // ATI_Compress_Test_Helpers.cpp
 //
 
+#pragma once
+
 #include <stdio.h>
 #include <tchar.h>
 #include <assert.h>

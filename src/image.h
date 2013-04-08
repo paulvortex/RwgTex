@@ -1,9 +1,9 @@
 // image.h
 
-#pragma once
+#ifndef RWGTEX_IMAGE_H
+#define RWGTEX_IMAGE_H
 
 #include "fs.h"
-#include "image.h"
 #include <freeimage.h>
 
 typedef struct MipMap_s
@@ -23,6 +23,7 @@ typedef enum
 	IMAGE_COLORSWIZZLE_NONE,
 	IMAGE_COLORSWIZZLE_PREMODULATE,
 	IMAGE_COLORSWIZZLE_XGBR, // doom 3's RXGB
+	IMAGE_COLORSWIZZLE_YCOCG, // YCoCg and Scaled YCoCg
 	IMAGE_COLORSWIZZLE_AGBR // same as RXGB but alpha is saved
 }
 COLORSWIZZLE;
@@ -88,7 +89,7 @@ void Image_Unload(LoadedImage *image);
 void Image_Delete(LoadedImage *image);
 
 // internal color conversion
-void Image_ConvertColorsForCompression(LoadedImage *image, bool swappedColor, COLORSWIZZLE swizzleColor);
+void Image_ConvertColorsForCompression(LoadedImage *image, bool swappedColor, COLORSWIZZLE swizzleColor, bool forceBGRA);
 
 bool Image_WriteTarga(char *filename, int width, int height, int bpp, byte *data, bool flip);
 bool Image_Save(LoadedImage *image, char *filename);
@@ -99,3 +100,5 @@ void Image_Shutdown(void);
 void Image_PrintModules(void);
 
 int NextPowerOfTwo(int n);
+
+#endif

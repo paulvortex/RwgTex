@@ -39,8 +39,11 @@ FCLIST opt_forceDXT4;
 FCLIST opt_forceDXT5;
 FCLIST opt_forceBGRA;
 FCLIST opt_forceRXGB;
+FCLIST opt_forceYCG1;
+FCLIST opt_forceYCG2;
 FCLIST opt_forceNvCompressor;
 FCLIST opt_forceATICompressor;
+FCLIST opt_forceGimpDDSCompressor;
 FCLIST opt_isNormal;
 FCLIST opt_isHeight;
 string opt_basedir;
@@ -62,9 +65,15 @@ int    opt_zipMemory;
 DWORD  opt_forceAllFormat;
 bool   opt_forceAllNormalmap;
 TOOL   opt_compressor;
+bool   opt_useDDSMagic;
+DWORD  opt_ddsMagic1;
+DWORD  opt_ddsMagic2;
+DWORD  opt_ddsVersion;
 
 bool OptionBoolean(char *val)
 {
+	if (!stricmp(val, "true"))
+		return true;
 	if (!stricmp(val, "enabled"))
 		return true;
 	if (!stricmp(val, "enable"))
@@ -98,8 +107,11 @@ void LoadOptions(char *filename)
 	opt_forceDXT5.clear();
 	opt_forceBGRA.clear();
 	opt_forceRXGB.clear();
+	opt_forceYCG1.clear();
+	opt_forceYCG2.clear();
 	opt_forceNvCompressor.clear();
 	opt_forceATICompressor.clear();
+	opt_forceGimpDDSCompressor.clear();
 	opt_isNormal.clear();
 	opt_isHeight.clear();
 	opt_basedir = "id1";
@@ -112,6 +124,10 @@ void LoadOptions(char *filename)
 	opt_allowNonPowerOfTwoDDS = false;
 	opt_forceScale2x = false;
 	opt_normalmapRXGB = false;
+	opt_useDDSMagic = true;
+	opt_ddsMagic1 = MAKEFOURCC('R', 'W', 'G', 'T');
+	opt_ddsMagic2 = MAKEFOURCC('E', 'X', 0, 0);
+	opt_ddsVersion = 0;
 	opt_forceAllFormat = 0;
 	opt_forceAllNormalmap = false;
 	opt_compressor = COMPRESSOR_AUTOSELECT;
@@ -223,18 +239,28 @@ void LoadOptions(char *filename)
 				else if (!stricmp(val, "super2x"))
 					opt_scaler = IMAGE_SCALER_SUPER2X;
 			}
+			else if (!stricmp(key, "sign"))
+				opt_useDDSMagic = OptionBoolean(val);
+			else if (!stricmp(key, "signword"))
+			{
+				opt_ddsMagic1 = MAKEFOURCC( strlen(val) < 1 ? 0 : val[0], strlen(val) < 2 ? 0 : val[1], strlen(val) < 3 ? 0 : val[2], strlen(val) < 4 ? 0 : val[3] );
+				opt_ddsMagic2 = MAKEFOURCC( strlen(val) < 5 ? 0 : val[4], strlen(val) < 6 ? 0 : val[5], strlen(val) < 7 ? 0 : val[6], strlen(val) < 8 ? 0 : val[7] );
+			}
+			else if (!stricmp(key, "signversion"))
+				opt_ddsVersion = MAKEFOURCC( strlen(val) < 1 ? 0 : val[0], strlen(val) < 2 ? 0 : val[1], strlen(val) < 3 ? 0 : val[2], strlen(val) < 4 ? 0 : val[3] );
 			else
 				Warning("%s:%i: unknown key '%s'", filename, linenum, key);
 			continue;
 		}
 		if (!stricmp(group, "input")      || !stricmp(group, "nomip")      || !stricmp(group, "is_normalmap") || !stricmp(group, "is_heightmap") ||
 			!stricmp(group, "force_dxt1") || !stricmp(group, "force_dxt2") || !stricmp(group, "force_dxt3")   || !stricmp(group, "force_dxt4")   || !stricmp(group, "force_dxt5") || !stricmp(group, "force_bgra") ||
-			!stricmp(group, "force_nv")   || !stricmp(group, "force_ati")  || !stricmp(group, "archives") ||    
+			!stricmp(group, "force_rxgb") || !stricmp(group, "force_ycg1") || !stricmp(group, "force_ycg2")   ||    
+			!stricmp(group, "force_nv")   || !stricmp(group, "force_ati")  || !stricmp(group, "force_gimp")   || !stricmp(group, "archives") ||    
 		    !stricmp(group, "scale"))
 		{
 			CompareOption O;
-			if (stricmp(key, "path") && stricmp(key, "suffix") && stricmp(key, "ext") && stricmp(key, "name") && stricmp(key, "match") &&
-				stricmp(key, "path!") && stricmp(key, "suffix!") && stricmp(key, "ext!") && stricmp(key, "name!") && stricmp(key, "match!"))
+			if (stricmp(key, "path") && stricmp(key, "suffix") && stricmp(key, "ext") && stricmp(key, "name") && stricmp(key, "match") && stricmp(key, "bpp") && stricmp(key, "alpha") &&
+				stricmp(key, "path!") && stricmp(key, "suffix!") && stricmp(key, "ext!") && stricmp(key, "name!") && stricmp(key, "match!") && stricmp(key, "bpp!") && stricmp(key, "alpha!"))
 				Warning("%s:%i: unknown key '%s'", filename, linenum, key);
 			else
 			{
@@ -251,8 +277,11 @@ void LoadOptions(char *filename)
 				else if (!stricmp(group, "force_dxt5"))   opt_forceDXT5.push_back(O);
 				else if (!stricmp(group, "force_bgra"))   opt_forceBGRA.push_back(O);
 				else if (!stricmp(group, "force_rxgb"))   opt_forceRXGB.push_back(O);
+				else if (!stricmp(group, "force_ycg1"))   opt_forceYCG1.push_back(O);
+				else if (!stricmp(group, "force_ycg2"))   opt_forceYCG2.push_back(O);
 				else if (!stricmp(group, "force_nv"))     opt_forceNvCompressor.push_back(O);
 				else if (!stricmp(group, "force_ati"))    opt_forceATICompressor.push_back(O);
+				else if (!stricmp(group, "force_gimp"))   opt_forceGimpDDSCompressor.push_back(O);
 				else if (!stricmp(group, "archives"))     opt_archiveFiles.push_back(O);
 				else if (!stricmp(group, "scale"))        opt_scale.push_back(O);
 			}
@@ -267,6 +296,7 @@ void LoadOptions(char *filename)
 	if (CheckParm("-nv"))         opt_compressor = COMPRESSOR_NVIDIA;
 	if (CheckParm("-nvtt"))       opt_compressor = COMPRESSOR_NVIDIA_TT;
 	if (CheckParm("-ati"))        opt_compressor = COMPRESSOR_ATI;
+	if (CheckParm("-gimp"))       opt_compressor = COMPRESSOR_GIMPDDS;
 	if (CheckParm("-dxt1"))       opt_forceAllFormat = FORMAT_DXT1;
 	if (CheckParm("-dxt2"))       opt_forceAllFormat = FORMAT_DXT2;
 	if (CheckParm("-dxt3"))       opt_forceAllFormat = FORMAT_DXT3;
@@ -274,6 +304,8 @@ void LoadOptions(char *filename)
 	if (CheckParm("-dxt5"))       opt_forceAllFormat = FORMAT_DXT5;
 	if (CheckParm("-bgra"))       opt_forceAllFormat = FORMAT_BGRA;
 	if (CheckParm("-rxgb"))       opt_forceAllFormat = FORMAT_RXGB;
+	if (CheckParm("-ycg1"))       opt_forceAllFormat = FORMAT_YCG1;
+	if (CheckParm("-ycg2"))       opt_forceAllFormat = FORMAT_YCG2;
 	if (CheckParm("-nm"))         opt_forceAllNormalmap = true;	
 	if (CheckParm("-2x"))         opt_forceScale2x = true; 
 	if (CheckParm("-npot"))       opt_allowNonPowerOfTwoDDS = true;
@@ -286,6 +318,8 @@ void LoadOptions(char *filename)
 	if (CheckParm("-lanczos"))    opt_scaler = IMAGE_SCALER_LANCZOS;
 	if (CheckParm("-scale2x"))    opt_scaler = IMAGE_SCALER_SCALE2X;				
 	if (CheckParm("-super2x"))    opt_scaler = IMAGE_SCALER_SUPER2X;	
+	if (CheckParm("-nosign"))     opt_useDDSMagic = false;
+	if (CheckParm("-gimpsign")) { opt_useDDSMagic = true; opt_ddsMagic1 = MAKEFOURCC('G', 'I', 'M', 'P'); opt_ddsMagic2 = MAKEFOURCC('-', 'D', 'D', 'S');  opt_ddsVersion = 131585; }
 	// string parameters
 	for (int i = 1; i < myargc; i++) 
 	{
@@ -431,7 +465,7 @@ int main(int argc, char **argv)
 	if (printcap)
 	{
 		Print("-----------------------------------------------------------\n");
-		Print(" RwgTex v%s by Pavel [VorteX] Timofeyev\n", RWGTEX_VERSION);
+		Print(" RwgTex v%s.%s by Pavel [VorteX] Timofeyev\n", RWGTEX_VERSION_MAJOR, RWGTEX_VERSION_MINOR);
 		DDS_PrintModules();
 		Image_PrintModules();
 		FS_PrintModules();

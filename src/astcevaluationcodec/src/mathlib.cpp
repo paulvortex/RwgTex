@@ -19,6 +19,10 @@
 #include <math.h>
 #include "mathlib.h"
 
+#ifndef M_PI
+#define M_PI 3.1415926535898
+#endif
+
 #ifdef WIN32
 	double cbrt(double n)
 	{

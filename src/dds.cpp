@@ -2,6 +2,8 @@
 //
 // RWGTEX - DDS exporting
 // coded by Pavel [VorteX] Timofeyev and placed to public domain
+// DDS compression routines are picked from DDS GIMP plugin
+//  Copyright (C) 2004 Shawn Kirst <skirst@gmail.com>, with parts (C) 2003 Arne Reuter <homepage@arnereuter.de> where specified.
 //
 //
 // This program is free software; you can redistribute it and/or
@@ -23,22 +25,11 @@
 #include "main.h"
 #include "dds.h"
 
-// NVidia DXT compressor
-#include <dxtlib/dxtlib.h>
-#pragma comment(lib, "nvDXTlibMT.vc8.lib")
-
-// NVIdia Texture Tools
-#include <nvtt.h>
-#pragma comment(lib, "nvtt.lib")
-
-// ATI Compress
-#include <ATI_Compress.h>
-#include <ATI_Compress_Test_Helpers.cpp>
-#pragma comment(lib, "ATI_Compress_MT.lib")
-
 char opt_srcDir[MAX_FPATH];
 char opt_srcFile[MAX_FPATH];
 char opt_destPath[MAX_FPATH];
+
+#include <ATI_Compress_Test_Helpers.cpp>
 
 char *getCompressionFormatString(DWORD formatCC)
 {
@@ -49,6 +40,8 @@ char *getCompressionFormatString(DWORD formatCC)
 	if (formatCC == FORMAT_DXT5) return "DXT5";
 	if (formatCC == FORMAT_BGRA) return "BGRA";
 	if (formatCC == FORMAT_RXGB) return "RXGB";
+	if (formatCC == FORMAT_YCG1) return "YCG1";
+	if (formatCC == FORMAT_YCG2) return "YCG2";
 	return "UNKNOWN";
 }
 
@@ -61,7 +54,16 @@ double getCompressionRatio(DWORD formatCC)
 	return 1.0f/4.0f;
 }
 
-size_t CompressedSize(LoadedImage *image, DWORD formatCC, bool ddsHeader, bool baseTex, bool mipMaps)
+bool IsDXT5SwizzledFormat(DWORD formatCC)
+{
+   if (formatCC == FOURCC_DXT5_xGBR || formatCC == FOURCC_DXT5_RxBG || formatCC == FOURCC_DXT5_RBxG ||
+       formatCC == FOURCC_DXT5_xRBG || formatCC == FOURCC_DXT5_RGxB || formatCC == FOURCC_DXT5_xGxR ||
+       formatCC == FOURCC_ATI2N_DXT5)
+       return true;
+   return false;
+}
+
+size_t getCompressedImageSize(LoadedImage *image, DWORD formatCC, bool ddsHeader, bool baseTex, bool mipMaps)
 {
 	size_t size, block, blockBytes;
 	int x, y;
@@ -98,15 +100,6 @@ size_t CompressedSize(LoadedImage *image, DWORD formatCC, bool ddsHeader, bool b
 	return size;
 }
 
-bool IsDXT5SwizzledFormat(DWORD formatCC)
-{
-   if (formatCC == FOURCC_DXT5_xGBR || formatCC == FOURCC_DXT5_RxBG || formatCC == FOURCC_DXT5_RBxG ||
-       formatCC == FOURCC_DXT5_xRBG || formatCC == FOURCC_DXT5_RGxB || formatCC == FOURCC_DXT5_xGxR ||
-       formatCC == FOURCC_ATI2N_DXT5)
-       return true;
-   return false;
-}
-
 byte *DDSHeader(byte *in, LoadedImage *image, DWORD formatCC)
 {
 	DDSD2 dds;
@@ -134,10 +127,29 @@ byte *DDSHeader(byte *in, LoadedImage *image, DWORD formatCC)
         dds.ddpfPixelFormat.dwFlags = DDPF_ALPHAPIXELS | DDPF_RGB;
 		dds.ddpfPixelFormat.dwRGBAlphaBitMask = 0xff000000;
 	}
+	else if (formatCC == FORMAT_YCG1 || formatCC == FORMAT_YCG2)
+	{
+		dds.ddpfPixelFormat.dwFourCC = FORMAT_DXT5;
+		dds.ddpfPixelFormat.dwRBitMask = 0x00ff0000;
+		dds.ddpfPixelFormat.dwGBitMask = 0x0000ff00;
+		dds.ddpfPixelFormat.dwBBitMask = 0x000000ff;
+		dds.ddpfPixelFormat.dwFlags = DDPF_FOURCC;
+		dds.dwEmptyFaceColor = formatCC;
+	}
 	else
 	{
 		dds.ddpfPixelFormat.dwFourCC = formatCC;
+		dds.ddpfPixelFormat.dwRBitMask = 0x00ff0000;
+		dds.ddpfPixelFormat.dwGBitMask = 0x0000ff00;
+		dds.ddpfPixelFormat.dwBBitMask = 0x000000ff;
 		dds.ddpfPixelFormat.dwFlags = DDPF_FOURCC;
+	}
+
+	// set DDS magic works (GIMP uses it as special info)
+	if (opt_useDDSMagic)
+	{
+		dds.dwAlphaBitDepth = opt_ddsMagic1;
+		dds.dwReserved = opt_ddsMagic2;
 	}
 
 	// fill alphapixels information, ensure that our texture have actual alpha channel
@@ -164,370 +176,6 @@ byte *DDSHeader(byte *in, LoadedImage *image, DWORD formatCC)
 /*
 ==========================================================================================
 
-  DDS compression - nvDXTlib path
-
-==========================================================================================
-*/
-
-typedef struct
-{
-	byte        *stream;
-	int          numwrites;
-}nvWriteInfo;
-
-NV_ERROR_CODE NvDXTLib_WriteDDS(const void *buffer, size_t count, const MIPMapData *mipMapData, void *userData)
-{
-	nvWriteInfo *wparm = (nvWriteInfo *)userData;
-	if (wparm->numwrites > 1)
-	{
-		memcpy(wparm->stream, buffer, count);
-		wparm->stream = (byte *)(wparm->stream) + count;
-	}
-	wparm->numwrites++;
-	return NV_OK;
-}
-
-bool NvDXTlibCompress(byte *stream, FS_File *file, LoadedImage *image, DWORD formatCC)
-{
-	nvCompressionOptions options;
-	nvWriteInfo writeOptions;
-	float weights[3];
-
-	// options
-	options.SetDefaultOptions();
-	options.DoNotGenerateMIPMaps();
-	options.SetQuality(kQualityHighest, 100);
-	options.user_data = &writeOptions;
-	if (image->useChannelWeighting)
-	{
-		weights[0] = image->weightRed;
-		weights[1] = image->weightGreen;
-		weights[2] = image->weightBlue;
-		options.SetCompressionWeighting(kUserDefinedWeighting, weights);
-	}
-	if (formatCC == FORMAT_DXT1)
-	{
-		if (image->hasAlpha)
-		{
-			options.bForceDXT1FourColors = false;
-			options.SetTextureFormat(kTextureTypeTexture2D, kDXT1a);
-		}
-		else
-		{
-			options.bForceDXT1FourColors = true;
-			options.SetTextureFormat(kTextureTypeTexture2D, kDXT1);
-		}
-	}
-	else if (formatCC == FORMAT_DXT2 || formatCC == FORMAT_DXT3)
-		options.SetTextureFormat(kTextureTypeTexture2D, kDXT3);
-	else if (formatCC == FORMAT_DXT4 || formatCC == FORMAT_DXT5 || formatCC == FORMAT_RXGB)
-		options.SetTextureFormat(kTextureTypeTexture2D, kDXT5);
-	else
-	{
-		Warning("NvDXTlib : %s%s.dds - unsupported compression %s", file->path.c_str(), file->name.c_str(), getCompressionFormatString(formatCC));
-		return false;
-	}
-	memset(&writeOptions, 0, sizeof(writeOptions));
-	writeOptions.stream = stream;
-
-	// compress
-	NV_ERROR_CODE res = nvDDS::nvDXTcompress(Image_GetData(image), image->width,  image->height,  image->width*image->bpp, image->hasAlpha ? nvBGRA : nvBGR, &options, NvDXTLib_WriteDDS, 0);
-	if (res == NV_OK)
-	{
-		for (MipMap *mipmap = image->mipMaps; mipmap; mipmap = mipmap->nextmip)
-		{
-			writeOptions.numwrites = 0;
-			res = nvDDS::nvDXTcompress(mipmap->data, mipmap->width, mipmap->height,  mipmap->width*image->bpp, image->hasAlpha ? nvBGRA : nvBGR, &options, NvDXTLib_WriteDDS, 0);
-			if (res != NV_OK)
-				break;
-		}
-	}
-	if (res != NV_OK)
-	{
-		Warning("NvDXTlib : %s%s.dds error - %s", file->path.c_str(), file->name.c_str(), getErrorString(res));
-		return false;
-	}
-	return true;
-}
-
-/*
-==========================================================================================
-
-  DDS compression - NVidia Texture Tools Path
-
-==========================================================================================
-*/
-
-class nvttOutputHandler : public nvtt::OutputHandler
-{
-public:
-	byte *stream;
-	void beginImage(int size, int width, int height, int depth, int face, int miplevel)
-	{
-	}
-	bool writeData(const void *data, int size)
-	{
-		memcpy(stream, data, size);
-		stream += size;
-		return true;
-	}
-};
-
-class nvttErrorHandler : public nvtt::ErrorHandler
-{
-public : 
-	nvtt::Error errorCode;
-	void error(nvtt::Error e)
-	{
-		errorCode = e;
-	}
-};
-
-void NvTTlibCompressData(nvtt::InputOptions &inputOptions, nvtt::OutputOptions &outputOptions, byte *data, int width, int height, nvtt::CompressionOptions &compressionOptions)
-{
-	nvtt::Compressor compressor;
-
-	inputOptions.setTextureLayout(nvtt::TextureType_2D, width, height);
-	inputOptions.setMipmapData(data, width, height);
-	compressor.process(inputOptions, compressionOptions, outputOptions);
-}
-
-bool NvTTlibCompress(byte *stream, FS_File *file, LoadedImage *image, DWORD formatCC)
-{
-	nvtt::CompressionOptions compressionOptions;
-	nvtt::OutputOptions outputOptions;
-	nvtt::InputOptions inputOptions;
-	nvttErrorHandler errorHandler;
-	nvttOutputHandler outputHandler;
-
-	inputOptions.reset();
-	compressionOptions.reset();
-	outputOptions.reset();
-
-	// options
-	inputOptions.setMipmapGeneration(false);
-	if (image->hasAlpha)
-		inputOptions.setAlphaMode(nvtt::AlphaMode_Transparency);
-	else
-		inputOptions.setAlphaMode(nvtt::AlphaMode_None);
-	if (image->useChannelWeighting)
-		compressionOptions.setColorWeights(image->weightRed, image->weightGreen, image->weightBlue);
-	if (formatCC == FORMAT_DXT1)
-	{
-		if (image->hasAlpha)
-			compressionOptions.setFormat(nvtt::Format_DXT1a);
-		else
-			compressionOptions.setFormat(nvtt::Format_DXT1);
-	}
-	else if (formatCC == FORMAT_DXT2 || formatCC == FORMAT_DXT3)
-		compressionOptions.setFormat(nvtt::Format_DXT3);
-	else if (formatCC == FORMAT_DXT4 || formatCC == FORMAT_DXT5 || formatCC == FORMAT_RXGB)
-		compressionOptions.setFormat(nvtt::Format_DXT5);
-	else
-	{
-		Warning("NvTT : %s%s.dds - unsupported compression %s", file->path.c_str(), file->name.c_str(), getCompressionFormatString(formatCC));
-		return false;
-	}
-	if (image->hasAlpha)
-		compressionOptions.setPixelFormat(32, 0x0000FF, 0x00FF00, 0xFF0000, 0xFF000000);
-	else
-		compressionOptions.setPixelFormat(24, 0x0000FF, 0x00FF00, 0xFF0000, 0);
-	compressionOptions.setQuality(nvtt::Quality_Production);
-	
-	// set output parameters
-	outputOptions.setOutputHeader(false);
-	outputOptions.setErrorHandler(&errorHandler);
-	errorHandler.errorCode = nvtt::Error_Unknown;
-	outputOptions.setOutputHandler(&outputHandler);
-	outputHandler.stream = stream; 
-
-	// write base texture and mipmaps
-	NvTTlibCompressData(inputOptions, outputOptions, Image_GetData(image), image->width, image->height, compressionOptions);
-	if (errorHandler.errorCode == nvtt::Error_Unknown)
-	{
-		for (MipMap *mipmap = image->mipMaps; mipmap; mipmap = mipmap->nextmip)
-		{
-			NvTTlibCompressData(inputOptions, outputOptions, mipmap->data, mipmap->width, mipmap->height, compressionOptions);
-			if (errorHandler.errorCode != nvtt::Error_Unknown)
-				break;
-		}
-	}
-	
-	// end, advance stats
-	if (errorHandler.errorCode != nvtt::Error_Unknown)
-	{
-		Warning("NVTT Error: %s%s.dds - %s", file->path.c_str(), file->name.c_str(), nvtt::errorString(errorHandler.errorCode));
-		return false;
-	}
-	return true;
-}
-
-/*
-==========================================================================================
-
-  DDS compression - ATI Compressor path
-
-==========================================================================================
-*/
-
-// compress single image
-ATI_TC_ERROR AtiCompressData(ATI_TC_Texture *src, ATI_TC_Texture *dst, byte *data, int width, int height, ATI_TC_CompressOptions *options, ATI_TC_FORMAT compressFormat, int bpp)
-{
-
-	// fill source pixels, swap rgb->bgr
-	// premodulate color if requested
-	src->dwWidth = width;
-	src->dwHeight = height;
-	src->dwPitch = width * bpp;
-	src->dwDataSize = width * height * bpp;
-	src->pData = data;
-	
-	// fill dst texture
-	dst->dwWidth = width;
-	dst->dwHeight = height;
-	dst->dwPitch = 0;
-	dst->format = compressFormat;
-	dst->dwDataSize = ATI_TC_CalculateBufferSize(dst);
-
-	// convert
-	return ATI_TC_ConvertTexture(src, dst, options, NULL, NULL, NULL);
-}
-
-bool AtiCompress(byte *stream, FS_File *file, LoadedImage *image, DWORD formatCC)
-{
-	ATI_TC_Texture src;
-	ATI_TC_Texture dst;
-	ATI_TC_CompressOptions options;
-	ATI_TC_FORMAT compress;
-
-	memset(&src, 0, sizeof(src));
-	memset(&options, 0, sizeof(options));
-
-	// get options
-	options.nAlphaThreshold = 127;
-	options.nCompressionSpeed = ATI_TC_Speed_Normal;
-	options.bUseAdaptiveWeighting = true;
-	options.bUseChannelWeighting = false;
-	options.dwSize = sizeof(options);
-	if (image->useChannelWeighting)
-	{
-		options.bUseChannelWeighting = true;
-		options.fWeightingRed = image->weightRed;
-		options.fWeightingGreen = image->weightGreen;
-		options.fWeightingBlue = image->weightBlue;
-	}
-	if (formatCC == FORMAT_DXT1)
-	{
-		if (image->hasAlpha)
-			options.bDXT1UseAlpha = true;
-		else
-			options.bDXT1UseAlpha = false;
-		compress = ATI_TC_FORMAT_DXT1;
-	}
-	else if (formatCC == FORMAT_DXT2 || formatCC == FORMAT_DXT3)
-		compress = ATI_TC_FORMAT_DXT3;
-	else if (formatCC == FORMAT_DXT4 || formatCC == FORMAT_DXT5 || formatCC == FORMAT_RXGB)
-		compress = ATI_TC_FORMAT_DXT5;
-	else
-	{
-		Warning("AtiCompress : %s%s.dds - unsupported compression %s", file->path.c_str(), file->name.c_str(), getCompressionFormatString(formatCC));
-		return false;
-	}
-
-	// init source texture
-	src.dwSize = sizeof(src);
-	src.dwWidth = image->width;
-	src.dwHeight = image->height;
-	src.dwPitch = image->width*image->bpp;
-	if (image->hasAlpha)
-		src.format = ATI_TC_FORMAT_ARGB_8888;
-	else
-		src.format = ATI_TC_FORMAT_RGB_888;
-	
-	// init dest texture
-	memset(&dst, 0, sizeof(dst));
-	dst.dwSize = sizeof(dst);
-	dst.dwWidth = image->width;
-	dst.dwHeight = image->height;
-	dst.dwPitch = 0;
-	dst.format = compress;
-
-	// compress
-	ATI_TC_ERROR res = ATI_TC_OK;
-	dst.pData = stream;
-	res = AtiCompressData(&src, &dst, Image_GetData(image), image->width, image->height, &options, compress, image->bpp);
-	if (res == ATI_TC_OK)
-	{
-		stream += dst.dwDataSize;
-		// mipmaps
-		for (MipMap *mipmap = image->mipMaps; mipmap; mipmap = mipmap->nextmip)
-		{
-			dst.pData = stream;
-			res = AtiCompressData(&src, &dst, mipmap->data, mipmap->width, mipmap->height, &options, compress, image->bpp);
-			if (res != ATI_TC_OK)
-				break;
-			stream += dst.dwDataSize;
-		}
-	}
-
-	// end, advance stats
-	if (res != ATI_TC_OK)
-	{
-		Warning("AtiCompress : %s%s.dds - compressor fail (error code %i)", file->path.c_str(), file->name.c_str(), res);
-		return false;
-	}
-	return true;
-}
-
-/*
-==========================================================================================
-
-  DDS compression - Internal compressor
-
-==========================================================================================
-*/
-
-bool InternalCompress(byte *stream, FS_File *file, LoadedImage *image, DWORD formatCC)
-{
-	if (formatCC == FORMAT_BGRA)
-	{
-		byte *in = Image_GetData(image);
-		byte *end = in + image->width * image->height * image->bpp;
-		byte *out = stream;
-
-		if (image->hasAlpha)
-		{
-			while(in < end)
-			{
-				out[0] = in[0];
-				out[1] = in[1];
-				out[2] = in[2];
-				out[3] = in[3];
-				out += 4;		
-				in  += 4;
-			}
-		}
-		else
-		{
-			while(in < end)
-			{
-				out[0] = in[0];
-				out[1] = in[1];
-				out[2] = in[2];
-				out[3] = 255;
-				out += 4;
-				in  += 3;
-			}
-		}
-		return true;
-	}
-	Warning("InternalCompress : %s%s.dds - unsupported compression %s", file->path.c_str(), file->name.c_str(), getCompressionFormatString(formatCC));
-	return false;
-}
-
-/*
-==========================================================================================
-
   DDS compression - Generic
 
 ==========================================================================================
@@ -538,12 +186,14 @@ void DDS_PrintModules(void)
 	Print(" NVidia DDS Utilities %s\n", GetDXTCVersion());
 	//Print(" NVidia Texture Tools  %i.%i\n", (int)(nvtt::version() / 100), nvtt::version() - ((int)(nvtt::version()) / 100)*100);
 	Print(" ATI Compress %i.%i\n", ATI_COMPRESS_VERSION_MAJOR, ATI_COMPRESS_VERSION_MINOR);
+	Print(" GIMP DDS Plugin %i.%i.%i\n", DDS_PLUGIN_VERSION_MAJOR, DDS_PLUGIN_VERSION_MINOR, DDS_PLUGIN_VERSION_REVISION);
 }
 
 byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 {
-	bool isNormalmap;
-	bool isHeightmap;
+	bool isNormalmap = false;
+	bool isHeightmap = false;
+	bool forceBGRA = false;
 	COLORSWIZZLE colorSwizzle;
 	DWORD formatCC;
 	TOOL tool;
@@ -553,8 +203,8 @@ byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 		return NULL;
 
 	// detect special texture types
-	isNormalmap = FS_FileMatchList(file, opt_isNormal);
-	isHeightmap = FS_FileMatchList(file, opt_isHeight);
+	isNormalmap = FS_FileMatchList(file, image, opt_isNormal);
+	isHeightmap = FS_FileMatchList(file, image, opt_isHeight);
 
 	// select compression type
 	colorSwizzle = IMAGE_COLORSWIZZLE_NONE;
@@ -569,20 +219,24 @@ byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 
 	if (opt_forceAllFormat)
 		formatCC = opt_forceAllFormat;
-	else if (FS_FileMatchList(file, opt_forceDXT1))
+	else if (FS_FileMatchList(file, image, opt_forceDXT1))
 		formatCC = FORMAT_DXT1;
-	else if (FS_FileMatchList(file, opt_forceDXT2))
+	else if (FS_FileMatchList(file, image, opt_forceDXT2))
 		formatCC = FORMAT_DXT2;
-	else if (FS_FileMatchList(file, opt_forceDXT3))
+	else if (FS_FileMatchList(file, image, opt_forceDXT3))
 		formatCC = FORMAT_DXT3;
-	else if (FS_FileMatchList(file, opt_forceDXT4))
+	else if (FS_FileMatchList(file, image, opt_forceDXT4))
 		formatCC = FORMAT_DXT4;
-	else if (FS_FileMatchList(file, opt_forceDXT5))
+	else if (FS_FileMatchList(file, image, opt_forceDXT5))
 		formatCC = FORMAT_DXT5;
-	else if (FS_FileMatchList(file, opt_forceBGRA))
+	else if (FS_FileMatchList(file, image, opt_forceBGRA))
 		formatCC = FORMAT_BGRA;
-	else if (FS_FileMatchList(file, opt_forceRXGB))
+	else if (FS_FileMatchList(file, image, opt_forceRXGB))
 		formatCC = FORMAT_RXGB;
+	else if (FS_FileMatchList(file, image, opt_forceYCG1))
+		formatCC = FORMAT_YCG1;
+	else if (FS_FileMatchList(file, image, opt_forceYCG2))
+		formatCC = FORMAT_YCG2;
 	if (formatCC == FORMAT_DXT4 || formatCC == FORMAT_DXT2)
 		colorSwizzle = IMAGE_COLORSWIZZLE_PREMODULATE;
 
@@ -594,6 +248,11 @@ byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 	// check for swizzled format
 	if (formatCC == FORMAT_RXGB)
 		colorSwizzle = IMAGE_COLORSWIZZLE_XGBR;
+	if (formatCC == FORMAT_YCG1 || formatCC == FORMAT_YCG2)
+	{
+		colorSwizzle = IMAGE_COLORSWIZZLE_YCOCG;
+		forceBGRA = true;
+	}
 
 	// select compressor tool
 	tool = opt_compressor;
@@ -607,13 +266,19 @@ byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 		else
 			tool = COMPRESSOR_ATI;
 		// check if forcing
-		if (FS_FileMatchList(file, opt_forceNvCompressor))
+		if (FS_FileMatchList(file, image, opt_forceNvCompressor))
 			tool = COMPRESSOR_NVIDIA;
-		else if (FS_FileMatchList(file, opt_forceATICompressor))
+		else if (FS_FileMatchList(file, image, opt_forceGimpDDSCompressor))
+			tool = COMPRESSOR_GIMPDDS;
+		else if (FS_FileMatchList(file, image, opt_forceATICompressor))
 			tool = COMPRESSOR_ATI;
 	}
+
+	// specific formats only supported by a few compressors
 	if (formatCC == FORMAT_BGRA)
-		tool = COMPRESSOR_INTERNAL;
+		tool = COMPRESSOR_BGRA;
+	if (formatCC == FORMAT_YCG1 || formatCC == FORMAT_YCG2)
+		tool = COMPRESSOR_GIMPDDS;
 
 	// for AI compressor we set color weiting (NVidia compressor has nice automatic weighting)
 	if (tool == COMPRESSOR_ATI)
@@ -635,19 +300,19 @@ byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 	}
 
 	// postprocess
-	Image_ConvertColorsForCompression(image, true, colorSwizzle); // DDS compressors expects BGR
-	if (FS_FileMatchList(file, opt_scale) || opt_forceScale2x)
+	Image_ConvertColorsForCompression(image, true, colorSwizzle, forceBGRA); // DDS compressors expects BGR
+	if (FS_FileMatchList(file, image, opt_scale) || opt_forceScale2x)
 		Image_Scale2x(image, opt_scaler, opt_allowNonPowerOfTwoDDS ? false : true);
 	if (!opt_allowNonPowerOfTwoDDS)
 		Image_MakePowerOfTwo(image);
 	if (formatCC == FORMAT_DXT1 && image->hasAlpha)
 		Image_MakeAlphaBinary(image, 180);
-	if (!opt_forceNoMipmaps && !FS_FileMatchList(file, opt_nomip))
+	if (!opt_forceNoMipmaps && !FS_FileMatchList(file, image, opt_nomip))
 		Image_GenerateMipmaps(image);
 
 	// allocate memory for destination DDS
 	image->formatCC = formatCC;
-	size_t datasize = CompressedSize(image, formatCC, true, true, true);
+	size_t datasize = getCompressedImageSize(image, formatCC, true, true, true);
 	byte  *data = (byte *)mem_alloc(datasize);
 	memset(data, 0, datasize);
 	byte  *in = DDSHeader(data, image, formatCC);
@@ -656,11 +321,13 @@ byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 	if (tool == COMPRESSOR_ATI)
 		res = AtiCompress(in, file, image, formatCC);
 	else if (tool == COMPRESSOR_NVIDIA)
-		res = NvDXTlibCompress(in, file, image, formatCC);
+		res = NvDXTlib(in, file, image, formatCC);
 	else if (tool == COMPRESSOR_NVIDIA_TT)
-		res = NvTTlibCompress(in, file, image, formatCC);
-	else if (tool == COMPRESSOR_INTERNAL)
-		res = InternalCompress(in, file, image, formatCC);
+		res = NvTTlib(in, file, image, formatCC);
+	else if (tool == COMPRESSOR_BGRA)
+		res = BGRA(in, file, image, formatCC);
+	else if (tool == COMPRESSOR_GIMPDDS)
+		res = GimpDDS(in, file, image, formatCC);
 	else
 		Error("bad compression tool!\n");
 
@@ -748,9 +415,9 @@ void GenerateDDS_Thread(ThreadData *thread)
 			SharedData->num_write_files++;
 			
 			// stats
-			dds_headsize += (double)CompressedSize(frame, frame->formatCC,  true, false, false) / (1024.0f * 1024.0f);
-			dds_texsize  += (double)CompressedSize(frame, frame->formatCC, false,  true, false) / (1024.0f * 1024.0f);
-			dds_mipsize  += (double)CompressedSize(frame, frame->formatCC, false, false,  true) / (1024.0f * 1024.0f); 
+			dds_headsize += (double)getCompressedImageSize(frame, frame->formatCC,  true, false, false) / (1024.0f * 1024.0f);
+			dds_texsize  += (double)getCompressedImageSize(frame, frame->formatCC, false,  true, false) / (1024.0f * 1024.0f);
+			dds_mipsize  += (double)getCompressedImageSize(frame, frame->formatCC, false, false,  true) / (1024.0f * 1024.0f); 
 			org_filesize += (double)frame->filesize / (1024.0f * 1024.0f);
 			org_texsize  += (double)((frame->width*frame->height*frame->bpp)/frame->scale) / (1024.0f * 1024.0f);
 			numdds++;
@@ -934,6 +601,7 @@ void DDS_Help(void)
 	"     -nomip: dont generate mipmaps\n"
 	"        -nv: force NVidia DDS Utilities compressor\n"
 	"       -ati: force ATI compressor\n"
+	"      -gimp: force Gimp DDS Plugin compressor\n"
 	"      -dxt1: force DXT1 compression\n"
 	"      -dxt2: force DXT2 compression\n"
 	"      -dxt3: force DXT3 compression\n"
@@ -960,7 +628,7 @@ void DDS_Help(void)
 int DDS_Main(int argc, char **argv)
 {
 	double timeelapsed;
-	char cachefile[MAX_FPATH];
+	char cachefile[MAX_FPATH], comment[9];
 	int i;
 
 	// launched without parms, try to find kain.exe
@@ -1057,6 +725,8 @@ int DDS_Main(int argc, char **argv)
 		Print("Using NVidia Texture Tools compressor\n");
 	else if (opt_compressor == COMPRESSOR_ATI)
 		Print("Using ATI compressor\n");
+	else if (opt_compressor == COMPRESSOR_GIMPDDS)
+		Print("Using GIMP DDS Plugin compressor\n");
 	else
 		Print("Using hybrid (autoselect) compressor\n");
 	if (opt_forceAllFormat)
@@ -1071,6 +741,10 @@ int DDS_Main(int argc, char **argv)
 			Print("Forcing DDS format to BGRA\n");
 		else if (opt_forceAllFormat == FORMAT_RXGB)
 			Print("Forcing DDS format to RXGB (Doom 3 DXT5 swizzled normalmap format)\n");
+		else if (opt_forceAllFormat == FORMAT_YCG1)
+			Print("Forcing DDS format to YCoCg Unscaled\n");
+		else if (opt_forceAllFormat == FORMAT_YCG2)
+			Print("Forcing DDS format to YCoCg Scaled\n");
 	}	
 	if (opt_forceAllNormalmap)
 		Print("Forcing normalmap compression tricks\n");
@@ -1098,6 +772,13 @@ int DDS_Main(int argc, char **argv)
 		Print("Allow non-power-of-two texture dimensions\n");
 	if (opt_forceNoMipmaps)
 		 Print("Not generating mipmaps\n");
+	if (opt_useDDSMagic)
+	{
+		memset(comment, 0, sizeof(comment));
+		memcpy(comment, &opt_ddsMagic1, 4);
+		memcpy(comment + 4, &opt_ddsMagic2, 4);
+		Print("Inserting signword '%s' to DDS file\n", comment);
+	}
 
 	// load cache
 	if (opt_useFileCache)

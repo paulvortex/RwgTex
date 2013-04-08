@@ -113,9 +113,9 @@ void ConvertToBPP(LoadedImage *image, int bpp)
 
 // swap RGB->BGR, optional swizzle for smart texture formats
 // assumes that image is already in RGB/RGBA format
-void Image_ConvertColorsForCompression(LoadedImage *image, bool swappedColor, COLORSWIZZLE swizzleColor)
+void Image_ConvertColorsForCompression(LoadedImage *image, bool swappedColor, COLORSWIZZLE swizzleColor, bool forceBGRA)
 {
-	byte *data, *end;
+	byte *data, *end, y, co, cg;
 	bool doSwap;
 
 	if (!image->bitmap)
@@ -127,8 +127,8 @@ void Image_ConvertColorsForCompression(LoadedImage *image, bool swappedColor, CO
 	if (swizzleColor == IMAGE_COLORSWIZZLE_PREMODULATE)
 		if (image->bpp != 4)
 			swizzleColor = IMAGE_COLORSWIZZLE_NONE;
-	// RXGB requires alpha to be presented
-	if (swizzleColor == IMAGE_COLORSWIZZLE_XGBR || swizzleColor == IMAGE_COLORSWIZZLE_AGBR)
+	// RXGB, YCoCg requires alpha to be presented
+	if (swizzleColor == IMAGE_COLORSWIZZLE_XGBR || swizzleColor == IMAGE_COLORSWIZZLE_AGBR || swizzleColor == IMAGE_COLORSWIZZLE_YCOCG || forceBGRA)
 	{
 		if (image->bpp != 4)
 		{
@@ -139,6 +139,7 @@ void Image_ConvertColorsForCompression(LoadedImage *image, bool swappedColor, CO
 	// do not allow double color swizzle as it would freak thing out
 	if (image->colorSwizzle != IMAGE_COLORSWIZZLE_NONE)
 		swizzleColor = IMAGE_COLORSWIZZLE_NONE;
+
 	// get start & end pointers
 	data = FreeImage_GetBits(image->bitmap);
 	end  = data + FreeImage_GetWidth(image->bitmap)*FreeImage_GetHeight(image->bitmap)*image->bpp;
@@ -193,6 +194,39 @@ void Image_ConvertColorsForCompression(LoadedImage *image, bool swappedColor, CO
 			{
 				data[3] = data[2];
 				data[2] = 0;
+				data += image->bpp;
+			}
+		}
+	}
+	else if (swizzleColor == IMAGE_COLORSWIZZLE_YCOCG)
+	{
+		if (doSwap)
+		{
+			// swap, swizzle
+			while(data < end)
+			{
+				y  = ((data[0] + (data[1] << 1) + data[2]) + 2) >> 2;
+				co = ((((data[0] << 1) - (data[2] << 1)) + 2) >> 2) + 128;
+				cg = (((-data[0] + (data[1] << 1) - data[2]) + 2) >> 2) + 128;
+				data[0] = 255;
+			    data[1] = (cg > 255 ? 255 : (cg < 0 ? 0 : cg));
+			    data[2] = (co > 255 ? 255 : (co < 0 ? 0 : co));
+			    data[3] = (y  > 255 ? 255 : (y  < 0 ? 0 :  y));
+				data += image->bpp;
+			}
+		}
+		else
+		{
+			// no swap, swizzle
+			while(data < end)
+			{
+				y  = ((data[2] + (data[1] << 1) + data[0]) + 2) >> 2;
+				co = ((((data[2] << 1) - (data[0] << 1)) + 2) >> 2) + 128;
+				cg = (((-data[2] + (data[1] << 1) - data[0]) + 2) >> 2) + 128;
+				data[0] = 255;
+			    data[1] = (cg > 255 ? 255 : (cg < 0 ? 0 : cg));
+			    data[2] = (co > 255 ? 255 : (co < 0 ? 0 : co));
+			    data[3] = (y  > 255 ? 255 : (y  < 0 ? 0 :  y));
 				data += image->bpp;
 			}
 		}

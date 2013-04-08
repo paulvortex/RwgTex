@@ -18,7 +18,8 @@ using namespace std;
 #include "dds.h"
 #include "fs.h"
 
-#define RWGTEX_VERSION "1.2"
+#define RWGTEX_VERSION_MAJOR "1"
+#define RWGTEX_VERSION_MINOR "3"
 #define MAX_FPATH 1024
 
 // general
@@ -38,6 +39,10 @@ extern bool   opt_allowNonPowerOfTwoDDS;
 extern bool   opt_forceNoMipmaps;
 extern bool   opt_forceScale2x;
 extern bool   opt_normalmapRXGB;
+extern bool   opt_useDDSMagic;
+extern DWORD  opt_ddsMagic1;
+extern DWORD  opt_ddsMagic2;
+extern DWORD  opt_ddsVersion;
 extern FCLIST opt_include;
 extern FCLIST opt_nomip;
 extern FCLIST opt_forceDXT1;
@@ -47,10 +52,13 @@ extern FCLIST opt_forceDXT4;
 extern FCLIST opt_forceDXT5;
 extern FCLIST opt_forceBGRA;
 extern FCLIST opt_forceRXGB;
+extern FCLIST opt_forceYCG1;
+extern FCLIST opt_forceYCG2;
 extern DWORD  opt_forceAllFormat;
 extern bool   opt_forceAllNormalmap;
 extern FCLIST opt_forceNvCompressor;
 extern FCLIST opt_forceATICompressor;
+extern FCLIST opt_forceGimpDDSCompressor;
 extern FCLIST opt_isNormal;
 extern FCLIST opt_isHeight;
 extern string opt_basedir;

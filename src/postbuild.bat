@@ -19,4 +19,10 @@ copy ..\rwgtex.exe ..\rwgtex-dds-npot-2x.exe /Y >> garbage
 echo copying rwgtex-dds-bgra.exe...
 copy ..\rwgtex.exe ..\rwgtex-dds-bgra.exe /Y >> garbage
 
+echo copying rwgtex-dds-ycg1.exe...
+copy ..\rwgtex.exe ..\rwgtex-dds-ycg1.exe /Y >> garbage
+
+echo copying rwgtex-dds-ycg2.exe...
+copy ..\rwgtex.exe ..\rwgtex-dds-ycg2.exe /Y >> garbage
+
 del garbage /Q

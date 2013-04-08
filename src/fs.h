@@ -1,10 +1,12 @@
 // fs.h
 
-#pragma once
+#ifndef RWGTEX_FS_H
+#define RWGTEX_FS_H
 
 #include "main.h"
 #include "zip.h"
 #include "unzip.h"
+#include "image.h"
 
 typedef enum
 {
@@ -48,6 +50,7 @@ extern int texturesSkipped;
 
 bool FS_FindDir(char *pattern);
 bool FS_FindFile(char *pattern);
+bool FS_FileMatchList(FS_File *file, void *image, vector<CompareOption> &list);
 bool FS_FileMatchList(FS_File *file, vector<CompareOption> &list);
 bool FS_FileMatchList(char *filename, vector<CompareOption> &list);
 void FS_Init(void);
@@ -59,3 +62,5 @@ FS_File *FS_NewFile(char *path, char *name);
 void     FS_SetFile(FS_File *file, char *path, char *name);
 void     FS_SetFile(FS_File *file, char *fullpath);
 void     FS_FreeFile(FS_File *file);
+
+#endif

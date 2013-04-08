@@ -284,8 +284,10 @@ int matchpattern(const char *in, const char *pattern, bool caseinsensitive)
 ==========================================================================================
 */
 
-bool FS_FileMatchList(FS_File *file, vector<CompareOption> &list)
+bool FS_FileMatchList(FS_File *file, void *image, vector<CompareOption> &list)
 {
+	LoadedImage *loadedimage = (LoadedImage *)image;
+
 	// check rules
 	for (vector<CompareOption>::iterator option = list.begin(); option < list.end(); option++)
 	{
@@ -321,6 +323,22 @@ bool FS_FileMatchList(FS_File *file, vector<CompareOption> &list)
 				return false;
 			continue;
 		}
+		// exclude image rules
+		if (loadedimage)
+		{
+			if (!stricmp(option->parm.c_str(), "bpp!"))
+			{
+				if (loadedimage->bpp == atoi(option->pattern.c_str()))
+					return false;
+				continue;
+			}
+			if (!stricmp(option->parm.c_str(), "alpha!"))
+			{
+				if ((loadedimage->hasAlpha ? 1 : 0) == atoi(option->pattern.c_str()))
+					return false;
+				continue;
+			}
+		}
 		// include rules
 		if (!stricmp(option->parm.c_str(), "path"))
 		{
@@ -352,8 +370,29 @@ bool FS_FileMatchList(FS_File *file, vector<CompareOption> &list)
 				return true;
 			continue;
 		}
+		// include image rules
+		if (loadedimage)
+		{
+			if (!stricmp(option->parm.c_str(), "bpp"))
+			{
+				if (loadedimage->bpp == atoi(option->pattern.c_str()))
+					return true;
+				continue;
+			}
+			if (!stricmp(option->parm.c_str(), "alpha"))
+			{
+				if ((loadedimage->hasAlpha ? 1 : 0) == atoi(option->pattern.c_str()))
+					return true;
+				continue;
+			}
+		}
 	}
 	return false;
+}
+
+bool FS_FileMatchList(FS_File *file, vector<CompareOption> &list)
+{
+	return FS_FileMatchList(file, NULL, list);
 }
 
 bool FS_FileMatchList(char *filename, vector<CompareOption> &list)
@@ -361,7 +400,7 @@ bool FS_FileMatchList(char *filename, vector<CompareOption> &list)
 	FS_File file;
 
 	FS_SetFile(&file, filename);
-	return FS_FileMatchList(&file, list);
+	return FS_FileMatchList(&file, NULL, list);
 }
 
 /*

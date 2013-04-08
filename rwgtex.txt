@@ -82,6 +82,8 @@ Options to process files are stored in .opt file. For each particular engine opt
 
  -nv        : use Nvidia DXTlib instead of mixed mode
 
+ -gimp      : use GIMP DDS plugin compressor
+
  -nocache   : dont read/write filescrc.txt
 
  -npot      : allow non-power-of-two texture dimensions
@@ -100,6 +102,10 @@ Options to process files are stored in .opt file. For each particular engine opt
 
  -rxgb      : forces RXGB compression
 
+ -ycg1      : forces YCoCg Unscaled compression
+
+ -ycg2      : forces YCoCg Scaled compression
+
  -bgra      : forces BGRA DDS file creation
 
  -ap X      : sets archive internal path for ZIP file creation
@@ -109,6 +115,10 @@ Options to process files are stored in .opt file. For each particular engine opt
  -2x        : Scale texture by 2x before compression
 
  -scaler x  : Sets scaler for 2x scaling, possible scalers: nearest, bilinear, bicubic, bspline, catmullrom, lanczos, scale2x (default), super2x (scale 4x with backscale to 2x using lanczos filter).
+
+ -nosign    : disable DDS magic sign
+
+ -gimpsign  : enables "GIMP-DDS" magic sign which makes generated swizzled DDS to be readable in GIMP
 
  Trick: can include commandline parms to exe name, so they become defaults. Example: rwgdds-ati-w.exe
 
@@ -135,6 +145,15 @@ Options to process files are stored in .opt file. For each particular engine opt
 ----------
  VERSION HISTORY:
 ----------
+
+1.3
+------
+
+ - Added support for YCoCg Scaled and Unscaled compression (DXT5 with RGB converted to YCoCg colorspace, color component stored in alpha, optional color scaling (normalizing image to 0-255 space). New general options: force_ycg1, force_ycg2 (file masks). New commandline parm: -ycg1, -ycg2.
+
+ - New DXT compressor from GIMP DDS Plugin, can compress DXT1, DXT3, DXT5 and YCoCg/YCoCg Scaled.
+
+ - Added DDS magic signs support. A sign is two DWORDS forming 8-char comment string to be included in DDS headers. New general options: sign, signword. New keys: -nosign (disables sign, generate pure DDS), -gimpsign (makes GIMP-DDS sign which makes generated YCG1/YCG2 DDS to be readable in GIMP)
 
 1.2
 ------

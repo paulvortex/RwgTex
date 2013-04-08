@@ -41,6 +41,11 @@ waitforkey=yes
 #   super2x    : Scale4x filter with lanczos backscale to 2x
 scaler=scale2x
 
+# DDS magic sign
+# exported DDS files will include this 8-chars sign
+sign=enabled
+signword=RWGTEX
+
 ########################################
 # FILE MASKS
 ########################################
@@ -53,6 +58,9 @@ scaler=scale2x
 #   name   : file name match this
 #   ext    : file extension match this
 #   match  : wildcard pattern. "*" equals to any amount of symbols, "?" - to one any symbol
+# +image-based selectors:
+#   bpp    : bytes-per-pixel (usually 1, 2, 3, 4)
+#   alpha  : alpha component (1 or 0)
 # valid operators:
 #    = : equal
 #   != : nor equal
@@ -98,13 +106,16 @@ path=particles/particlefont
 path=particlefont
 [force_dxt5]
 [force_rxgb]
+[force_ycg1]
+[force_ycg2]
 
 # FORCE COMPRESSOR
 # this files will be forced to use certain compression lib
 # only works in hybrid mode
-# nv = nvDXTlib, ati = ATI Compressor
+# nv = nvDXTlib, ati = ATI Compressor, gimp = GIMP DDS plugin
 [force_nv]
 [force_ati]
+[force_gimp]
 
 # SCALE2X
 # this textures will be scaled by 200%
