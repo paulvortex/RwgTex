@@ -1,0 +1,3 @@
+- add support for ETC1
+- add support for PRVTC
+- add support for ATITC
