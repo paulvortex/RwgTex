@@ -1,7 +1,6 @@
 ----------------------------------------
- RwgDDS by Pavel [VorteX] Timofeyev
- (c) of Razorwind Games
- Version 1.1
+ RwgTex by Pavel [VorteX] Timofeyev
+ Version 1.3
 ----------------------------------------
 
 ----------
