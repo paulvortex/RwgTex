@@ -54,13 +54,16 @@ byte   opt_binaryAlphaMax;
 byte   opt_binaryAlphaCenter;
 FCLIST opt_archiveFiles;
 string opt_archivePath;
-FCLIST opt_scale;
+FCLIST opt_scale2x;
+FCLIST opt_scale4x;
 bool   opt_useFileCache;
 bool   opt_forceNoMipmaps;
 bool   opt_allowNonPowerOfTwoDDS;
 bool   opt_forceScale2x;
+bool   opt_forceScale4x;
 bool   opt_normalmapRXGB;
 SCALER opt_scaler;
+SCALER opt_scaler2;
 int    opt_zipMemory;
 DWORD  opt_forceAllFormat;
 bool   opt_forceAllNormalmap;
@@ -118,11 +121,13 @@ void LoadOptions(char *filename)
 	opt_ddsdir = "dds";
 	opt_archiveFiles.clear();
 	opt_archivePath = "";
-	opt_scale.clear();
+	opt_scale2x.clear();
+	opt_scale4x.clear();
 	opt_useFileCache = true;
 	opt_forceNoMipmaps = false;
 	opt_allowNonPowerOfTwoDDS = false;
 	opt_forceScale2x = false;
+	opt_forceScale4x = false;
 	opt_normalmapRXGB = false;
 	opt_useDDSMagic = true;
 	opt_ddsMagic1 = MAKEFOURCC('R', 'W', 'G', 'T');
@@ -132,6 +137,7 @@ void LoadOptions(char *filename)
 	opt_forceAllNormalmap = false;
 	opt_compressor = COMPRESSOR_AUTOSELECT;
 	opt_scaler = IMAGE_SCALER_SUPER2X;
+	opt_scaler2 = opt_scaler2;
 	opt_zipMemory = 0;
 	
 	// parse file
@@ -238,6 +244,26 @@ void LoadOptions(char *filename)
 					opt_scaler = IMAGE_SCALER_SCALE2X;
 				else if (!stricmp(val, "super2x"))
 					opt_scaler = IMAGE_SCALER_SUPER2X;
+				opt_scaler2 = opt_scaler;
+			}
+			else if (!stricmp(key, "scaler2"))
+			{
+				if (!stricmp(val, "nearest"))
+					opt_scaler2 = IMAGE_SCALER_BOX;
+				else if (!stricmp(val, "bilinear"))
+					opt_scaler2 = IMAGE_SCALER_BILINEAR;
+				else if (!stricmp(val, "bicubic"))
+					opt_scaler2 = IMAGE_SCALER_BICUBIC;
+				else if (!stricmp(val, "bspline"))
+					opt_scaler2 = IMAGE_SCALER_BSPLINE;
+				else if (!stricmp(val, "catmullrom"))
+					opt_scaler2 = IMAGE_SCALER_CATMULLROM;
+				else if (!stricmp(val, "lanczos"))
+					opt_scaler2 = IMAGE_SCALER_LANCZOS;
+				else if (!stricmp(val, "scale2x"))
+					opt_scaler2 = IMAGE_SCALER_SCALE2X;
+				else if (!stricmp(val, "super2x"))
+					opt_scaler2 = IMAGE_SCALER_SUPER2X;
 			}
 			else if (!stricmp(key, "sign"))
 				opt_useDDSMagic = OptionBoolean(val);
@@ -256,7 +282,7 @@ void LoadOptions(char *filename)
 			!stricmp(group, "force_dxt1") || !stricmp(group, "force_dxt2") || !stricmp(group, "force_dxt3")   || !stricmp(group, "force_dxt4")   || !stricmp(group, "force_dxt5") || !stricmp(group, "force_bgra") ||
 			!stricmp(group, "force_rxgb") || !stricmp(group, "force_ycg1") || !stricmp(group, "force_ycg2")   ||    
 			!stricmp(group, "force_nv")   || !stricmp(group, "force_ati")  || !stricmp(group, "force_gimp")   || !stricmp(group, "archives") ||    
-		    !stricmp(group, "scale"))
+		    !stricmp(group, "scale")      || !stricmp(group, "scale_2x")   || !stricmp(group, "scale_4x"))
 		{
 			CompareOption O;
 			if (stricmp(key, "path") && stricmp(key, "suffix") && stricmp(key, "ext") && stricmp(key, "name") && stricmp(key, "match") && stricmp(key, "bpp") && stricmp(key, "alpha") &&
@@ -283,7 +309,8 @@ void LoadOptions(char *filename)
 				else if (!stricmp(group, "force_ati"))    opt_forceATICompressor.push_back(O);
 				else if (!stricmp(group, "force_gimp"))   opt_forceGimpDDSCompressor.push_back(O);
 				else if (!stricmp(group, "archives"))     opt_archiveFiles.push_back(O);
-				else if (!stricmp(group, "scale"))        opt_scale.push_back(O);
+				else if (!stricmp(group, "scale") || !stricmp(group, "scale_2x")) opt_scale2x.push_back(O);
+				else if (!stricmp(group, "scale_4x"))     opt_scale2x.push_back(O);
 			}
 			continue;
 		}
@@ -308,16 +335,25 @@ void LoadOptions(char *filename)
 	if (CheckParm("-ycg2"))       opt_forceAllFormat = FORMAT_YCG2;
 	if (CheckParm("-nm"))         opt_forceAllNormalmap = true;	
 	if (CheckParm("-2x"))         opt_forceScale2x = true; 
+	if (CheckParm("-4x"))         opt_forceScale4x = true; 
 	if (CheckParm("-npot"))       opt_allowNonPowerOfTwoDDS = true;
 	if (CheckParm("-nomip"))      opt_forceNoMipmaps = true;
-	if (CheckParm("-nearest"))    opt_scaler = IMAGE_SCALER_BOX;
-	if (CheckParm("-bilinear"))   opt_scaler = IMAGE_SCALER_BILINEAR;
-	if (CheckParm("-bicubic"))    opt_scaler = IMAGE_SCALER_BICUBIC;
-	if (CheckParm("-bspline"))    opt_scaler = IMAGE_SCALER_BSPLINE;
-	if (CheckParm("-catmullrom")) opt_scaler = IMAGE_SCALER_CATMULLROM;
-	if (CheckParm("-lanczos"))    opt_scaler = IMAGE_SCALER_LANCZOS;
-	if (CheckParm("-scale2x"))    opt_scaler = IMAGE_SCALER_SCALE2X;				
-	if (CheckParm("-super2x"))    opt_scaler = IMAGE_SCALER_SUPER2X;	
+	if (CheckParm("-nearest"))    opt_scaler = opt_scaler2 = IMAGE_SCALER_BOX;
+	if (CheckParm("-bilinear"))   opt_scaler = opt_scaler2 = IMAGE_SCALER_BILINEAR;
+	if (CheckParm("-bicubic"))    opt_scaler = opt_scaler2 = IMAGE_SCALER_BICUBIC;
+	if (CheckParm("-bspline"))    opt_scaler = opt_scaler2 = IMAGE_SCALER_BSPLINE;
+	if (CheckParm("-catmullrom")) opt_scaler = opt_scaler2 = IMAGE_SCALER_CATMULLROM;
+	if (CheckParm("-lanczos"))    opt_scaler = opt_scaler2 = IMAGE_SCALER_LANCZOS;
+	if (CheckParm("-scale2x"))    opt_scaler = opt_scaler2 = IMAGE_SCALER_SCALE2X;				
+	if (CheckParm("-super2x"))    opt_scaler = opt_scaler2 = IMAGE_SCALER_SUPER2X;	
+	if (CheckParm("-nearest2"))   opt_scaler2 = IMAGE_SCALER_BOX;
+	if (CheckParm("-2bilinear"))  opt_scaler2 = IMAGE_SCALER_BILINEAR;
+	if (CheckParm("-2bicubic"))   opt_scaler2 = IMAGE_SCALER_BICUBIC;
+	if (CheckParm("-2bspline"))   opt_scaler2 = IMAGE_SCALER_BSPLINE;
+	if (CheckParm("-2catmullrom"))opt_scaler2 = IMAGE_SCALER_CATMULLROM;
+	if (CheckParm("-2lanczos"))   opt_scaler2 = IMAGE_SCALER_LANCZOS;
+	if (CheckParm("-2scale2x"))   opt_scaler2 = IMAGE_SCALER_SCALE2X;				
+	if (CheckParm("-2super2x"))   opt_scaler2 = IMAGE_SCALER_SUPER2X;	
 	if (CheckParm("-nosign"))     opt_useDDSMagic = false;
 	if (CheckParm("-gimpsign")) { opt_useDDSMagic = true; opt_ddsMagic1 = MAKEFOURCC('G', 'I', 'M', 'P'); opt_ddsMagic2 = MAKEFOURCC('-', 'D', 'D', 'S');  opt_ddsVersion = 131585; }
 	// string parameters
@@ -361,6 +397,31 @@ void LoadOptions(char *filename)
 					opt_scaler = IMAGE_SCALER_SCALE2X;
 				else if (!stricmp(myargv[i], "super2x"))
 					opt_scaler = IMAGE_SCALER_SUPER2X;
+				opt_scaler2 = opt_scaler;
+			}
+			continue;
+		}
+		else if (!stricmp(myargv[i], "-scaler2"))
+		{
+			i++;
+			if (i < myargc)
+			{
+				    if (!stricmp(myargv[i], "nearest"))
+					opt_scaler2 = IMAGE_SCALER_BOX;
+				else if (!stricmp(myargv[i], "bilinear"))
+					opt_scaler2 = IMAGE_SCALER_BILINEAR;
+				else if (!stricmp(myargv[i], "bicubic"))
+					opt_scaler2 = IMAGE_SCALER_BICUBIC;
+				else if (!stricmp(myargv[i], "bspline"))
+					opt_scaler2 = IMAGE_SCALER_BSPLINE;
+				else if (!stricmp(myargv[i], "catmullrom"))
+					opt_scaler2 = IMAGE_SCALER_CATMULLROM;
+				else if (!stricmp(myargv[i], "lanczos"))
+					opt_scaler2 = IMAGE_SCALER_LANCZOS;
+				else if (!stricmp(myargv[i], "scale2x"))
+					opt_scaler2 = IMAGE_SCALER_SCALE2X;
+				else if (!stricmp(myargv[i], "super2x"))
+					opt_scaler2 = IMAGE_SCALER_SUPER2X;
 			}
 			continue;
 		}
@@ -478,10 +539,11 @@ int main(int argc, char **argv)
 		Print("\n");
 	}
 
-	LoadOptions(optionfile);
-
 	if (CheckParm("-dds"))
+	{
+		LoadOptions(optionfile);
 		returncode = DDS_Main(argc-i, argv+i);
+	}
 	else
 		Help();
 	Print("\n");

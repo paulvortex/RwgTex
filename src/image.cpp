@@ -460,7 +460,7 @@ void Image_Scale2x(LoadedImage *image, SCALER scaler, bool makePowerOfTwo)
 	else if (scaler == IMAGE_SCALER_LANCZOS)    filter = FILTER_LANCZOS3;
 	else
 	{
-		Warning("Image_Scale2x: bad scaler");
+		Warning("Image_Scale: bad scaler");
 		return;
 	}
 

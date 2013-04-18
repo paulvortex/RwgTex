@@ -29,7 +29,7 @@ normalmapcompression=default
 # wait for key press once finished
 waitforkey=yes
 
-# this scaler will be used for 2x upscale effect (see [scale_2x] below)
+# this scaler will be used for 2x upscale effect (see [scale2x] below)
 # valid scalers:
 #   nearest    : box filter
 #   bilinear   : bilinear interpolation
@@ -39,7 +39,9 @@ waitforkey=yes
 #   lanczos    : Lanczos/Sinc filter
 #   scale2x    : Scale2x filter (default one)
 #   super2x    : Scale4x filter with lanczos backscale to 2x
+# scaler2 is optional and only used for 4x scaled images
 scaler=scale2x
+scaler2=scale2x
 
 # DDS magic sign
 # exported DDS files will include this 8-chars sign
@@ -118,5 +120,6 @@ path=particlefont
 [force_gimp]
 
 # SCALE2X
-# this textures will be scaled by 200%
-[scale]
+# this textures will be scaled by 200% or 400%
+[scale_2x]
+[scale_4x]

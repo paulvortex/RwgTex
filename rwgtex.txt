@@ -155,6 +155,8 @@ Options to process files are stored in .opt file. For each particular engine opt
 
  - Added DDS magic signs support. A sign is two DWORDS forming 8-char comment string to be included in DDS headers. New general options: sign, signword. New keys: -nosign (disables sign, generate pure DDS), -gimpsign (makes GIMP-DDS sign which makes generated YCG1/YCG2 DDS to be readable in GIMP)
 
+ - Added 4x scaling. This is done by double applying 2x scale filter. Each pass can have its' own scale filter (by default second scaler = first scaler). This feature adds new commandline parms: -4x and -scaler and also new exe-name switches: -4x -2bilinear, -2bicubic, -2bspline, -2catmullrom, -2lanczos, -2scale2x, -2super2x. Not that first scaler always set the second scaler. So second scaler keys must be after first one (-2x-nearest-2bilinear is correct). New option groups: scaler2 and scale_4x. For 4x scale, the power-of-two rescale is applied on second pass.
+
 1.2
 ------
  

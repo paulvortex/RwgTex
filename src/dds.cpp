@@ -301,7 +301,12 @@ byte *GenerateDDS(FS_File *file, LoadedImage *image, size_t *outdatasize)
 
 	// postprocess
 	Image_ConvertColorsForCompression(image, true, colorSwizzle, forceBGRA); // DDS compressors expects BGR
-	if (FS_FileMatchList(file, image, opt_scale) || opt_forceScale2x)
+	if (FS_FileMatchList(file, image, opt_scale4x) || opt_forceScale4x)
+	{
+		Image_Scale2x(image, opt_scaler, true);
+		Image_Scale2x(image, opt_scaler2, opt_allowNonPowerOfTwoDDS ? false : true);
+	}
+	else if (FS_FileMatchList(file, image, opt_scale2x) || opt_forceScale2x)
 		Image_Scale2x(image, opt_scaler, opt_allowNonPowerOfTwoDDS ? false : true);
 	if (!opt_allowNonPowerOfTwoDDS)
 		Image_MakePowerOfTwo(image);
@@ -609,7 +614,9 @@ void DDS_Help(void)
 	"      -dxt5: force DXT5 compression\n"
 	"      -bgra: force BGRA format (no compression)\n"
 	"        -2x: apply 2x scale (Scale2X)\n"
+	"        -4x: apply 4x scale (2 pass scale)\n"
 	"  -scaler X: set a filter to be used for scaling\n"
+	" -scaler2 X: set a filter to be used for second scale pass\n"
 	"  -zipmem X: keep zip file in memory until end\n"
 	"             this avoids many file writes\n"
 	"\n"
@@ -748,9 +755,12 @@ int DDS_Main(int argc, char **argv)
 	}	
 	if (opt_forceAllNormalmap)
 		Print("Forcing normalmap compression tricks\n");
-	if (opt_forceScale2x)
+	if (opt_forceScale2x || opt_forceScale4x)
 	{
-		Print("Upscale images to 200%% ");
+		if (opt_forceScale2x)
+			Print("Upscale images to 200%% ");
+		else
+			Print("Upscale images to 400%% ");
 		if (opt_scaler == IMAGE_SCALER_BOX)
 			Print("using box filter\n");
 		else if (opt_scaler == IMAGE_SCALER_BILINEAR)
@@ -767,6 +777,25 @@ int DDS_Main(int argc, char **argv)
 			Print("using Scale2x filter\n");
 		else
 			Print("using Super2x filter\n");
+		if (opt_forceScale4x && (opt_scaler2 != opt_scaler))
+		{
+			if (opt_scaler2 == IMAGE_SCALER_BOX)
+				Print("using box filter for second scaler\n");
+			else if (opt_scaler2 == IMAGE_SCALER_BILINEAR)
+				Print("using bilinear filter for second scaler\n");
+			else if (opt_scaler2 == IMAGE_SCALER_BICUBIC)
+				Print("using cubic Mitchell filter for second scaler\n");
+			else if (opt_scaler2 == IMAGE_SCALER_BSPLINE)
+				Print("using cubic b-spline for second scaler\n");
+			else if (opt_scaler2 == IMAGE_SCALER_CATMULLROM)
+				Print("using Catmull-Rom spline for second scaler\n");
+			else if (opt_scaler2 == IMAGE_SCALER_LANCZOS)
+				Print("using Lanczos filter for second scaler\n");
+			else if (opt_scaler2 == IMAGE_SCALER_SCALE2X)
+				Print("using Scale2x filter for second scaler\n");
+			else
+				Print("using Super2x filter for second scaler\n");
+		}
 	}
 	if (opt_allowNonPowerOfTwoDDS)
 		Print("Allow non-power-of-two texture dimensions\n");
