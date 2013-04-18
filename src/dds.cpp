@@ -530,13 +530,19 @@ void GenerateDDS_MainThread(ThreadData *thread)
 				zipdatalen = ZipGetMemoryWritten(outzip);
 				if (!SharedData->zip_warning && (float)((float)zipdatalen / (float)SharedData->zip_maxlen) > 0.9)
 				{
-
 					Warning("GenerateDDS: there is less than 10%% of free ZIP memory, program may crash!\n");
 					SharedData->zip_warning = true;
 				}
 				ZRESULT zr = ZipAdd(outzip, outfile, WriteData->data, WriteData->datasize);
 				if (zr != ZR_OK)
-					Warning("GenerateDDS(%s): failed to pack DDS into ZIP - error code 0x%08X", outfile, zr);
+				{
+					if (zr == ZR_MEMSIZE)
+						Error("GenerateDDS(%s): failed to pack DDS into ZIP - out of memory (consider increasing -zipmem). Process stopped. ", outfile);
+					else if (zr == ZR_FAILED)
+						Error("GenerateDDS(%s): failed to pack DDS into ZIP - previous file failed. Process stopped. ", outfile);
+					else
+						Warning("GenerateDDS(%s): failed to pack DDS into ZIP - error code 0x%08X", outfile, zr);
+				}
 			}
 			else
 			{
