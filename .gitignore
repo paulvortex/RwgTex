@@ -1,3 +1,17 @@
+src/freeimage/FreeImage.dll
+src/freeimage/FreeImage.h
+src/freeimage/FreeImageDLL.lib
+rwgtex.exe
+rwgtex-dds.exe
+rwgtex-dds-ati.exe
+rwgtex-dds-bgra.exe
+rwgtex-dds-nomip.exe
+rwgtex-dds-npot.exe
+rwgtex-dds-npot-2x.exe
+rwgtex-dds-nv.exe
+rwgtex-dds-ycg1.exe
+rwgtex-dds-ycg2.exe
+
 #################
 ## Eclipse
 #################
@@ -125,7 +139,6 @@ Thumbs.db
 
 # Folder config file
 Desktop.ini
-
 
 #############
 ## Python

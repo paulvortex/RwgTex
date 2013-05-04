@@ -683,6 +683,8 @@ void LoadImage_QuakeSprite(FS_File *file, byte *filedata, size_t filesize, Loade
 			frame->height = *(unsigned int *)(buf + 16);
 			frame->filesize = frame->width*frame->height*4;
 			filesize -= 20; buf += 20;
+			if (frame->width < 0 || frame->width > 32768 || frame->height < 0 || frame->height > 32768)
+				Error("LoadImage_QuakeSprite(%s) bogus frame %i size: %ix%i", frame->texname, framenum, frame->width, frame->height);
 			fiLoadDataRaw(frame->width, frame->height, 4, buf, filesize, NULL, false, frame);
 			LoadFinish(frame);
 			// go next frame
@@ -722,11 +724,13 @@ void LoadImage_QuakeBSP(FS_File *file, byte *filedata, size_t filesize, LoadedIm
 				int texmipofs = *(int *)(buf + textureoffsets[texnum] + 24); 
 				// fill data
 				tex->filesize = texwidth * texheight;
-				fiLoadDataRaw(texwidth, texheight, 1, (byte *)(buf + textureoffsets[texnum] + texmipofs), texwidth * texheight, quake_palette, false, tex);
 				if (texname[0] == '*')
 					texname[0] = '#';
 				tex->useTexname = true;
 				sprintf(tex->texname, "%s/%s", file->name.c_str(), texname);
+				if (texwidth < 0 || texwidth > 32768 || texheight < 0 || texheight > 32768)
+					Error("LoadImage_QuakeBSP(%s) bogus texture size: %ix%i", tex->texname, texwidth, texheight);
+				fiLoadDataRaw(texwidth, texheight, 1, (byte *)(buf + textureoffsets[texnum] + texmipofs), texwidth * texheight, quake_palette, false, tex);
 				LoadFinish(tex);
 				// set next texture
 				tex->next = Image_Create();
