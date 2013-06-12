@@ -1,9 +1,9 @@
 // freeimage.h
-
-#pragma once
+#ifndef H_TEX_FREEIMAGE_H
+#define H_TEX_FREEIMAGE_H
 
 // freeimage lib
-#include <freeimage.h>
+#include "freeimage/freeimage.h"
 #pragma comment(lib, "FreeImageDLL.lib")
 
 // blend modes
@@ -72,3 +72,5 @@ FIBITMAP *fiSharpen(FIBITMAP *bitmap, float factor, int iteractions, bool remove
 
 // fix transparent pixels for alpha blending
 FIBITMAP *fiFixTransparentPixels(FIBITMAP *bitmap);
+
+#endif

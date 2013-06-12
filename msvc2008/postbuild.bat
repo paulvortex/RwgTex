@@ -1,0 +1,36 @@
+del ..\win32\rwgtex-*.exe /Q
+
+echo copying rwgtex-dxt-nv-t.exe...
+copy ..\win32\rwgtex.exe ..\win32\rwgtex-dxt-nv-t.exe /Y >> garbage
+
+echo copying rwgtex-dxt-ati-t.exe...
+copy ..\win32\rwgtex.exe ..\win32\rwgtex-dxt-ati-t.exe /Y >> garbage
+
+echo copying rwgtex-dxt-gimp-t.exe...
+copy ..\win32\rwgtex.exe ..\win32\rwgtex-dxt-gimp-t.exe /Y >> garbage
+
+echo copying rwgtex-dxt-crunch-t.exe...
+copy ..\win32\rwgtex.exe ..\win32\rwgtex-dxt-crunch-t.exe /Y >> garbage
+
+echo copying rwgtex-dxt-pvrtex-t.exe...
+copy ..\win32\rwgtex.exe ..\win32\rwgtex-dxt-pvrtex-t.exe /Y >> garbage
+
+echo copying rwgtex-etc-etcpack-t.exe...
+copy ..\win32\rwgtex.exe ..\win32\rwgtex-etc-etcpack-t.exe /Y >> garbage
+
+echo copying rwgtex-etc-ati-t.exe...
+copy ..\win32\rwgtex.exe ..\win32\rwgtex-etc-ati-t.exe /Y >> garbage
+
+echo copying rwgtex-etc-rgetc1-t.exe...
+copy ..\win32\rwgtex.exe ..\win32\rwgtex-etc-rgetc1-t.exe /Y >> garbage
+
+echo copying rwgtex-etc-pvrtex-t.exe...
+copy ..\win32\rwgtex.exe ..\win32\rwgtex-etc-pvrtex-t.exe /Y >> garbage
+
+echo copying rwgtex-pvr-t.exe...
+copy ..\win32\rwgtex.exe ..\win32\rwgtex-pvr-t.exe /Y >> garbage
+
+echo copying rwgtex-unc-t.exe...
+copy ..\win32\rwgtex.exe ..\win32\rwgtex-unc-t.exe /Y >> garbage
+
+del garbage /Q

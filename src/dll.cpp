@@ -1,21 +1,10 @@
 ////////////////////////////////////////////////////////////////
 //
-// RWGTEX
+// RwgTex / DLL management
+// (c) Pavel [VorteX] Timofeyev
+// based on functions picked from Darkplaces engine
+// See LICENSE text file for a license agreement
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-//
-// See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ////////////////////////////////
 
 #include "main.h"
@@ -54,9 +43,9 @@ static bool LoadDllFunctions(dllhandle_t dllhandle, const dllfunction_t *fcts, b
 			{
 				if(complain)
 				{
-					Verbose (" - missing function \"%s\" - broken library!", func->name);
+					Warning(" - missing function \"%s\" - broken library!", func->name);
 					if (has_next)
-						Verbose("\nContinuing with");
+						Warning("\nContinuing with");
 				}
 				goto notfound;
 			}
@@ -85,7 +74,7 @@ bool LoadDll (const char** dllnames, dllhandle_t* handle, const dllfunction_t *f
 	dllhandle = dlopen(NULL, RTLD_LAZY | RTLD_GLOBAL);
 	if(LoadDllFunctions(dllhandle, fcts, false, false))
 	{
-		Verbose ("All of %s's functions were already linked in! Not loading dynamically...\n", dllnames[0]);
+		Verbose("All of %s's functions were already linked in! Not loading dynamically...\n", dllnames[0]);
 		*handle = dllhandle;
 		return true;
 	}

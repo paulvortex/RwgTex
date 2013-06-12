@@ -1,5 +1,6 @@
 // thread.h
-#pragma once
+#ifndef H_TEX_THREAD_H
+#define H_TEX_THREAD_H
 
 #ifdef WIN32
 #include <windows.h>
@@ -44,3 +45,5 @@ double ParallelThreads(int num_threads, int work_count, void *common_data, void(
 // init threading system
 void Thread_Init(void);
 void Thread_Shutdown(void);
+
+#endif

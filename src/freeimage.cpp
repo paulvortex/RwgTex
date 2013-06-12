@@ -1,23 +1,9 @@
 ////////////////////////////////////////////////////////////////
 //
-// RWGTEX - freeimage helper class
-// coded by Pavel [VorteX] Timofeyev and placed to public domain
+// RwgTex / FreeImage helpe functions
+// (c) Pavel [VorteX] Timofeyev
+// See LICENSE text file for a license agreement
 //
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-//
-// See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ////////////////////////////////
 
 #include "main.h"
@@ -797,7 +783,7 @@ FIBITMAP *fiFixTransparentPixels(FIBITMAP *bitmap)
 				rgb[0] = 0.0f;
 				rgb[1] = 0.0f;
 				rgb[2] = 0.0f;
-				#define fill(_x,_y) nx = (_x < 0) ? (w - 1) : (_x >= w) ? 0 : _x; ny = (_y < 0) ? (h - 1) : (_y >= h) ? 0 : _y; npix = data + w*4*ny + nx*4; if (npix[3] > opt_binaryAlphaMin) { nc++; rgb[0] += (float)npix[0]; rgb[1] += (float)npix[1]; rgb[2] += (float)npix[2]; }
+				#define fill(_x,_y) nx = (_x < 0) ? (w - 1) : (_x >= w) ? 0 : _x; ny = (_y < 0) ? (h - 1) : (_y >= h) ? 0 : _y; npix = data + w*4*ny + nx*4; if (npix[3] > tex_binaryAlphaMin) { nc++; rgb[0] += (float)npix[0]; rgb[1] += (float)npix[1]; rgb[2] += (float)npix[2]; }
 				fill(x-1,y-1)
 				fill(x  ,y-1)
 				fill(x+1,y-1)

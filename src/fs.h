@@ -1,12 +1,10 @@
 // fs.h
-
 #ifndef RWGTEX_FS_H
 #define RWGTEX_FS_H
 
 #include "main.h"
 #include "zip.h"
 #include "unzip.h"
-#include "image.h"
 
 typedef enum
 {
@@ -34,7 +32,7 @@ bool         FS_LoadCache(char *filename);
 void         FS_SaveCache(char *filename);
 unsigned int FS_CRC32(char *filename);
 bool         FS_CheckCache(const char *filepath, unsigned int *fileCRC);
-void         FS_ScanPath(char *basepath, char *singlefile, char *addpath);
+void         FS_ScanPath(char *basepath, const char *singlefile, char *addpath);
 byte        *FS_LoadFile(FS_File *file, size_t *filesize);
 
 typedef struct

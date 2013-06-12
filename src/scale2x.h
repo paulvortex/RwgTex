@@ -18,7 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#pragma once
+#ifndef H_TEX_SCALE2X_H
+#define H_TEX_SCALE2X_H
 
 enum
 {
@@ -52,3 +53,5 @@ extern int sxCheck(unsigned int scale, unsigned char bpp, unsigned int width, un
  * \param height Vertical size in pixels of the source bitmap.
 */
 extern void sxScale(unsigned int scale, void* void_dst, unsigned int dst_slice, const void* void_src, unsigned int src_slice, unsigned char bpp, unsigned int width, unsigned int height);
+
+#endif

@@ -1,0 +1,20 @@
+
+    KTX Project TO DO List
+
+	$Id: TODO 13118 2010-12-03 02:08:32Z markc $
+
+    toktx
+
+    - ppm & reference ktx files for 1D textures
+    - support 3D and array textures
+    - ppm & reference ktx files for cubemap, 3D & array texture creation tests
+
+    library testing
+
+    - proper mipmap test (multiple planes each showing a different miplevel)
+    - GLES2 & GL load tests
+    - cubemap, 3D & array texture loading tests
+
+    general
+
+    - design icon for KTX files

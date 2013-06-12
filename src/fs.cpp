@@ -1,29 +1,16 @@
 ////////////////////////////////////////////////////////////////
 //
-// Blood Pill - file system
-// coded by Pavel [VorteX] Timofeyev and placed to public domain
-// matchpattern_with_separator() function coded by Forest [LordHavoc] Hale
+// RwgTex / file system
+// (c) Pavel [VorteX] Timofeyev
+// See LICENSE text file for a license agreement
 //
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-//
-// See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ////////////////////////////////
 
 #include "main.h"
 #include "zip.h"
 #include "unzip.h"
 #include "crc32.h"
+#include "tex.h"
 
 vector<FS_File> textures;
 int texturesSkipped;
@@ -51,8 +38,8 @@ void FS_SetFile(FS_File *file, char *path, char *name)
 	char c[MAX_FPATH];
 
 	memset(file, 0, sizeof(FS_File));
-	if (!path[0])
-		path = "./";
+	//if (!path[0])
+	//	path = "./";
 	if (!name[0])
 		name = "?";
 	file->path = path;
@@ -144,7 +131,7 @@ void FS_SaveCache(char *filename)
 	FILE *f;
 
 	f = SafeOpen(filename, "w");
-	fprintf(f, "# Crc32 table for source files used to generate DDS\n");
+	fprintf(f, "# Crc32 table for source files\n");
 	fprintf(f, "# generated automatically, do not modify\n");
 	for (std::vector<FileCacheS>::iterator file = FileCache.begin(); file < FileCache.end(); file++)
 		if (file->used)
@@ -166,7 +153,7 @@ bool FS_CheckCache(const char *filepath, unsigned int *fileCRC)
 	unsigned int crc;
 
 	// get crc
-	sprintf(filename, "%s%s", opt_srcDir, filepath);
+	sprintf(filename, "%s%s", tex_srcDir, filepath);
 	if (!fileCRC)
 		crc = FS_CRC32(filename);
 	else
@@ -338,6 +325,25 @@ bool FS_FileMatchList(FS_File *file, void *image, vector<CompareOption> &list)
 					return false;
 				continue;
 			}
+			if (!stricmp(option->parm.c_str(), "type!"))
+			{
+				if (!stricmp(option->pattern.c_str(), "color"))
+				{
+					if (loadedimage->datatype == IMAGE_COLOR)
+						return false;
+				}
+				else if (!stricmp(option->pattern.c_str(), "normalmap"))
+				{
+					if (loadedimage->datatype == IMAGE_NORMALMAP)
+						return false;
+				}
+				else if (!stricmp(option->pattern.c_str(), "grayscale"))
+				{
+					if (loadedimage->datatype == IMAGE_GRAYSCALE)
+						return false;
+				}
+				continue;
+			}
 		}
 		// include rules
 		if (!stricmp(option->parm.c_str(), "path"))
@@ -383,6 +389,25 @@ bool FS_FileMatchList(FS_File *file, void *image, vector<CompareOption> &list)
 			{
 				if ((loadedimage->hasAlpha ? 1 : 0) == atoi(option->pattern.c_str()))
 					return true;
+				continue;
+			}
+			if (!stricmp(option->parm.c_str(), "type"))
+			{
+				if (!stricmp(option->pattern.c_str(), "color"))
+				{
+					if (loadedimage->datatype == IMAGE_COLOR)
+						return true;
+				}
+				else if (!stricmp(option->pattern.c_str(), "normalmap"))
+				{
+					if (loadedimage->datatype == IMAGE_NORMALMAP)
+						return true;
+				}
+				else if (!stricmp(option->pattern.c_str(), "grayscale"))
+				{
+					if (loadedimage->datatype == IMAGE_GRAYSCALE)
+						return true;
+				}
 				continue;
 			}
 		}
@@ -447,7 +472,7 @@ bool FS_FindFile(char *pattern)
 
 bool AllowFile(FS_File *file)
 {
-	if (!FS_FileMatchList(file, opt_include))
+	if (!FS_FileMatchList(file, tex_includeFiles))
 		return false;
 	return true;
 }
@@ -458,7 +483,7 @@ bool AddFile(FS_File &file, bool checkinclude, unsigned int *fileCRC)
 	{
 		if (!AllowFile(&file))
 			return false;
-		if (opt_useFileCache)
+		if (tex_useFileCache)
 		{
 			if (!FS_CheckCache(file.fullpath.c_str(), fileCRC))
 			{
@@ -480,7 +505,7 @@ bool AddArchive(FS_File &archive_file, bool checkinclude)
 	if (checkinclude)
 		if (!AllowFile(&archive_file))
 			return false;
-	sprintf(filepath, "%s%s", opt_srcDir, archive_file.fullpath.c_str());
+	sprintf(filepath, "%s%s", tex_srcDir, archive_file.fullpath.c_str());
 
 	// open zip
 	HZIP zh = OpenZip(filepath, "");
@@ -512,7 +537,7 @@ bool AddArchive(FS_File &archive_file, bool checkinclude)
 	return true;
 }
 
-void FS_ScanPath(char *basepath, char *singlefile, char *addpath)
+void FS_ScanPath(char *basepath, const char *singlefile, char *addpath)
 {
 	char pattern[MAX_FPATH], path[MAX_FPATH], scanpath[MAX_FPATH];
 	FS_File file;
@@ -560,7 +585,7 @@ void FS_ScanPath(char *basepath, char *singlefile, char *addpath)
 		FS_SetFile(&file, path, n_file.cFileName);
 
 		// add
-		if (FS_FileMatchList(&file, opt_archiveFiles))
+		if (FS_FileMatchList(&file, tex_archiveFiles))
 		{
 			AddArchive(file, singlefile ? false : true);
 			continue;
@@ -590,7 +615,7 @@ byte *FS_LoadFile(FS_File *file, size_t *filesize)
 	byte *filedata;
 
 	sprintf(filename, "%s%s.%s", file->path.c_str(), file->name.c_str(), file->ext.c_str());
-	sprintf(filepath, "%s%s", opt_srcDir, filename);
+	sprintf(filepath, "%s%s", tex_srcDir, filename);
 
 	// unpack ZIP
 	if (!file->zipfile.empty())

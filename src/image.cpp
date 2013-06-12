@@ -1,30 +1,16 @@
 ////////////////////////////////////////////////////////////////
 //
-// RWGDDS - image loading
-// coded by Pavel [VorteX] Timofeyev and placed to public domain
+// RwgTex / image loading and processing
+// (c) Pavel [VorteX] Timofeyev
+// See LICENSE text file for a license agreement
 //
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-//
-// See the GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ////////////////////////////////
 
+#define F_IMAGE_C
 #include "main.h"
-
 #include "freeimage.h"
-
 #include "scale2x.h"
+#include "tex.h"
 
 /*
 ==========================================================================================
@@ -105,184 +91,72 @@ void Image_Delete(LoadedImage *image)
 ==========================================================================================
 */
 
-void ConvertToBPP(LoadedImage *image, int bpp)
+byte *Image_ConvertBPP(LoadedImage *image, int bpp)
 {
+	if (!image)
+		return NULL;
+	if (image->bpp == bpp)
+		return FreeImage_GetBits(image->bitmap);
 	image->bitmap = fiConvertBPP(image->bitmap, bpp);
+	image->converted = true;
+	if (image->bpp < 4)
+	{
+		if (bpp == 4)
+		{
+			image->hasAlpha = true;
+			image->hasGradientAlpha = false;
+		}
+	}
+	else if (bpp < 4)
+	{
+		image->hasAlpha = false;
+		image->hasGradientAlpha = false;
+	}
 	image->bpp = FreeImage_GetBPP(image->bitmap)/8;
+	return FreeImage_GetBits(image->bitmap);
 }
 
-// swap RGB->BGR, optional swizzle for smart texture formats
-// assumes that image is already in RGB/RGBA format
-void Image_ConvertColorsForCompression(LoadedImage *image, bool swappedColor, COLORSWIZZLE swizzleColor, bool forceBGRA)
+// swap RGB->BGR
+void  Image_SwapColors(LoadedImage *image, bool swappedColor)
 {
-	byte *data, *end, y, co, cg;
-	bool doSwap;
+	byte *data, *end;
 
 	if (!image->bitmap)
 		return;
+	if (swappedColor == image->colorSwap)
+		return;
 
-	// prepare colors
-	doSwap = (swappedColor != image->colorSwap);
-	// premodulate color requires 32-bite texture (otherwize alpha is 255)
-	if (swizzleColor == IMAGE_COLORSWIZZLE_PREMODULATE)
-		if (image->bpp != 4)
-			swizzleColor = IMAGE_COLORSWIZZLE_NONE;
-	// RXGB, YCoCg requires alpha to be presented
-	if (swizzleColor == IMAGE_COLORSWIZZLE_XGBR || swizzleColor == IMAGE_COLORSWIZZLE_AGBR || swizzleColor == IMAGE_COLORSWIZZLE_YCOCG || forceBGRA)
-	{
-		if (image->bpp != 4)
-		{
-			ConvertToBPP(image, 4);
-			image->hasAlpha = true;
-		}
-	}
-	// do not allow double color swizzle as it would freak thing out
-	if (image->colorSwizzle != IMAGE_COLORSWIZZLE_NONE)
-		swizzleColor = IMAGE_COLORSWIZZLE_NONE;
-
-	// get start & end pointers
+	// swap
 	data = FreeImage_GetBits(image->bitmap);
 	end  = data + FreeImage_GetWidth(image->bitmap)*FreeImage_GetHeight(image->bitmap)*image->bpp;
-
-	// process
-	if (swizzleColor == IMAGE_COLORSWIZZLE_PREMODULATE)
+	while(data < end)
 	{
-		if (doSwap)
-		{
-			// swap, premodulate
-			while(data < end)
-			{
-				float mod = (float)data[3] / 255.0f;
-				byte saved = data[0];
-				data[0] = (byte)(data[2] * mod);
-				data[1] = (byte)(data[1] * mod);
-				data[2] = (byte)(saved   * mod);
-				data += image->bpp;
-			}
-		}
-		else
-		{
-			// no swap, premodulate
-			while(data < end)
-			{
-				float mod = (float)data[3] / 255.0f;
-				data[0] = (byte)(data[0] * mod);
-				data[1] = (byte)(data[1] * mod);
-				data[2] = (byte)(data[2] * mod);
-				data += image->bpp;
-			}
-		}
-	}
-	else if (swizzleColor == IMAGE_COLORSWIZZLE_XGBR)
-	{
-		if (doSwap)
-		{
-			// swap, swizzle
-			while(data < end)
-			{
-				byte saved = data[0];
-				data[0] = data[2];
-				data[2] = 0;
-				data[3] = saved;
-				data += image->bpp;
-			}
-		}
-		else
-		{
-			// no swap, swizzle
-			while(data < end)
-			{
-				data[3] = data[2];
-				data[2] = 0;
-				data += image->bpp;
-			}
-		}
-	}
-	else if (swizzleColor == IMAGE_COLORSWIZZLE_YCOCG)
-	{
-		if (doSwap)
-		{
-			// swap, swizzle
-			while(data < end)
-			{
-				y  = ((data[0] + (data[1] << 1) + data[2]) + 2) >> 2;
-				co = ((((data[0] << 1) - (data[2] << 1)) + 2) >> 2) + 128;
-				cg = (((-data[0] + (data[1] << 1) - data[2]) + 2) >> 2) + 128;
-				data[0] = 255;
-			    data[1] = (cg > 255 ? 255 : (cg < 0 ? 0 : cg));
-			    data[2] = (co > 255 ? 255 : (co < 0 ? 0 : co));
-			    data[3] = (y  > 255 ? 255 : (y  < 0 ? 0 :  y));
-				data += image->bpp;
-			}
-		}
-		else
-		{
-			// no swap, swizzle
-			while(data < end)
-			{
-				y  = ((data[2] + (data[1] << 1) + data[0]) + 2) >> 2;
-				co = ((((data[2] << 1) - (data[0] << 1)) + 2) >> 2) + 128;
-				cg = (((-data[2] + (data[1] << 1) - data[0]) + 2) >> 2) + 128;
-				data[0] = 255;
-			    data[1] = (cg > 255 ? 255 : (cg < 0 ? 0 : cg));
-			    data[2] = (co > 255 ? 255 : (co < 0 ? 0 : co));
-			    data[3] = (y  > 255 ? 255 : (y  < 0 ? 0 :  y));
-				data += image->bpp;
-			}
-		}
-	}
-	else if (swizzleColor == IMAGE_COLORSWIZZLE_AGBR)
-	{
-		if (doSwap)
-		{
-			// swap, swizzle
-			while(data < end)
-			{
-				byte saved = data[0];
-				data[0] = data[2];
-				data[2] = data[3];
-				data[3] = saved;
-				data += image->bpp;
-			}
-		}
-		else
-		{
-			// no swap, swizzle
-			while(data < end)
-			{
-				byte saved = data[2];
-				data[2] = data[3];
-				data[3] = saved;
-				data += image->bpp;
-			}
-		}
-	}
-	else if (doSwap)
-	{
-		// swap R<>B
-		while(data < end)
-		{
-			byte saved = data[0];
-			data[0] = data[2];
-			data[2] = saved;
-			data += image->bpp;
-		}
-	}
-	else
-	{
-		// image already in format we want it to be
+		byte saved = data[0];
+		data[0] = data[2];
+		data[2] = saved;
+		data += image->bpp;
 	}
 	image->colorSwap = swappedColor;
-	image->colorSwizzle = swizzleColor;
 }
 
-void Image_GenerateMipmaps(LoadedImage *image)
+void Image_FreeMipmaps(LoadedImage *image)
+{
+	if (image->mipMaps)
+		FreeImageMipmaps(image);
+}
+
+void Image_GenerateMipmaps(LoadedImage *image, bool overwrite)
 {
 	MipMap *mipmap;
 	int s, w, h, l;
+	FIBITMAP *mipbitmap;
 		
 	if (image->mipMaps)
+	{
+		if (!overwrite)
+			return;
 		FreeImageMipmaps(image);
+	}
 
 	s = min(image->width, image->height);
 	w = image->width;
@@ -306,7 +180,7 @@ void Image_GenerateMipmaps(LoadedImage *image)
 		}
 		memset(mipmap, 0, sizeof(MipMap));
 		mipmap->nextmip = NULL;
-		FIBITMAP *mipbitmap = fiRescale(image->bitmap, w, h, FILTER_LANCZOS3, false);
+		mipbitmap = fiRescale(image->bitmap, w, h, FILTER_LANCZOS3, false);
 		mipmap->width = w;
 		mipmap->height = h;
 		mipmap->level = l;
@@ -336,7 +210,7 @@ void Image_Scale2x_Super2x(LoadedImage *image, bool makePowerOfTwo)
 	// scale2x does not allows BPP = 3
 	// convert to 4 (and convert back after finish)
 	if (image->bpp != 4)
-		ConvertToBPP(image, 4);
+		Image_ConvertBPP(image, 4);
 
 	// check if we can scale
 	if (sxCheck(4, image->bpp, image->width, image->height) != SCALEX_OK)
@@ -367,7 +241,7 @@ void Image_Scale2x_Super2x(LoadedImage *image, bool makePowerOfTwo)
 		while(in < end)
 		{
 			*out++ = in[3];
-			if (in[3] < opt_binaryAlphaMin)
+			if (in[3] < tex_binaryAlphaMin)
 			{
 				// filter out colors for transparent pixels for better scaling
 				in[0] = 0;
@@ -390,7 +264,7 @@ void Image_Scale2x_Super2x(LoadedImage *image, bool makePowerOfTwo)
 
 	// scale alpha as a second pass
 	if (!alpha)
-		ConvertToBPP(image, 3);
+		Image_ConvertBPP(image, 3);
 	else
 	{
 		FIBITMAP *alpha_scaled = fiRescale(fiScale2x(alpha, w, h, 1, 4, true), nw, nh, FILTER_CATMULLROM, true);
@@ -398,8 +272,7 @@ void Image_Scale2x_Super2x(LoadedImage *image, bool makePowerOfTwo)
 		fiCombine(image->bitmap, alpha_scaled, COMBINE_R_TO_ALPHA, 1.0, true);
 		fiBindToImage(fiFixTransparentPixels(image->bitmap), image);
 	}
-
-	image->scale = image->scale * 2;
+	image->scaled = true;
 }
 
 // scale for 2x
@@ -411,7 +284,7 @@ void Image_Scale2x_Scale2x(LoadedImage *image)
 	// scale2x does not allows BPP = 3
 	// convert to 4 (and convert back after finish)
 	if (image->bpp != 4)
-		ConvertToBPP(image, 4);
+		Image_ConvertBPP(image, 4);
 
 	// check if we can scale
 	if (sxCheck(2, image->bpp, image->width, image->height) != SCALEX_OK)
@@ -429,12 +302,12 @@ void Image_Scale2x_Scale2x(LoadedImage *image)
 
 	// finish
 	if (!image->hasAlpha)
-		ConvertToBPP(image, 3);
-	image->scale = image->scale * 2;
+		Image_ConvertBPP(image, 3);
+	image->scaled = true;
 }
 
 // scale image using different scale technique
-void Image_Scale2x(LoadedImage *image, SCALER scaler, bool makePowerOfTwo)
+void Image_Scale2x(LoadedImage *image, ImageScaler scaler, bool makePowerOfTwo)
 {
 	if (!image->bitmap)
 		return;
@@ -472,21 +345,32 @@ void Image_Scale2x(LoadedImage *image, SCALER scaler, bool makePowerOfTwo)
 		w = NextPowerOfTwo(w);
 	}
 	fiBindToImage(fiRescale(image->bitmap, w, h, filter, false), image);
-	image->scale = image->scale * 2;
+	image->scaled = true;
 }
 
 // scale for 4x and then backscale 1/2 for best quality
-void Image_MakePowerOfTwo(LoadedImage *image)
+void Image_MakeDimensions(LoadedImage *image, bool powerOfTwo, bool square)
 {
 	int w, h;
 
 	if (!image->bitmap)
 		return;
-	w = NextPowerOfTwo(image->width);
-	h = NextPowerOfTwo(image->height);
-	if (w == image->width && h == image->height)
-		return;
-	fiBindToImage(fiRescale(image->bitmap, w, h, FILTER_LANCZOS3, false), image);
+	w = image->width;
+	h = image->height;
+	if (powerOfTwo)
+	{
+		w = NextPowerOfTwo(w);
+		h = NextPowerOfTwo(h);
+	}
+	if (square)
+	{
+		if (w < h)
+			w = h;
+		if (w > h)
+			h = w;
+	}
+	if (w != image->width || h != image->height)
+		fiBindToImage(fiRescale(image->bitmap, w, h, FILTER_LANCZOS3, false), image);
 }
 
 // make image's alpha binary
@@ -494,43 +378,70 @@ void Image_MakeAlphaBinary(LoadedImage *image, int thresh)
 {
 	if (!image->bitmap)
 		return;
-	if (!image->hasAlpha)
-		return;
 	if (image->bpp != 4)
+		return;
+	if (image->hasGradientAlpha == false)
 		return;
 	
 	byte *in = FreeImage_GetBits(image->bitmap);
 	byte *end = in + image->width * image->height * image->bpp;
 	while(in < end)
 	{
-		in[3] = (in[3] < opt_binaryAlphaCenter) ? 0 : 255;
+		in[3] = (in[3] < tex_binaryAlphaCenter) ? 0 : 255;
 		in += 4;
 	}
 	image->hasGradientAlpha = false;
+	image->swizzled = true;
 }
 
-byte *Image_GetData(LoadedImage *image)
+// force alpha to certain value
+void Image_SetAlpha(LoadedImage *image, byte value)
+{
+	Image_ConvertBPP(image, 4);
+	byte *data = FreeImage_GetBits(image->bitmap);
+	byte *end  = data + FreeImage_GetWidth(image->bitmap)*FreeImage_GetHeight(image->bitmap)*image->bpp;
+	while(data < end)
+	{
+		data[3] = value;
+		data += image->bpp;
+	}
+	image->swizzled = true;
+}
+
+void Image_Swizzle(LoadedImage *image, void (*swizzleFunction)(LoadedImage *image, bool decode), bool decode)
 {
 	if (!image->bitmap)
+		return;
+	if (!swizzleFunction)
+		return;
+	swizzleFunction(image, decode);
+	image->swizzled = true;
+}
+
+byte *Image_GetData(LoadedImage *image, size_t *datasize)
+{
+	size_t bitmapsize;
+
+	if (!image->bitmap)
 		return NULL;
+	bitmapsize = (FreeImage_GetBPP(image->bitmap)/8)*FreeImage_GetWidth(image->bitmap)*FreeImage_GetHeight(image->bitmap);
+	if (datasize)
+		*datasize = bitmapsize;
+	// compare real data size and structure
+	if ((image->bpp*image->width*image->height) != bitmapsize)
+		Error("Image_GetData: local bpp/width/height %i/%i/%i not match bitmap parameters %i/%i/%i", image->bpp, image->width, image->height, FreeImage_GetBPP(image->bitmap)/8, FreeImage_GetWidth(image->bitmap), FreeImage_GetHeight(image->bitmap));
 	return (byte *)FreeImage_GetBits(image->bitmap);
 }
 
-
-size_t Image_GetDataSize(LoadedImage *image)
+byte *Image_GenerateTarga(size_t *outsize, int width, int height, int bpp, byte *data, bool flip, bool rgb, bool grayscale)
 {
-	return image->width * image->height * image->bpp;
-}
-
-bool Image_WriteTarga(char *filename, int width, int height, int bpp, byte *data, bool flip)
-{
-	byte tga[18];
-	FILE *f;
+	byte *tga, *pixels;
+	byte sr, sg, sb;
+	size_t tgasize;
 	int i;
 
-	f = fopen(filename, "wb");
-	if (!f)
-		return false;
+	tgasize = 18 + width*height*bpp;
+	tga = (byte *)mem_alloc(tgasize);
 	memset(tga, 0, 18);
 	tga[2]  = 2;
 	tga[12] = (width >> 0) & 0xFF;
@@ -538,51 +449,62 @@ bool Image_WriteTarga(char *filename, int width, int height, int bpp, byte *data
 	tga[14] = (height >> 0) & 0xFF;
 	tga[15] = (height >> 8) & 0xFF;
 	tga[16] = bpp * 8;
-	fwrite(tga, 18, 1, f);
-	if (!flip)
-		fwrite(data, width * height * bpp, 1, f);
+	pixels = tga + 18;
+	if (rgb)
+	{
+		sr = 2;
+		sg = 1;
+		sb = 0;
+	}
 	else
 	{
-		byte *pixels = (byte *)mem_alloc(width * height * bpp);
-		byte *out = pixels;
-		if (bpp == 4)
-		{
-			for (i = height-1; i >=0; i--)
-			{
-				byte *in = data + i * width * bpp;
-				byte *end = in + width * bpp;
-				while(in < end)
-				{
-					out[0] = in[2];
-					out[1] = in[1];
-					out[2] = in[0];
-					out[3] = in[3];
-					out+=4;
-					in+=4;
-				}
-			}
-		}
-		else if (bpp == 3)
-		{
-			for (i = height-1; i >=0; i--)
-			{
-				byte *in = data + i * width * bpp;
-				byte *end = in + width * bpp;
-				while(in < end)
-				{
-					out[0] = in[2];
-					out[1] = in[1];
-					out[2] = in[0];
-					out+=3;
-					in+=3;
-				}
-			}
-		}
-		fwrite(pixels, width * height * bpp, 1, f);
-		mem_free(pixels);
+		sr = 0;
+		sg = 1;
+		sb = 2;
 	}
-	fclose(f);
-	return true;
+	if (grayscale)
+		sb = sg = sr;
+	if (!flip)
+	{
+		byte *out = pixels;
+		for (i = 0; i < height; i++)
+		{
+			byte *in = data + i * width * bpp;
+			byte *end = in + width * bpp;
+			while(in < end)
+			{
+				out[0] = in[sr];
+				out[1] = in[sg];
+				out[2] = in[sb];
+				if (bpp == 4)
+					out[3] = in[3];
+				out+=bpp;
+				in+=bpp;
+			}
+		}
+	}
+	else
+	{
+		byte *out = pixels;
+		for (i = height-1; i >=0; i--)
+		{
+			byte *in = data + i * width * bpp;
+			byte *end = in + width * bpp;
+			while(in < end)
+			{
+				out[0] = in[sr];
+				out[1] = in[sg];
+				out[2] = in[sb];
+				if (bpp == 4)
+					out[3] = in[3];
+				out+=bpp;
+				in+=bpp;
+			}
+		}
+	}
+	// write file
+	*outsize = tgasize;
+	return tga;
 }
 
 bool Image_Save(LoadedImage *image, char *filename)
@@ -590,9 +512,27 @@ bool Image_Save(LoadedImage *image, char *filename)
 	return fiSave(image->bitmap, FIF_UNKNOWN, filename);
 }
 
-bool Image_Test(LoadedImage *image, char *filename)
+byte *Image_ExportTarga(LoadedImage *image, size_t *tgasize)
 {
-	return Image_WriteTarga(filename, FreeImage_GetWidth(image->bitmap), FreeImage_GetHeight(image->bitmap), FreeImage_GetBPP(image->bitmap) / 8, FreeImage_GetBits(image->bitmap), true);
+	byte *tga = Image_GenerateTarga(tgasize, FreeImage_GetWidth(image->bitmap), FreeImage_GetHeight(image->bitmap), FreeImage_GetBPP(image->bitmap) / 8, FreeImage_GetBits(image->bitmap), true, image->colorSwap ? false : true, (image->datatype == IMAGE_GRAYSCALE) ? true : false);
+	return tga;
+}
+
+bool Image_ExportTarga(LoadedImage *image, char *filename)
+{
+	byte *tga;
+	size_t tgasize;
+	FILE *f;
+
+	tga = Image_ExportTarga(image, &tgasize);
+	f = fopen(filename, "wb");
+	if (f)
+	{
+		fwrite(tga, tgasize, 1, f);
+		fclose(f);
+	}
+	mem_free(tga);
+	return true;
 }
 
 /*
@@ -603,12 +543,29 @@ bool Image_Test(LoadedImage *image, char *filename)
 ==========================================================================================
 */
 
-void LoadFinish(LoadedImage *image)
+// create procedural image
+void Image_Generate(LoadedImage *image, int width, int height, int bpp)
+{
+	Image_Unload(image);
+	image->bitmap = fiCreate(width, height, bpp);
+	image->width = width;
+	image->height = height;
+	image->bpp = bpp;
+	Image_LoadFinish(image);
+}
+
+// returns true if image was changed since latest load
+bool Image_Changed(LoadedImage *image)
+{
+	if (!memcmp(&image->loadedState, &image->width, sizeof(ImageState)))
+		return false;
+	return true;
+}
+
+void Image_LoadFinish(LoadedImage *image)
 {
 	if (!image->bitmap)
 		return;
-
-	image->scale = 1;
 
 	// we want bitmap image type
 	image->bitmap = fiConvertType(image->bitmap, FIT_BITMAP);
@@ -619,12 +576,12 @@ void LoadFinish(LoadedImage *image)
 	if (colorType == FIC_PALETTE)
 	{
 		if (FreeImage_IsTransparent(image->bitmap))
-			ConvertToBPP(image, 4);
+			Image_ConvertBPP(image, 4);
 		else
-			ConvertToBPP(image, 3);
+			Image_ConvertBPP(image, 3);
 	}
 	else if (image->bpp != 3 && image->bpp != 4)
-		ConvertToBPP(image, 3);
+		Image_ConvertBPP(image, 3);
 
 	// check alpha
 	image->hasAlpha = false;
@@ -632,17 +589,17 @@ void LoadFinish(LoadedImage *image)
 	if (image->bpp == 4)
 	{
 		int  num_grad = 0;
-		int  need_grad = (image->width + image->height) / 4;
-		long pixels = image->width*image->height*4;
+		int  need_grad = (int)(image->width*image->height*(100.0f - tex_binaryAlphaThreshold)/100.0f);
+		long pixels = image->width*image->height*image->bpp;
 		byte *data = FreeImage_GetBits(image->bitmap);
 		image->hasAlpha = true;
-		if (!opt_detectBinaryAlpha)
+		if (!tex_detectBinaryAlpha)
 			image->hasGradientAlpha = true;
 		else
 		{
-			for (long i = 0; i < pixels; i+= 4)
+			for (long i = 0; i < pixels; i+= image->bpp)
 			{
-				if (data[i+3] < opt_binaryAlphaMax && data[i+3] > opt_binaryAlphaMin)
+				if (data[i+3] >= tex_binaryAlphaMin && data[i+3] <= tex_binaryAlphaMax)
 					num_grad++;
 				if (num_grad > need_grad)
 				{
@@ -652,6 +609,9 @@ void LoadFinish(LoadedImage *image)
 			}
 		}
 	}
+
+	// save the loaded state (for comparison if image was altered)
+	memcpy(&image->loadedState, &image->width, sizeof(ImageState));
 }
 
 byte quake_palette[768] = { 0,0,0,15,15,15,31,31,31,47,47,47,63,63,63,75,75,75,91,91,91,107,107,107,123,123,123,139,139,139,155,155,155,171,171,171,187,187,187,203,203,203,219,219,219,235,235,235,15,11,7,23,15,11,31,23,11,39,27,15,47,35,19,55,43,23,63,47,23,75,55,27,83,59,27,91,67,31,99,75,31,107,83,31,115,87,31,123,95,35,131,103,35,143,111,35,11,11,15,19,19,27,27,27,39,39,39,51,47,47,63,55,55,75,63,63,87,71,71,103,79,79,115,91,91,127,99,99,139,107,107,151,115,115,163,123,123,175,131,131,187,139,139,203,0,0,0,7,7,0,11,11,0,19,19,0,27,27,0,35,35,0,43,43,7,47,47,7,55,55,7,63,63,7,71,71,7,75,75,11,83,83,11,91,91,11,99,99,11,107,107,15,7,0,0,15,0,0,23,0,0,31,0,0,39,0,0,47,0,0,55,0,0,63,0,0,71,0,0,79,0,0,87,0,0,95,0,0,103,0,0,111,0,0,119,0,0,127,0,0,19,19,0,27,27,0,35,35,0,47,43,0,55,47,0,67,55,0,75,59,7,87,67,7,95,71,7,107,75,11,119,83,15,131,87,19,139,91,19,151,95,27,163,99,31,175,103,35,35,19,7,47,23,11,59,31,15,75,35,19,87,43,23,99,47,31,115,55,35,127,59,43,143,67,51,159,79,51,175,99,47,191,119,47,207,143,43,223,171,39,239,203,31,255,243,27,11,7,0,27,19,0,43,35,15,55,43,19,71,51,27,83,55,35,99,63,43,111,71,51,127,83,63,139,95,71,155,107,83,167,123,95,183,135,107,195,147,123,211,163,139,227,179,151,171,139,163,159,127,151,147,115,135,139,103,123,127,91,111,119,83,99,107,75,87,95,63,75,87,55,67,75,47,55,67,39,47,55,31,35,43,23,27,35,19,19,23,11,11,15,7,7,187,115,159,175,107,143,163,95,131,151,87,119,139,79,107,127,75,95,115,67,83,107,59,75,95,51,63,83,43,55,71,35,43,59,31,35,47,23,27,35,19,19,23,11,11,15,7,7,219,195,187,203,179,167,191,163,155,175,151,139,163,135,123,151,123,111,135,111,95,123,99,83,107,87,71,95,75,59,83,63,51,67,51,39,55,43,31,39,31,23,27,19,15,15,11,7,111,131,123,103,123,111,95,115,103,87,107,95,79,99,87,71,91,79,63,83,71,55,75,63,47,67,55,43,59,47,35,51,39,31,43,31,23,35,23,15,27,19,11,19,11,7,11,7,255,243,27,239,223,23,219,203,19,203,183,15,187,167,15,171,151,11,155,131,7,139,115,7,123,99,7,107,83,0,91,71,0,75,55,0,59,43,0,43,31,0,27,15,0,11,7,0,0,0,255,11,11,239,19,19,223,27,27,207,35,35,191,43,43,175,47,47,159,47,47,143,47,47,127,47,47,111,47,47,95,43,43,79,35,35,63,27,27,47,19,19,31,11,11,15,43,0,0,59,0,0,75,7,0,95,7,0,111,15,0,127,23,7,147,31,7,163,39,11,183,51,15,195,75,27,207,99,43,219,127,59,227,151,79,231,171,95,239,191,119,247,211,139,167,123,59,183,155,55,199,195,55,231,227,87,127,191,255,171,231,255,215,255,255,103,0,0,139,0,0,179,0,0,215,0,0,255,0,0,255,243,147,255,247,199,255,255,255,159,91,83 };
@@ -686,7 +646,7 @@ void LoadImage_QuakeSprite(FS_File *file, byte *filedata, size_t filesize, Loade
 			if (frame->width < 0 || frame->width > 32768 || frame->height < 0 || frame->height > 32768)
 				Error("LoadImage_QuakeSprite(%s) bogus frame %i size: %ix%i", frame->texname, framenum, frame->width, frame->height);
 			fiLoadDataRaw(frame->width, frame->height, 4, buf, filesize, NULL, false, frame);
-			LoadFinish(frame);
+			Image_LoadFinish(frame);
 			// go next frame
 			framenum++;
 			filesize -= frame->filesize;
@@ -731,7 +691,7 @@ void LoadImage_QuakeBSP(FS_File *file, byte *filedata, size_t filesize, LoadedIm
 				if (texwidth < 0 || texwidth > 32768 || texheight < 0 || texheight > 32768)
 					Error("LoadImage_QuakeBSP(%s) bogus texture size: %ix%i", tex->texname, texwidth, texheight);
 				fiLoadDataRaw(texwidth, texheight, 1, (byte *)(buf + textureoffsets[texnum] + texmipofs), texwidth * texheight, quake_palette, false, tex);
-				LoadFinish(tex);
+				Image_LoadFinish(tex);
 				// set next texture
 				tex->next = Image_Create();
 				tex = tex->next;
@@ -747,12 +707,11 @@ void LoadImage_Generic(FS_File *file, byte *filedata, size_t filesize, LoadedIma
 	image->filesize = filesize;
 	fiLoadData(FIF_UNKNOWN, file, filedata, filesize, image);
 	mem_free(filedata);
-	LoadFinish(image);
+	Image_LoadFinish(image);
 }
 
 void Image_Load(FS_File *file, LoadedImage *image)
 {
-	unsigned int formatCC;
 	size_t filesize;
 	byte *filedata;
 
@@ -761,10 +720,10 @@ void Image_Load(FS_File *file, LoadedImage *image)
 		return;
 
 	ClearImage(image);
-	formatCC = *(unsigned int *)filedata;
-	if (formatCC == MAKEFOURCC('I','D','S','P'))
+	unsigned int fourCC = *(unsigned int *)filedata;
+	if (fourCC == FOURCC('I','D','S','P'))
 		LoadImage_QuakeSprite(file, filedata, filesize, image);
-	else if (formatCC == 29)
+	else if (fourCC == 29)
 		LoadImage_QuakeBSP(file, filedata, filesize, image);
 	else
 		LoadImage_Generic(file, filedata, filesize, image);

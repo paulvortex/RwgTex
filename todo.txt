@@ -1,3 +1,2 @@
-- add support for ETC1
-- add support for PRVTC
-- add support for ATITC
+- finish support for KTX files
+- fix the bugs for 1.5

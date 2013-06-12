@@ -1,4 +1,7 @@
-#pragma once
+// crc32.h
+#ifndef H_TEX_CRC32_H
+#define H_TEX_CRC32_H
+
 #include "main.h"
 
 #ifndef _QWORD_DEFINED
@@ -19,3 +22,5 @@ typedef __int64 QWORD, *LPQWORD;
 DWORD FileCrc32Win32(LPCTSTR szFilename, DWORD &dwCrc32);
 DWORD FileCrc32Filemap(LPCTSTR szFilename, DWORD &dwCrc32);
 DWORD FileCrc32Assembly(LPCTSTR szFilename, DWORD &dwCrc32);
+
+#endif

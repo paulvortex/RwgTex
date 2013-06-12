@@ -1,7 +1,7 @@
 // cmdlib.h
-// parts of code picked from Darkplaces hmap2
+#ifndef H_TEX_CMDLIB_H
+#define H_TEX_CMDLIB_H
 
-#pragma once
 #include <stdio.h>
 #include <io.h>
 #include <string.h>
@@ -10,12 +10,14 @@
 #include <ctype.h>
 #include <time.h>
 #include <string>
+#include <vector>
+
 using namespace std;
 
-#ifndef __BYTEBOOL__
-#define __BYTEBOOL__
-typedef unsigned char byte;
-#endif
+typedef unsigned char  byte;
+typedef unsigned short ushort;
+typedef unsigned long  ulong;
+typedef unsigned int   uint;
 
 // the dec offsetof macro doesn't work very well...
 #define myoffsetof(type,identifier) ((size_t)&((type *)0)->identifier)
@@ -152,3 +154,5 @@ void WrapFileWritesToMemory();
 FILE *SafeOpenWrite (char *filename);
 FILE *OpenReadWrite(char *filename);
 void WriteClose(FILE *f);
+
+#endif

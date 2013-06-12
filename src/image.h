@@ -1,32 +1,28 @@
 // image.h
+#ifndef H_IMAGE_H
+#define H_IMAGE_H
 
-#ifndef RWGTEX_IMAGE_H
-#define RWGTEX_IMAGE_H
-
+#include "freeimage/freeimage.h"
 #include "fs.h"
-#include <freeimage.h>
+#include "options.h"
 
 typedef struct MipMap_s
 {
-	int    width;
-	int    height;
-	int    level;
-	byte  *data;
-	size_t datasize;
-
+	int       width;
+	int       height;
+	int       level;
+	byte     *data;
+	size_t    datasize;
 	MipMap_s *nextmip;
 }MipMap;
 
-// internal color conversion
+// data type
 typedef enum
 {
-	IMAGE_COLORSWIZZLE_NONE,
-	IMAGE_COLORSWIZZLE_PREMODULATE,
-	IMAGE_COLORSWIZZLE_XGBR, // doom 3's RXGB
-	IMAGE_COLORSWIZZLE_YCOCG, // YCoCg and Scaled YCoCg
-	IMAGE_COLORSWIZZLE_AGBR // same as RXGB but alpha is saved
-}
-COLORSWIZZLE;
+	IMAGE_COLOR,
+	IMAGE_NORMALMAP,
+	IMAGE_GRAYSCALE,
+}DATATYPE;
 
 // scalers
 typedef enum
@@ -40,7 +36,38 @@ typedef enum
 	IMAGE_SCALER_SCALE2X,
 	IMAGE_SCALER_SUPER2X
 }
-SCALER;
+ImageScaler;
+#ifdef F_IMAGE_C
+	OptionList ImageScalers[] =
+	{
+		{ "nearest",    IMAGE_SCALER_BOX },
+		{ "bilinear",   IMAGE_SCALER_BILINEAR },
+		{ "bicubic",    IMAGE_SCALER_BICUBIC },
+		{ "bspline",    IMAGE_SCALER_BSPLINE },
+		{ "catmullrom", IMAGE_SCALER_CATMULLROM },
+		{ "lanczos",    IMAGE_SCALER_LANCZOS },
+		{ "scale2x",    IMAGE_SCALER_SCALE2X },
+		{ "super2x",    IMAGE_SCALER_SUPER2X },
+		{ 0 },
+	};
+#else
+	extern OptionList ImageScalers[];
+#endif
+
+typedef struct ImageState_s
+{
+	int          width;
+	int          height;
+	int          bpp;              // bits per pixel
+	bool         colorSwap;        // BGR instead of RGB
+	bool         swizzled;         // colors was explicitly altered
+	bool         hasAlpha;         // have alpha channel (this indicates if SOURCE file actually have alpha and may differ from bpp)
+	bool         hasGradientAlpha; // alpha channel is a gradient type (not binary
+	bool         scaled;           // set to true if image was scaled
+	bool         converted;        // BPP was converted
+	bool         unused2; 
+	bool         unused3;  
+} ImageState;
 
 typedef struct LoadedImage_s
 {
@@ -49,28 +76,31 @@ typedef struct LoadedImage_s
 
 	// FreeImage parameters
 	FIBITMAP    *bitmap;
-	int          width;
-	int          height;
-	bool         colorSwap; // BGR instead of RGB
-	COLORSWIZZLE colorSwizzle; // color was swizzled
 	int          scale;
 
-	// FinishLoad parameters
+	// current image state (should match contents and order of ImageState!)
+	int          width;
+	int          height;
 	int          bpp;              // bits per pixel
-	bool         hasAlpha;         // have alpha channel
-	bool         hasGradientAlpha; // alpha channel is a gradient type (not binary)
+	bool         colorSwap;        // BGR instead of RGB
+	bool         swizzled;         // colors was explicitly altered
+	bool         hasAlpha;         // have alpha channel (this indicates if SOURCE file actually have alpha and may differ from bpp)
+	bool         hasGradientAlpha; // alpha channel is a gradient type (not binary
+	bool         scaled;           // set to true if image was scaled
+	bool         converted;        // BPP was converted        
+	bool         unused2; 
+	bool         unused3; 
+
+	// saved loaded state
+	ImageState   loadedState;
 
 	// special
 	MipMap      *mipMaps;       // generated mipmaps
 	char         texname[128];  // null if there is no custom texture name
 	bool         useTexname;
 
-	// set by DDS exporter
-	DWORD        formatCC;
-	bool         useChannelWeighting;
-	float        weightRed;
-	float        weightGreen;
-	float        weightBlue;
+	// set by texture tool
+	DATATYPE     datatype;
 
 	// next image's frame
 	LoadedImage_s *next;
@@ -78,26 +108,32 @@ typedef struct LoadedImage_s
 LoadedImage;
 
 LoadedImage *Image_Create(void);
-void Image_Load(FS_File *file, LoadedImage *image);
-void Image_GenerateMipmaps(LoadedImage *image);
-void Image_Scale2x(LoadedImage *image, SCALER scaler, bool makePowerOfTwo);
-void Image_MakePowerOfTwo(LoadedImage *image);
-void Image_MakeAlphaBinary(LoadedImage *image, int thresh);
-byte *Image_GetData(LoadedImage *image);
-size_t Image_GetDataSize(LoadedImage *image);
-void Image_Unload(LoadedImage *image);
-void Image_Delete(LoadedImage *image);
+void  Image_Generate(LoadedImage *image, int width, int height, int bpp);
+void  Image_Load(FS_File *file, LoadedImage *image);
+void  Image_LoadFinish(LoadedImage *image);
+bool  Image_Changed(LoadedImage *image);
+void  Image_GenerateMipmaps(LoadedImage *image, bool overwrite);
+void  Image_FreeMipmaps(LoadedImage *image);
+void  Image_Scale2x(LoadedImage *image, ImageScaler scaler, bool makePowerOfTwo);
+void  Image_MakeDimensions(LoadedImage *image, bool powerOfTwo, bool square);
+void  Image_MakeAlphaBinary(LoadedImage *image, int thresh);
+void  Image_SetAlpha(LoadedImage *image, byte value);
+void  Image_Swizzle(LoadedImage *image, void (*swizzleFunction)(LoadedImage *image, bool decode), bool decode);
+byte *Image_GetData(LoadedImage *image, size_t *datasize);
+void  Image_Unload(LoadedImage *image);
+void  Image_Delete(LoadedImage *image);
 
 // internal color conversion
-void Image_ConvertColorsForCompression(LoadedImage *image, bool swappedColor, COLORSWIZZLE swizzleColor, bool forceBGRA);
+byte* Image_ConvertBPP(LoadedImage *image, int bpp);
+void  Image_SwapColors(LoadedImage *image, bool swappedColor);
+byte *Image_GenerateTarga(size_t *outsize, int width, int height, int bpp, byte *data, bool flip, bool rgb, bool grayscale);
+bool  Image_Save(LoadedImage *image, char *filename);
+byte *Image_ExportTarga(LoadedImage *image, size_t *tgasize);
+bool  Image_ExportTarga(LoadedImage *image, char *filename);
 
-bool Image_WriteTarga(char *filename, int width, int height, int bpp, byte *data, bool flip);
-bool Image_Save(LoadedImage *image, char *filename);
-bool Image_Test(LoadedImage *image, char *filename);
-
-void Image_Init(void);
-void Image_Shutdown(void);
-void Image_PrintModules(void);
+void  Image_Init(void);
+void  Image_Shutdown(void);
+void  Image_PrintModules(void);
 
 int NextPowerOfTwo(int n);
 

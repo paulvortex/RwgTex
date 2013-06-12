@@ -1,4 +1,6 @@
-#pragma once
+// unzip.h
+#ifndef H_TEX_UNZIP_H
+#define H_TEX_UNZIP_H
 
 // UNZIPPING functions -- for unzipping.
 // This file is a repackaged form of extracts from the zlib code available
@@ -207,4 +209,6 @@ bool IsZipHandleU(HZIP hz);
 #else
 #define CloseZip CloseZipU
 #define FormatZipMessage FormatZipMessageU
+#endif
+
 #endif

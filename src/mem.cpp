@@ -1,6 +1,17 @@
-// memory management
+////////////////////////////////////////////////////////////////
+//
+// RwgTex / memory management
+// (c) Pavel [VorteX] Timofeyev
+// based on functions picked from Darkplaces engine
+// See LICENSE text file for a license agreement
+//
+////////////////////////////////
 
 #include "main.h"
+#include "mem.h"
+#include <string>
+#include <vector>
+using namespace std;
 
 typedef struct
 {
@@ -20,6 +31,17 @@ vector<memsentinel> sentinels;
 HANDLE              sentinelMutex = NULL;
 HANDLE              sentinelMutex2 = NULL;
 
+void Mem_Error(char *message_format, ...) 
+{
+	char msg[16384];
+	va_list argptr;
+
+	va_start(argptr, message_format);
+	vsprintf(msg, message_format, argptr);
+	va_end(argptr);
+	Error(msg);
+}
+
 void Mem_Init(void)
 {
 	if (initialized)
@@ -35,7 +57,7 @@ void Mem_Init(void)
 	sentinelMutex2 = CreateMutex(NULL, FALSE, NULL);
 }
 
-void Mem_Shutdown()
+void Mem_Shutdown(void)
 {
 	if (!initialized)
 		return;
@@ -52,25 +74,21 @@ void Mem_Shutdown()
 			}
 		}
 
-		printf("----------------------------------------\n");
-		printf(" Memory stats\n");
-		printf("----------------------------------------\n");
-		printf("     peak active memory: %.2f Mbytes\n", (double)total_active_peak / 1048576.0 );
-		printf(" total memory allocated: %.2f Mbytes\n", (double)total_allocated / 1048576.0 );
-		printf("          leaked memory: %.2f Mbytes\n", (double)leaked / 1048576.0 );
+		Print("----------------------------------------\n");
+		Print(" Dynamic memory usage stats\n");
+		Print("----------------------------------------\n");
+		Print("        Peak allocated: %.3f Mb\n", (double)total_active_peak / 1048576.0 );
+		Print("       total allocated: %.3f Mb\n", (double)total_allocated / 1048576.0 );
+		Print("                 leaks: %.3f Mb\n", (double)leaked / 1048576.0 );
 		if (leaks)
 		{
-			printf("     leaked allocations: %i\n", leaks );
-			printf("\n");
-			printf("----------------------------------------\n");
-			printf(" Leaked memory\n");
-			printf("----------------------------------------\n");
+			Print("            leak spots: %i\n", leaks );
+			Print("\n");
 			for (std::vector<memsentinel>::iterator s = sentinels.begin(); s < sentinels.end(); s++)
 				if (!s->free)
-					printf("%s:%i (%s) %i bytes (%.2f Mb)\n", s->file, s->line, s->name, s->size, (double)s->size / 1048576.0);
+					Print("%s:%i (%s) %i bytes (%.3f Mb)\n", s->file, s->line, s->name, s->size, (double)s->size / 1048576.0);
 		}
-
-		printf("\n");
+		Print("\n");
 	}
 	initialized = false;
 	sentinels.clear();
@@ -158,10 +176,25 @@ bool _mem_sentinel_free(char *name, void *ptr, char *file, int line)
 	if (found == 1)
 		return true;
 	if (found == -1)
-		Error("%s:%i (%s) - tried to free a non-allocated page %i (sentinel not found)\n", name, file, line, ptr);
+		Mem_Error("%s:%i (%s) - trying to free non-allocated page %i (sentinel not found)\n", name, file, line, ptr);
 	if (found == -2)
-		Error("%s:%i (%s) - tried to free a non-allocated page %i (sentinel already freed)\n", name, file, line, ptr);
+		Mem_Error("%s:%i (%s) - trying to free non-allocated page %i (sentinel already freed)\n", name, file, line, ptr);
 	return false;
+}
+
+void *_mem_realloc(void *data, size_t size, char *file, int line)
+{
+	if (size <= 0)
+		return NULL;
+	if (!_mem_sentinel_free("mem_realloc", data, file, line))
+		return NULL;
+	data = realloc(data, size);
+	if (!data)
+		Mem_Error("%s:%i - error reallocating %d bytes (%.2f Mb)\n", file, line, size, (double)size / 1048576.0);
+	if (!initialized)
+		return data;
+	_mem_sentinel("mem_realloc", data, size, file, line);
+	return data;
 }
 
 void *_mem_alloc(size_t size, char *file, int line)
@@ -172,11 +205,27 @@ void *_mem_alloc(size_t size, char *file, int line)
 		return NULL;
 	data = malloc(size);
 	if (!data)
-		Error("%s:%i - failed on allocating %d bytes (%.2f Mb)\n", file, line, size, (double)size / 1048576.0);
+		Mem_Error("%s:%i - error allocating %d bytes (%.2f Mb)\n", file, line, size, (double)size / 1048576.0);
 	if (!initialized)
 		return data;
 	_mem_sentinel("mem_alloc", data, size, file, line);
 	return data;
+}
+
+void _mem_calloc(void **bufferptr, size_t size, char *file, int line)
+{
+	void *data;
+
+	if (size <= 0)
+		return;
+	data = malloc(size);
+	memset(data, 0, size);
+	if (!data)
+		Mem_Error("%s:%i - error allocating %d bytes (%.2f Mb)\n", file, line, size, (double)size / 1048576.0);
+	if (!initialized)
+		return;
+	_mem_sentinel("mem_calloc", data, size, file, line);
+	*bufferptr = data;
 }
 
 void _mem_free(void *data, char *file, int line)

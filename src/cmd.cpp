@@ -1,5 +1,11 @@
-// Useful Functions Library
-// parts of code picked from Darkplaces hmap2
+////////////////////////////////////////////////////////////////
+//
+// RwgTex / Commandline Functions Library
+// (c) Pavel [VorteX] Timofeyev
+// based on functions picked from Darkplaces hmap2
+// See LICENSE text file for a license agreement
+//
+////////////////////////////////
 
 #define __USE_BSD 1
 
@@ -155,13 +161,13 @@ void PercentPacifier(char *str, ...)
 	fflush(stdout);
 }
 
-void Pacifier(char *str, ...)
+void Pacifier(char *format, ...)
 {
 	va_list argptr;
 	char msg[10000];
 
-	va_start(argptr, str);
-	vsprintf(msg, str, argptr);
+	va_start(argptr, format);
+	vsprintf(msg, format, argptr);
 	va_end(argptr);
 	printf("\r%s                                        \r", msg);
 	fflush(stdout);
@@ -929,9 +935,8 @@ void StripFileExtension(char *path, char *dest)
 {
 	int l;
 
-
 	l = strlen(path) - 1;
-	while(path[l] != '.')
+	while(l >= 0 && path[l] != '.')
 		l--;
 	if (l == 0)
 		return;
@@ -1083,6 +1088,15 @@ short   BigShort (short l)
 }
 
 
+short   LittleShort (short l)
+{
+  byte    b1,b2;
+
+  b1 = l&255;
+  b2 = (l>>8)&255;
+
+  return (b1<<8) + b2;
+}
 int    LittleLong (int l)
 {
   byte    b1,b2,b3,b4;
