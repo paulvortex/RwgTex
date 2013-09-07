@@ -160,26 +160,29 @@ void TexCompress_WorkerThread(ThreadData *thread)
 
 			// postprocess and export all frames for all encoders
 			size_t numexported = 0;
-			for (frame = image; frame != NULL; frame = frame->next)
+			int framenum = 0;
+			for (frame = image; frame != NULL; frame = frame->next, framenum++)
 			{
+				//Print("Processing %s frame %i %ix%i %i bpp for codec %s\n", task.file->name.c_str(), framenum, frame->width, frame->height, frame->bpp, codec->name);
 				// input stats
-				task.codec->stat_inputDiskMB += (image->width*image->height*image->bpp) / 1048576.0f;
-				if (tex_noMipmaps || FS_FileMatchList(task.file, image, tex_noMipFiles))
+				task.codec->stat_inputDiskMB += (frame->width*frame->height*frame->bpp) / 1048576.0f;
+				if (tex_noMipmaps || FS_FileMatchList(task.file, frame, tex_noMipFiles))
 				{
-					task.codec->stat_inputRamMB += (image->width*image->height*image->bpp) / 1048576.0f;
-					task.codec->stat_inputPOTRamMB += (NextPowerOfTwo(image->width)*NextPowerOfTwo(image->height)*image->bpp)/1048576.0f;
+					task.codec->stat_inputRamMB += (frame->width*frame->height*frame->bpp) / 1048576.0f;
+					task.codec->stat_inputPOTRamMB += (NextPowerOfTwo(frame->width)*NextPowerOfTwo(frame->height)*frame->bpp)/1048576.0f;
 				}
 				else
 				{
-					int w = image->width;
-					int h = image->height;
-					while (w > 1 && h > 1) { task.codec->stat_inputRamMB += (w*h*image->bpp) / 1048576.0f; w /= 2; h /= 2; }
-					w = NextPowerOfTwo(image->width);
-					h = NextPowerOfTwo(image->height);
-					while (w > 1 && h > 1) { task.codec->stat_inputPOTRamMB += (w*h*image->bpp) / 1048576.0f; w /= 2; h /= 2; }
+					int w = frame->width;
+					int h = frame->height;
+					while (w > 1 && h > 1) { task.codec->stat_inputRamMB += (w*h*frame->bpp) / 1048576.0f; w /= 2; h /= 2; }
+					w = NextPowerOfTwo(frame->width);
+					h = NextPowerOfTwo(frame->height);
+					while (w > 1 && h > 1) { task.codec->stat_inputPOTRamMB += (w*h*frame->bpp) / 1048576.0f; w /= 2; h /= 2; }
 				}
 
 				// compress
+				task.image = frame;
 				task.stream = NULL;
 				task.streamLen = 0;
 				task.tool = NULL;
@@ -191,7 +194,7 @@ void TexCompress_WorkerThread(ThreadData *thread)
 				task.codec->stat_outputRamMB += (float)(task.streamLen - task.container->headerSize)/1048576.0f;
 				task.codec->stat_numTextures++;
 				task.codec->stat_numImages++;
-				for (MipMap *mipmap = task.image->mipMaps; mipmap; mipmap = mipmap->nextmip)
+				for (MipMap *mipmap = frame->mipMaps; mipmap; mipmap = mipmap->nextmip)
 					codec->stat_numImages++;
 
 				// save for saving thread
@@ -228,6 +231,7 @@ void TexCompress_WorkerThread(ThreadData *thread)
 				// output stats
 				numexported++;
 			}
+			task.image = image;
 
 			// delete image if it was changed or if it is not needed anymore
 			if (Image_Changed(image) || !codec->nextActive)
