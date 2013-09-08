@@ -26,7 +26,6 @@ char          tex_destPath[MAX_FPATH];
 bool          tex_destPathUseCodecDir;
 bool          tex_generateArchive;
 string        tex_gameDir;
-bool          tex_useFileCache;
 bool          tex_allowNPOT;
 bool          tex_noMipmaps;
 bool          tex_forceScale2x;
@@ -501,7 +500,6 @@ void Tex_Init(void)
 	tex_archivePath = "";
 	tex_scale2xFiles.clear();
 	tex_scale4xFiles.clear();
-	tex_useFileCache = true;
 	tex_noMipmaps = false;
 	tex_allowNPOT = false;
 	tex_forceScale2x = false;
@@ -517,8 +515,6 @@ void Tex_Init(void)
 	tex_testCompresion = false;
 	tex_container = findContainer("DDS", false);
 
-	// COMMANDLINEPARM: -nocache: disable file caching
-	if (CheckParm("-nocache"))    tex_useFileCache = false;
 	// COMMANDLINEPARM: -nm: for all files to compress with best Peak-Signal-To-Noise (really it is using normalmap path for them)
 	if (CheckParm("-nm"))         tex_forceBestPSNR = true;	
 	// COMMANDLINEPARM: -2x: apply 2x scale (Scale2X)
@@ -676,7 +672,6 @@ void Tex_Help(void)
 	Tex_PrintCodecs();
 	Print(
 	"Codec general options:\n"
-	"   -nocache: disable file caching\n"
 	"      -npot: allow non-power-of-two textures\n"
 	"     -nomip: dont generate mipmaps\n"
 	"        -2x: apply 2x scale (Scale2X)\n"
@@ -712,7 +707,8 @@ int TexMain(int argc, char **argv)
 {
 	double timeelapsed;
 	vector<string> drop_files;
-	char cachefile[MAX_FPATH];
+	vector<string> add_files;
+	char f[MAX_FPATH], path[MAX_FPATH], file[MAX_FPATH];
 	int i;
 
 	// launched without parms, try to find kain.exe
@@ -773,7 +769,6 @@ int TexMain(int argc, char **argv)
 		{
 			// dragged files to exe, there is no output path
 			strncpy(tex_srcDir, argv[0], sizeof(tex_srcDir));
-			tex_useFileCache = false;
 			if (FS_FindDir(tex_srcDir)) 
 			{
 				// dragged a directory
@@ -788,7 +783,6 @@ int TexMain(int argc, char **argv)
 				ExtractFileName(tex_srcDir, tex_srcFile);
 				ExtractFilePath(tex_srcDir, tex_destPath);
 				strncpy(tex_srcDir, tex_destPath, sizeof(tex_srcDir));
-				// if file is archive, add "dds/" folder
 				if (FS_FileMatchList(tex_srcFile, tex_archiveFiles))
 				{
 					tex_destPathUseCodecDir = true;
@@ -803,23 +797,6 @@ int TexMain(int argc, char **argv)
 			// commandline launch
 			drop_files.clear();
 			strncpy(tex_srcDir, argv[0], sizeof(tex_srcDir));
-
-			// optional output directory
-			char *destPath = NULL;
-			for (i = 1; i < argc; i++)
-			{
-				if (!strcmp(argv[i], "-o"))
-				{
-					i++;
-					if (i < argc)
-					{
-						destPath = argv[i];
-						break;
-					}
-				}
-			}
-			if (destPath)
-				strncpy(tex_destPath, destPath, sizeof(tex_destPath));
 
 			// check if input is folder
 			// set default output directory
@@ -842,34 +819,38 @@ int TexMain(int argc, char **argv)
 	}
 	AddSlash(tex_srcDir);
 
-	// load cache
-	if (tex_useFileCache)
+	// options
+	char *destPath = NULL;
+	for (i = 1; i < argc; i++)
 	{
-		// check if dest path is an archive
-		if (FS_FileMatchList(tex_destPath, tex_archiveFiles))
+		if (!strcmp(argv[i], "-o"))
 		{
-			tex_useFileCache = false;
-			Print("Archive output does not support file cache at the moment\n");
-		}
-		else
-		{
-			Print("Converting only files that was changed\n");
-			sprintf(cachefile, "%s_filescrc.txt", tex_destPath);
-			FS_LoadCache(cachefile);
+			i++;
+			if (i < argc)
+			{
+				destPath = argv[i];
+				break;
+			}
 		}
 	}
+	if (destPath)
+		strncpy(tex_destPath, destPath, sizeof(tex_destPath));
 
 	// find files
 	Print("Entering \"%s%s\"\n", tex_srcDir, tex_srcFile);
-	if (tex_useFileCache)
-		Print("Calculating crc32 for files\n");
 	textures.clear();
 	texturesSkipped = 0;
 	FS_ScanPath(tex_srcDir, tex_srcFile, NULL);
 	if (drop_files.size())
 	{
 		for (vector<string>::iterator i = drop_files.begin(); i < drop_files.end(); i++)
-			FS_ScanPath("", i->c_str(), NULL);
+		{
+			strcpy(f, i->c_str());
+			ExtractFilePath(f, path);
+			ExtractFileName(f, file);
+			Print("Entering \"%s%s\"\n", path, file);
+			FS_ScanPath(path, file, NULL);
+		}
 		drop_files.clear();
 	}
 	if (texturesSkipped)
@@ -890,14 +871,11 @@ int TexMain(int argc, char **argv)
 	}
 
 	// run conversion
+	Print("%i files to encode\n", textures.size());
 	TexCompress_Load();
 	TexCompressData SharedData;
 	memset(&SharedData, 0, sizeof(TexCompressData));
 	timeelapsed = ParallelThreads(numthreads, textures.size(), &SharedData, TexCompress_WorkerThread, TexCompress_MainThread);
-
-	// save cache file
-	if (tex_useFileCache)
-		FS_SaveCache(cachefile);
 
 	// show stats
 	Print("Conversion finished!\n");

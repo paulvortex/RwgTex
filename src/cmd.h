@@ -98,7 +98,7 @@ extern void SafeRead (FILE *f, void *buffer, int count);
 extern void SafeWrite (FILE *f, void *buffer, int count);
 
 extern int LoadFile (char *filename, byte **bufferptr);
-extern int LoadFileUnsafe (char *filename, byte **bufferptr);
+extern size_t LoadFileUnsafe (char *filename, byte **bufferptr);
 
 extern void DefaultPath (char *path, char *basepath);
 extern void ReplaceExtension (char *path, char *oldextension, char *replacementextension, char *missingextension);

@@ -168,7 +168,7 @@ bool NvDXTLib_Compress(TexEncodeTask *t)
 		for (MipMap *mipmap = t->image->mipMaps; mipmap; mipmap = mipmap->nextmip)
 		{
 			writeOptions.numwrites = 0;
-			res = nvDDS::nvDXTcompress(mipmap->data, mipmap->width, mipmap->height,  mipmap->width*t->image->bpp, (t->image->bpp == 4) ? nvBGRA : nvBGR, &options, NvDXTLib_WriteDDS, 0);
+			res = nvDDS::nvDXTcompress(mipmap->data, mipmap->width, mipmap->height, mipmap->width*t->image->bpp, (t->image->bpp == 4) ? nvBGRA : nvBGR, &options, NvDXTLib_WriteDDS, 0);
 			if (res != NV_OK)
 				break;
 		}

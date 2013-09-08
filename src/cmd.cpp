@@ -786,15 +786,18 @@ LoadFileUnsafe
 ==============
 */
 
-int LoadFileUnsafe(char *filename, byte **bufferptr)
+size_t LoadFileUnsafe(char *filename, byte **bufferptr)
 {
   FILE *f;
-  int length;
+  size_t length;
   byte *buffer;
 
   f = fopen(filename, "rb");
   if (!f)
-	  return -1;
+  {
+	  *bufferptr = NULL;
+	  return 0;
+  }
   length = Q_filelength (f);
   buffer = (byte *)mem_alloc(length+1);
   ((char *)buffer)[length] = 0;

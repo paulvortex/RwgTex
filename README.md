@@ -63,7 +63,6 @@ Commandline parms
 -ati       : use ATI compressor instead of mixed mode
 -nv        : use Nvidia DXTlib instead of mixed mode
 -gimp      : use GIMP DDS plugin compressor
--nocache   : dont read/write filescrc.txt
 -npot      : allow non-power-of-two texture dimensions
 -nm        : forces texture to be processed as normalmap
 -dxt1      : forces DXT1 compression

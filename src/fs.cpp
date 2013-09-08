@@ -480,18 +480,8 @@ bool AllowFile(FS_File *file)
 bool AddFile(FS_File &file, bool checkinclude, unsigned int *fileCRC)
 {
 	if (checkinclude)
-	{
 		if (!AllowFile(&file))
 			return false;
-		if (tex_useFileCache)
-		{
-			if (!FS_CheckCache(file.fullpath.c_str(), fileCRC))
-			{
-				texturesSkipped++;
-				return false;
-			}
-		}
-	}
 	// passed
 	textures.push_back(file);
 	return true;
@@ -648,7 +638,7 @@ byte *FS_LoadFile(FS_File *file, size_t *filesize)
 		
 	// read real file
 	*filesize = LoadFileUnsafe(filepath, &filedata);
-	if (*filesize < 0)
+	if (!filedata)
 	{
 		Warning("%s : cannot open file (%s)", filename, strerror(errno));
 		return NULL;

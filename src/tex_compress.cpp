@@ -201,8 +201,9 @@ void TexCompress_WorkerThread(ThreadData *thread)
 				WriteData = (TexWriteData *)mem_alloc(sizeof(TexWriteData));
 				memset(WriteData, 0, sizeof(TexWriteData));
 				ext = task.container->extensionName;
-				sprintf(WriteData->outfile, "%s%s%s%s", tex_generateArchive ? tex_archivePath.c_str() : tex_destPath, 
+				sprintf(WriteData->outfile, "%s%s%s%s%s", tex_generateArchive ? "" : tex_destPath, 
 					                                    tex_destPathUseCodecDir ? codec->destDir : "", 
+														tex_generateArchive ? tex_archivePath.c_str() : "",
 														task.file->path.c_str(), 
 														frame->useTexname ? frame->texname : task.file->name.c_str());
 				if (tex_useSuffix & TEXSUFF_FORMAT)
@@ -409,8 +410,6 @@ void TexCompress_Option(const char *section, const char *group, const char *key,
 			tex_gameDir = val;
 		else if (!stricmp(key, "binaryalpha"))
 			tex_detectBinaryAlpha = OptionBoolean(val);
-		else if (!stricmp(key, "filecache"))
-			tex_useFileCache = OptionBoolean(val);
 		else if (!stricmp(key, "archivepath"))
 			tex_archivePath = val;
 		else if (!stricmp(key, "nonpoweroftwotextures"))

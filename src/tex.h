@@ -255,7 +255,6 @@ extern char          tex_destPath[MAX_FPATH];
 extern bool          tex_destPathUseCodecDir;
 extern bool          tex_generateArchive;
 extern string        tex_gameDir;
-extern bool          tex_useFileCache;
 extern bool          tex_allowNPOT;
 extern bool          tex_noMipmaps;
 extern bool          tex_forceScale2x;
