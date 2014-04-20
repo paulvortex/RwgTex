@@ -44,7 +44,8 @@ void GimpDDS_Init(void)
 	RegisterFormat(&F_RXGB, &TOOL_GIMPDDS);
 	RegisterFormat(&F_YCG1, &TOOL_GIMPDDS);
 	RegisterFormat(&F_YCG2, &TOOL_GIMPDDS);
-
+	RegisterFormat(&F_YCG3, &TOOL_GIMPDDS);
+	RegisterFormat(&F_YCG4, &TOOL_GIMPDDS);
 	// options
 	gimpdds_dithering = false;
 	gimpdds_colorBlockMethod = DDS_COLOR_MAX;
@@ -200,9 +201,9 @@ bool GimpDDS_Compress(TexEncodeTask *t)
 		options.compressionType = DDS_COMPRESS_BC2;
 	else if (t->format->block == &B_DXT5)
 	{
-		if (t->format == &F_YCG1)
+		if (t->format == &F_YCG1 || t->format == &F_YCG3)
 			options.compressionType = DDS_COMPRESS_YCOCG;
-		else if (t->format == &F_YCG2)
+		else if (t->format == &F_YCG2 || t->format == &F_YCG4)
 			options.compressionType = DDS_COMPRESS_YCOCGS;
 		else
 			options.compressionType = DDS_COMPRESS_BC3;

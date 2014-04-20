@@ -45,7 +45,7 @@ byte          tex_binaryAlphaMax;
 byte          tex_binaryAlphaCenter;
 float         tex_binaryAlphaThreshold;
 FCLIST        tex_archiveFiles;
-string        tex_archivePath;
+string        tex_addPath;
 int           tex_zipInMemory;
 FCLIST        tex_scale2xFiles;
 FCLIST        tex_scale4xFiles;
@@ -307,6 +307,18 @@ size_t compressedTextureSize(LoadedImage *image, TexFormat *format, TexContainer
 	return size;
 }
 
+size_t compressedTextureBPP(LoadedImage *image, TexFormat *format, TexContainer *container)
+{
+	uint fmt;
+
+	fmt = format->glFormat;
+	if (fmt == GL_RGB || fmt == GL_BGR || fmt == GL_RG)
+		return 3;
+	if (fmt == GL_RGBA || fmt == GL_BGRA)
+		return 4;
+	return 1;
+}
+
 bool findFormatByFourCCAndAlpha(DWORD fourCC, bool alpha, TexCodec **codec, TexFormat **format)
 {
 	TexFormat *f;
@@ -462,59 +474,14 @@ TexContainer *findContainerForFile(char *filename, byte *data, size_t datasize)
 /*
 ==========================================================================================
 
-  Init
+  CommandLine Options
 
 ==========================================================================================
 */
 
-void Tex_Init(void)
+
+void CommandLineOptions(void)
 {
-	RegisterCodec(&CODEC_DXT);
-	RegisterCodec(&CODEC_ETC1);
-	RegisterCodec(&CODEC_ETC2);
-	RegisterCodec(&CODEC_PVRTC);
-	RegisterCodec(&CODEC_BGRA);
-	RegisterContainer(&CONTAINER_DDS);
-	RegisterContainer(&CONTAINER_KTX);
-
-	// codecs chain
-	for (TexCodec *c = tex_codecs; c; c = c->next)
-	{
-		c->fallback = &CODEC_BGRA;
-		if (CheckParm(c->cmdParm))
-			UseCodec(c);
-	}
-
-	// set default options
-	tex_detectBinaryAlpha = false;
-	tex_binaryAlphaMin = 0;
-	tex_binaryAlphaMax = 255;
-	tex_binaryAlphaCenter = 180;
-	tex_binaryAlphaThreshold = 99.0f;
-	tex_includeFiles.clear();
-	tex_noMipFiles.clear();
-	tex_normalMapFiles.clear();
-	tex_grayScaleFiles.clear();
-	tex_gameDir = "id1";
-	tex_archiveFiles.clear();
-	tex_archivePath = "";
-	tex_scale2xFiles.clear();
-	tex_scale4xFiles.clear();
-	tex_noMipmaps = false;
-	tex_allowNPOT = false;
-	tex_forceScale2x = false;
-	tex_forceScale4x = false;
-	tex_useSign = true;
-	tex_signWord1 = FOURCC('R','W','G','T');
-	tex_signWord2 = FOURCC('E','X',0,0);
-	tex_signVersion = 0;
-	tex_forceBestPSNR = false;
-	tex_firstScaler = tex_secondScaler = IMAGE_SCALER_SUPER2X;
-	tex_zipInMemory = 0;
-	tex_useSuffix = 0;
-	tex_testCompresion = false;
-	tex_container = findContainer("DDS", false);
-
 	// COMMANDLINEPARM: -nm: for all files to compress with best Peak-Signal-To-Noise (really it is using normalmap path for them)
 	if (CheckParm("-nm"))         tex_forceBestPSNR = true;	
 	// COMMANDLINEPARM: -2x: apply 2x scale (Scale2X)
@@ -560,7 +527,7 @@ void Tex_Init(void)
 	// COMMANDLINEPARM: -nosign: do not add comment to generated texture files
 	if (CheckParm("-nosign"))     tex_useSign = false;
 	// COMMANDLINEPARM: -nosign: use GIMP comment for generated texture files
-	if (CheckParm("-gimpsign")) { tex_useSign = true; tex_signWord1 = FOURCC('G','I','M','P'); tex_signWord2 = FOURCC('-','D','D','S');  tex_signVersion = 131585; }
+	if (CheckParm("-gimpsign")) { tex_useSign = true; tex_signWord1 = FOURCC('G','I','M','P'); tex_signWord2 = FOURCC('-','D','D','S'); tex_signVersion = 131585; }
 	// COMMANDLINEPARM: -stfp/-stf/-stp/-sfp/-st/-sf/-sp: generate compressor/format file suffix (useful for file comparison)
 	if (CheckParm("-stfp"))   { tex_useSuffix = TEXSUFF_TOOL|TEXSUFF_FORMAT|TEXSUFF_PROFILE; }
 	if (CheckParm("-stf"))    { tex_useSuffix = TEXSUFF_TOOL|TEXSUFF_FORMAT; }
@@ -576,14 +543,14 @@ void Tex_Init(void)
 	// string parameters
 	for (int i = 1; i < myargc; i++) 
 	{
-		// COMMANDLINEPARM: -ap: additional archive path
+		// COMMANDLINEPARM: -ap: additional path
 		if (!stricmp(myargv[i], "-ap"))
 		{
 			i++;
 			if (i < myargc)
 			{
-				tex_archivePath = myargv[i];
-				AddSlash(tex_archivePath);
+				tex_addPath = myargv[i];
+				AddSlash(tex_addPath);
 			}
 			continue;
 		}
@@ -620,6 +587,64 @@ void Tex_Init(void)
 			continue;
 		}
 	}
+}
+
+
+/*
+==========================================================================================
+
+  Init
+
+==========================================================================================
+*/
+
+void Tex_Init(void)
+{
+	RegisterCodec(&CODEC_DXT);
+	RegisterCodec(&CODEC_ETC1);
+	RegisterCodec(&CODEC_ETC2);
+	RegisterCodec(&CODEC_PVRTC);
+	RegisterCodec(&CODEC_BGRA);
+	RegisterContainer(&CONTAINER_DDS);
+	RegisterContainer(&CONTAINER_KTX);
+
+	// codecs chain
+	for (TexCodec *c = tex_codecs; c; c = c->next)
+	{
+		c->fallback = &CODEC_BGRA;
+		if (CheckParm(c->cmdParm))
+			UseCodec(c);
+	}
+
+	// set default options
+	tex_detectBinaryAlpha = false;
+	tex_binaryAlphaMin = 0;
+	tex_binaryAlphaMax = 255;
+	tex_binaryAlphaCenter = 180;
+	tex_binaryAlphaThreshold = 99.0f;
+	tex_includeFiles.clear();
+	tex_noMipFiles.clear();
+	tex_normalMapFiles.clear();
+	tex_grayScaleFiles.clear();
+	tex_gameDir = "id1";
+	tex_archiveFiles.clear();
+	tex_addPath = "";
+	tex_scale2xFiles.clear();
+	tex_scale4xFiles.clear();
+	tex_noMipmaps = false;
+	tex_allowNPOT = false;
+	tex_forceScale2x = false;
+	tex_forceScale4x = false;
+	tex_useSign = true;
+	tex_signWord1 = FOURCC('R','W','G','T');
+	tex_signWord2 = FOURCC('E','X',0,0);
+	tex_signVersion = 0;
+	tex_forceBestPSNR = false;
+	tex_firstScaler = tex_secondScaler = IMAGE_SCALER_SUPER2X;
+	tex_zipInMemory = 0;
+	tex_useSuffix = 0;
+	tex_testCompresion = false;
+	tex_container = findContainer("DDS", false);
 }
 
 /*
@@ -710,6 +735,9 @@ int TexMain(int argc, char **argv)
 	vector<string> add_files;
 	char f[MAX_FPATH], path[MAX_FPATH], file[MAX_FPATH];
 	int i;
+
+	// parse commandline options
+	CommandLineOptions();
 
 	// launched without parms, try to find kain.exe
 	i = 0;

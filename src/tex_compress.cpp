@@ -203,7 +203,7 @@ void TexCompress_WorkerThread(ThreadData *thread)
 				ext = task.container->extensionName;
 				sprintf(WriteData->outfile, "%s%s%s%s%s", tex_generateArchive ? "" : tex_destPath, 
 					                                    tex_destPathUseCodecDir ? codec->destDir : "", 
-														tex_generateArchive ? tex_archivePath.c_str() : "",
+														tex_addPath.c_str(),
 														task.file->path.c_str(), 
 														frame->useTexname ? frame->texname : task.file->name.c_str());
 				if (tex_useSuffix & TEXSUFF_FORMAT)
@@ -287,9 +287,9 @@ void TexCompress_MainThread(ThreadData *thread)
 		tex_destPathUseCodecDir = true;
 		if (tex_zipInMemory > 0)
 			Print("Keeping ZIP in memory (max size %i MBytes)\n", tex_zipInMemory);
-		if (tex_archivePath.c_str()[0])
-			Print("Archive inner path \"%s\"\n", tex_archivePath.c_str());
 	}
+	if (tex_addPath.c_str()[0])
+		Print("Additional path \"%s\"\n", tex_addPath.c_str());
 	thread->pool->started = true;
 
 	// write files
@@ -410,8 +410,8 @@ void TexCompress_Option(const char *section, const char *group, const char *key,
 			tex_gameDir = val;
 		else if (!stricmp(key, "binaryalpha"))
 			tex_detectBinaryAlpha = OptionBoolean(val);
-		else if (!stricmp(key, "archivepath"))
-			tex_archivePath = val;
+		else if (!stricmp(key, "addpath"))
+			tex_addPath = val;
 		else if (!stricmp(key, "nonpoweroftwotextures"))
 			tex_allowNPOT = OptionBoolean(val);
 		else if (!stricmp(key, "generatemipmaps"))

@@ -150,6 +150,7 @@ int main(int argc, char **argv)
 	}
 	else
 		returncode = Help();
+	
 	if (CheckParm("-version"))
 		PrintModules();
 	Print("\n");

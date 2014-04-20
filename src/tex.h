@@ -226,6 +226,7 @@ TexContainer *findContainerForFile(char *filename, byte *data, size_t datasize);
 
 // main
 size_t        compressedTextureSize(LoadedImage *image, TexFormat *format, TexContainer *container, bool baseTex, bool mipMaps);
+size_t        compressedTextureBPP(LoadedImage *image, TexFormat *format, TexContainer *container);
 void          Tex_PrintCodecs(void);
 void          Tex_PrintTools(void);
 void          Tex_PrintContainers(void);
@@ -274,7 +275,7 @@ extern byte          tex_binaryAlphaMax;
 extern byte          tex_binaryAlphaCenter;
 extern float         tex_binaryAlphaThreshold;
 extern FCLIST        tex_archiveFiles;
-extern string        tex_archivePath;
+extern string        tex_addPath;
 extern int           tex_zipInMemory;
 extern FCLIST        tex_scale2xFiles;
 extern FCLIST        tex_scale4xFiles;

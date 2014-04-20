@@ -73,6 +73,8 @@ Commandline parms
 -rxgb      : forces RXGB compression
 -ycg1      : forces YCoCg Unscaled compression
 -ycg2      : forces YCoCg Scaled compression
+-ycg3      : forces YCoCg Gamma 2.0 compression
+-ycg4      : forces YCoCg Scaled Gamma 2.0 compression
 -bgra      : forces BGRA DDS file creation
 -ap X      : sets archive internal path for ZIP file creation
 -zipmem X  : create ZIP file is memory (X is number of megabytes),

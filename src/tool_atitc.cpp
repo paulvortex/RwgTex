@@ -55,6 +55,8 @@ void ATITC_Init(void)
 	RegisterFormat(&F_RXGB, &TOOL_ATITC);
 	RegisterFormat(&F_YCG1, &TOOL_ATITC);
 	RegisterFormat(&F_YCG2, &TOOL_ATITC);
+	RegisterFormat(&F_YCG3, &TOOL_ATITC);
+	RegisterFormat(&F_YCG4, &TOOL_ATITC);
 	// ETC
 	RegisterFormat(&F_ETC1, &TOOL_ATITC);
 	// options

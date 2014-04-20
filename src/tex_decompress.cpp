@@ -276,8 +276,8 @@ void Decompress(TexDecodeTask *task, bool exportFile, LoadedImage *original_imag
 	levels = 1 + task->numMipmaps;
 	for (int level = 0; level < levels; level++)
 	{
-		// decompress (unswizzle swizzled format)
-		task->image->bpp = task->hasAlpha ? 4 : 3;
+		// decompress (and unswizzle swizzled format)
+		task->image->bpp = compressedTextureBPP(task->image, task->format, task->container);
 		task->image->bitmap = fiCreate(task->image->width, task->image->height, task->image->bpp);
 		size_t compressedSize = compressedTextureSize(task->image, task->format, task->container, true, false);
 		if (compressedSize > task->pixeldatasize)
@@ -286,9 +286,9 @@ void Decompress(TexDecodeTask *task, bool exportFile, LoadedImage *original_imag
 			task->codec->fDecode(task);
 		else
 			Error("TexDecompress(%s): %s codec does not support decoding of %s format\n", task->filename, task->codec->name, task->format->name);
-		Image_ConvertBPP(task->image, (task->format->features & FF_ALPHA) ? 4 : 3);
 		if (!nounswizzle)
 			Image_Swizzle(task->image, task->format->colorSwizzle, true);
+		Image_ConvertBPP(task->image, (task->format->features & FF_ALPHA) ? 4 : 3);
 		Image_LoadFinish(task->image);
 
 		// calculate errors

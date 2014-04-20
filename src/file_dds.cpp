@@ -77,7 +77,7 @@ byte *DDS_CreateHeader(LoadedImage *image, TexFormat *format, size_t *outsize)
         dds->ddpfPixelFormat.dwFlags = DDPF_ALPHAPIXELS | DDPF_RGB;
 		dds->ddpfPixelFormat.dwRGBAlphaBitMask = 0xff000000;
 	}
-	else if (format->fourCC == FOURCC('Y','C','G','1') || format->fourCC == FOURCC('Y','C','G','2'))
+	else if (format->fourCC == FOURCC('Y','C','G','1') || format->fourCC == FOURCC('Y','C','G','2') || format->fourCC == FOURCC('Y','C','G','3') || format->fourCC == FOURCC('Y','C','G','4'))
 	{
 		dds->ddpfPixelFormat.dwFourCC = FOURCC('D','X','T','5');
 		dds->ddpfPixelFormat.dwRBitMask = 0x00ff0000;

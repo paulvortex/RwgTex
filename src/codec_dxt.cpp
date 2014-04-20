@@ -22,6 +22,8 @@ TexFormat F_DXT5  = { FOURCC('D','X','T','5'), "DXT5", "DirectX Texture Compress
 TexFormat F_RXGB  = { FOURCC('R','X','G','B'), "RXGB", "Doom 3 RXGB (swizzled DXT5)",    "rxgb", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_RGBA, 0, 0, Swizzle_AGBR };
 TexFormat F_YCG1  = { FOURCC('Y','C','G','1'), "YCG1", "YCoCg Unscaled",                 "ycg1", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_ALPHA, Swizzle_YCoCg };
 TexFormat F_YCG2  = { FOURCC('Y','C','G','2'), "YCG2", "YCoCg Scaled",                   "ycg2", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_RGBA, 0, 0, Swizzle_YCoCgScaled };
+TexFormat F_YCG3  = { FOURCC('Y','C','G','3'), "YCG3", "YCoCg Unscaled Gamma 2.0",       "ycg3", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_ALPHA, Swizzle_YCoCg_Gamma2 };
+TexFormat F_YCG4  = { FOURCC('Y','C','G','4'), "YCG4", "YCoCg Scaled Gamma 2.0",         "ycg4", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_RGBA, 0, 0, Swizzle_YCoCgScaled_Gamma2 };
 
 TexCodec  CODEC_DXT = 
 {
@@ -125,7 +127,7 @@ void CodecDXT_Encode(TexEncodeTask *task)
 	}
 
 	// specific formats only supported by a few compressors
-	if (task->format == &F_YCG1 || task->format == &F_YCG2)
+	if (task->format == &F_YCG1 || task->format == &F_YCG2 || task->format == &F_YCG3 || task->format == &F_YCG4)
 		task->tool = &TOOL_GIMPDDS;
 }
 
@@ -298,6 +300,57 @@ void Swizzle_YCoCg(LoadedImage *image, bool decode)
 	}
 }
 
+// YCoCg Unscaled Gamma 2.0
+void Swizzle_YCoCg_Gamma2(LoadedImage *image, bool decode)
+{
+	if (!decode)
+		Image_ConvertBPP(image, 4);
+	else if (image->bpp != 4)
+		Error("Swizzle_YCoCg: image have no alpha channel!\n");
+	byte *data = FreeImage_GetBits(image->bitmap);
+	byte *end = data + image->width*image->height*image->bpp;
+	if (decode)
+	{
+		while(data < end)
+		{
+			float Y, Co, Cg, R, G, B;
+			const float offset = 0.5f * 256.0f / 255.0f;
+			Y  = (float)data[3]/255.0f;
+			Co = (float)data[0]/255.0f - offset;
+			Cg = (float)data[1]/255.0f - offset;
+			R = Y + Co - Cg; R = (R < 0) ? 0 : (R > 1) ? 1 : R;
+			G = Y + Cg;      G = (G < 0) ? 0 : (G > 1) ? 1 : G;
+			B = Y - Co - Cg; B = (B < 0) ? 0 : (B > 1) ? 1 : B;
+			R = R * R;
+			G = G * G;
+			B = B * B;
+			data[3] = data[2]; // restore alpha from blue
+			data[0] = (byte)(R * 255.0f);
+			data[1] = (byte)(G * 255.0f);
+			data[2] = (byte)(B * 255.0f);
+			data += image->bpp;
+		}
+		Image_ConvertBPP(image, 3);
+		return;
+	}
+	// encode
+	byte Y, Co, Cg;
+	while(data < end)
+	{
+		Y  = ((data[2] + (data[1] << 1) + data[0]) + 2) >> 2;
+		Co = ((((data[2] << 1) - (data[0] << 1)) + 2) >> 2) + 128;
+		Cg = (((-data[2] + (data[1] << 1) - data[0]) + 2) >> 2) + 128;
+		Y = (byte)floor(sqrt((float)Y/255.0f) + 0.5f);        
+		Co = (byte)floor(sqrt((float)Co/255.0f) + 0.5f);    
+		Cg = (byte)floor(sqrt((float)Cg/255.0f) + 0.5f); 
+		data[0] = 255;
+		data[1] = (Cg > 255 ? 255 : (Cg < 0 ? 0 : Cg));
+		data[2] = (Co > 255 ? 255 : (Co < 0 ? 0 : Co));
+		data[3] = (Y  > 255 ? 255 : (Y  < 0 ? 0 :  Y));
+		data += image->bpp;
+	}
+}
+
 // IdTech5 Chrominance/Luminance swizzle - color scaled variant (doesnt store alpha at all)
 void Swizzle_YCoCgScaled(LoadedImage *image, bool decode)
 {
@@ -332,5 +385,70 @@ void Swizzle_YCoCgScaled(LoadedImage *image, bool decode)
 		return;
 	}
 	// encode
-	Swizzle_YCoCg(image, false);
+	byte Y, Co, Cg;
+	while(data < end)
+	{
+		Y  = ((data[2] + (data[1] << 1) + data[0]) + 2) >> 2;
+		Co = ((((data[2] << 1) - (data[0] << 1)) + 2) >> 2) + 128;
+		Cg = (((-data[2] + (data[1] << 1) - data[0]) + 2) >> 2) + 128;
+		data[0] = 255;
+		data[1] = (Cg > 255 ? 255 : (Cg < 0 ? 0 : Cg));
+		data[2] = (Co > 255 ? 255 : (Co < 0 ? 0 : Co));
+		data[3] = (Y  > 255 ? 255 : (Y  < 0 ? 0 :  Y));
+		data += image->bpp;
+	}
+}
+
+// YCoCg Scaled Gamma 2.0
+void Swizzle_YCoCgScaled_Gamma2(LoadedImage *image, bool decode)
+{
+	if (!decode)
+		Image_ConvertBPP(image, 4);
+	else if (image->bpp != 4)
+		Error("Swizzle_YCoCg: image have no alpha channel!\n");
+	byte *data = FreeImage_GetBits(image->bitmap);
+	byte *end = data + image->width*image->height*image->bpp;
+	if (decode)
+	{
+		float Y, Co, Cg, R, G, B, s;
+		const float offset = 0.5f * 256.0f / 255.0f;
+		while(data < end)
+		{
+			Y  = (float)data[3]/255.0f;
+			Co = (float)data[0]/255.0f;
+			Cg = (float)data[1]/255.0f;
+			s  = (float)data[2]/255.0f;
+			s = 1.0f / ((255.0f / 8.0f) * s + 1.0f);
+			Co = (Co - offset) * s;
+			Cg = (Cg - offset) * s;
+			R = Y + Co - Cg; R = (R < 0) ? 0 : (R > 1) ? 1 : R;
+			G = Y + Cg;      G = (G < 0) ? 0 : (G > 1) ? 1 : G;
+			B = Y - Co - Cg; B = (B < 0) ? 0 : (B > 1) ? 1 : B;
+			R = R * R;
+			G = G * G;
+			B = B * B;
+			data[0] = (byte)(R * 255.0f);
+			data[1] = (byte)(G * 255.0f);
+			data[2] = (byte)(B * 255.0f);
+			data[3] = 255; // set alpha to 1
+			data += image->bpp;
+		}
+		return;
+	}
+	// encode
+	byte Y, Co, Cg, R, G, B;
+	while(data < end)
+	{
+		R  = (byte)floor(sqrt((float)data[0] / 255.0f) * 255.0f);
+		G  = (byte)floor(sqrt((float)data[1] / 255.0f) * 255.0f);
+		B  = (byte)floor(sqrt((float)data[2] / 255.0f) * 255.0f);
+		Y  = ((B + (G << 1) + R) + 2) >> 2;
+		Co = ((((B << 1) - (R << 1)) + 2) >> 2) + 128;
+		Cg = (((-B + (G << 1) - R) + 2) >> 2) + 128;
+		data[0] = 255;
+		data[1] = (Cg > 255 ? 255 : (Cg < 0 ? 0 : Cg));
+		data[2] = (Co > 255 ? 255 : (Co < 0 ? 0 : Co));
+		data[3] = (Y  > 255 ? 255 : (Y  < 0 ? 0 :  Y));
+		data += image->bpp;
+	}
 }

@@ -26,12 +26,16 @@ extern TexFormat F_DXT5;
 extern TexFormat F_RXGB;
 extern TexFormat F_YCG1;
 extern TexFormat F_YCG2;
+extern TexFormat F_YCG3;
+extern TexFormat F_YCG4;
 
 // swizzle functions
 void Swizzle_Premult(LoadedImage *image, bool decode);
 void Swizzle_XGBR(LoadedImage *image, bool decode);
 void Swizzle_AGBR(LoadedImage *image, bool decode);
 void Swizzle_YCoCg(LoadedImage *image, bool decode);
+void Swizzle_YCoCg_Gamma2(LoadedImage *image, bool decode);
 void Swizzle_YCoCgScaled(LoadedImage *image, bool decode);
+void Swizzle_YCoCgScaled_Gamma2(LoadedImage *image, bool decode);
 
 #endif
