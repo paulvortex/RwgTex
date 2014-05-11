@@ -53,6 +53,10 @@ void NvDXTLib_Init(void)
 	RegisterFormat(&F_DXT4, &TOOL_NVDXTLIB);
 	RegisterFormat(&F_DXT5, &TOOL_NVDXTLIB);
 	RegisterFormat(&F_RXGB, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_YCG1, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_YCG2, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_YCG3, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_YCG4, &TOOL_NVDXTLIB);
 
 	// options
 	nvdxtlib_quality[PROFILE_FAST] = kQualityNormal;
@@ -149,9 +153,9 @@ bool NvDXTLib_Compress(TexEncodeTask *t)
 			options.SetTextureFormat(kTextureTypeTexture2D, kDXT1);
 		}
 	}
-	else if (t->format->block == &B_DXT3)
+	else if (t->format->block == &B_DXT2 || t->format->block == &B_DXT3)
 		options.SetTextureFormat(kTextureTypeTexture2D, kDXT3);
-	else if (t->format->block == &B_DXT5)
+	else if (t->format->block == &B_DXT4 || t->format->block == &B_DXT5)
 		options.SetTextureFormat(kTextureTypeTexture2D, kDXT5);
 	else
 	{

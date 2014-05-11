@@ -8,13 +8,16 @@
 
 #include "tex.h"
 
-TexBlock  B_BGR = { "BGR", 1, 1, 24 };
-TexBlock  B_BGRA = { "BGRA", 1, 1, 32 };
+
+TexBlock  B_BGRA = { FOURCC('B','G','R','A'), "BGRA", 1, 1, 32 };
+TexBlock  B_BGR6 = { FOURCC('B','G','R','6'), "BGR6", 1, 1, 24 };
+TexBlock  B_BGR3 = { FOURCC('B','G','R','4'), "BGR4", 1, 1, 24 };
+TexBlock  B_BGR1 = { FOURCC('B','G','R','1'), "BGR1", 1, 1, 24 };
 
 TexFormat F_BGRA = { FOURCC('B','G','R','A'), "BGRA", "Uncompressed 32-bit BGRA8888", "bgra", &B_BGRA, &CODEC_BGRA, GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE, FF_ALPHA };
-TexFormat F_BGR6 = { FOURCC('B','G','R','6'), "BGR6", "Uncompressed 24-bit BGRA6666", "bgr6", &B_BGR,  &CODEC_BGRA, GL_BGR,  GL_BGR,  GL_UNSIGNED_BYTE, FF_ALPHA, Swizzle_AlphaInRGB6 };
-TexFormat F_BGR3 = { FOURCC('B','G','R','4'), "BGR3", "Uncompressed 24-bit BGRA7773", "bgr3", &B_BGR,  &CODEC_BGRA, GL_BGR,  GL_BGR,  GL_UNSIGNED_BYTE, FF_ALPHA, Swizzle_AlphaInRGB3 };
-TexFormat F_BGR1 = { FOURCC('B','G','R','1'), "BGR1", "Uncompressed 24-bit BGRA8871", "bgr1", &B_BGR,  &CODEC_BGRA, GL_BGR,  GL_BGR,  GL_UNSIGNED_BYTE, FF_ALPHA | FF_BINARYALPHA, Swizzle_AlphaInRGB1 };
+TexFormat F_BGR6 = { FOURCC('B','G','R','6'), "BGR6", "Uncompressed 24-bit BGRA6666", "bgr6", &B_BGR6, &CODEC_BGRA, GL_BGR,  GL_BGR,  GL_UNSIGNED_BYTE, FF_ALPHA, Swizzle_AlphaInRGB6 };
+TexFormat F_BGR3 = { FOURCC('B','G','R','4'), "BGR3", "Uncompressed 24-bit BGRA7773", "bgr3", &B_BGR3, &CODEC_BGRA, GL_BGR,  GL_BGR,  GL_UNSIGNED_BYTE, FF_ALPHA, Swizzle_AlphaInRGB3 };
+TexFormat F_BGR1 = { FOURCC('B','G','R','1'), "BGR1", "Uncompressed 24-bit BGRA8871", "bgr1", &B_BGR1, &CODEC_BGRA, GL_BGR,  GL_BGR,  GL_UNSIGNED_BYTE, FF_ALPHA | FF_BINARYALPHA, Swizzle_AlphaInRGB1 };
 
 TexCodec  CODEC_BGRA = 
 {

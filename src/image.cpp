@@ -7,10 +7,14 @@
 ////////////////////////////////
 
 #define F_IMAGE_C
+
 #include "main.h"
 #include "freeimage.h"
+#include "omnilib/dpomnilib.h"
 #include "scale2x.h"
 #include "tex.h"
+
+using namespace omnilib;
 
 /*
 ==========================================================================================
@@ -137,6 +141,65 @@ void  Image_SwapColors(LoadedImage *image, bool swappedColor)
 		data += image->bpp;
 	}
 	image->colorSwap = swappedColor;
+}
+
+// calculate image averaged color
+void Image_CalcAverageColor(LoadedImage *image)
+{
+	byte *data, *end;
+	double avgcolor[4];
+	long samples;
+	int r, g, b;
+
+	samples = 0;
+	avgcolor[0] = 0;
+	avgcolor[1] = 0;
+	avgcolor[2] = 0;
+	avgcolor[3] = 0;
+	data = FreeImage_GetBits(image->bitmap);
+	end  = data + FreeImage_GetWidth(image->bitmap)*FreeImage_GetHeight(image->bitmap)*image->bpp;
+	if (image->colorSwap == true)
+	{
+		r = 2;
+		g = 1;
+		b = 0;
+	}
+	else
+	{
+		r = 0;
+		g = 1;
+		b = 2;
+	}
+	while(data < end)
+	{
+		// only use not-black pixels
+		if (data[0] != 0 || data[1] != 0 || data[2] != 0)
+		{
+			avgcolor[0] += (float)data[r] / 255.0f;
+			avgcolor[1] += (float)data[g] / 255.0f;
+			avgcolor[2] += (float)data[b] / 255.0f;
+			if (image->bpp == 4)
+				avgcolor[3] += (float)data[3] / 255.0f;
+			samples++;
+		}
+		data += image->bpp;
+	}
+	if (samples)
+	{
+		avgcolor[0] = min(1.0f, max(0.0f, avgcolor[0] / samples));
+		avgcolor[1] = min(1.0f, max(0.0f, avgcolor[1] / samples));
+		avgcolor[2] = min(1.0f, max(0.0f, avgcolor[2] / samples));
+		avgcolor[3] = min(1.0f, max(0.0f, avgcolor[3] / samples));
+	}
+	if (image->bpp < 4)
+		avgcolor[3] = 1.0f;
+
+	// store
+	image->hasAverageColor = true;
+	image->averagecolor[0] = (byte)(avgcolor[0] * 255.0f);
+	image->averagecolor[1] = (byte)(avgcolor[1] * 255.0f);
+	image->averagecolor[2] = (byte)(avgcolor[2] * 255.0f);
+	image->averagecolor[3] = (byte)(avgcolor[3] * 255.0f);
 }
 
 void Image_FreeMipmaps(LoadedImage *image)
@@ -620,6 +683,48 @@ void Image_LoadFinish(LoadedImage *image)
 byte quake_palette[768] = { 0,0,0,15,15,15,31,31,31,47,47,47,63,63,63,75,75,75,91,91,91,107,107,107,123,123,123,139,139,139,155,155,155,171,171,171,187,187,187,203,203,203,219,219,219,235,235,235,15,11,7,23,15,11,31,23,11,39,27,15,47,35,19,55,43,23,63,47,23,75,55,27,83,59,27,91,67,31,99,75,31,107,83,31,115,87,31,123,95,35,131,103,35,143,111,35,11,11,15,19,19,27,27,27,39,39,39,51,47,47,63,55,55,75,63,63,87,71,71,103,79,79,115,91,91,127,99,99,139,107,107,151,115,115,163,123,123,175,131,131,187,139,139,203,0,0,0,7,7,0,11,11,0,19,19,0,27,27,0,35,35,0,43,43,7,47,47,7,55,55,7,63,63,7,71,71,7,75,75,11,83,83,11,91,91,11,99,99,11,107,107,15,7,0,0,15,0,0,23,0,0,31,0,0,39,0,0,47,0,0,55,0,0,63,0,0,71,0,0,79,0,0,87,0,0,95,0,0,103,0,0,111,0,0,119,0,0,127,0,0,19,19,0,27,27,0,35,35,0,47,43,0,55,47,0,67,55,0,75,59,7,87,67,7,95,71,7,107,75,11,119,83,15,131,87,19,139,91,19,151,95,27,163,99,31,175,103,35,35,19,7,47,23,11,59,31,15,75,35,19,87,43,23,99,47,31,115,55,35,127,59,43,143,67,51,159,79,51,175,99,47,191,119,47,207,143,43,223,171,39,239,203,31,255,243,27,11,7,0,27,19,0,43,35,15,55,43,19,71,51,27,83,55,35,99,63,43,111,71,51,127,83,63,139,95,71,155,107,83,167,123,95,183,135,107,195,147,123,211,163,139,227,179,151,171,139,163,159,127,151,147,115,135,139,103,123,127,91,111,119,83,99,107,75,87,95,63,75,87,55,67,75,47,55,67,39,47,55,31,35,43,23,27,35,19,19,23,11,11,15,7,7,187,115,159,175,107,143,163,95,131,151,87,119,139,79,107,127,75,95,115,67,83,107,59,75,95,51,63,83,43,55,71,35,43,59,31,35,47,23,27,35,19,19,23,11,11,15,7,7,219,195,187,203,179,167,191,163,155,175,151,139,163,135,123,151,123,111,135,111,95,123,99,83,107,87,71,95,75,59,83,63,51,67,51,39,55,43,31,39,31,23,27,19,15,15,11,7,111,131,123,103,123,111,95,115,103,87,107,95,79,99,87,71,91,79,63,83,71,55,75,63,47,67,55,43,59,47,35,51,39,31,43,31,23,35,23,15,27,19,11,19,11,7,11,7,255,243,27,239,223,23,219,203,19,203,183,15,187,167,15,171,151,11,155,131,7,139,115,7,123,99,7,107,83,0,91,71,0,75,55,0,59,43,0,43,31,0,27,15,0,11,7,0,0,0,255,11,11,239,19,19,223,27,27,207,35,35,191,43,43,175,47,47,159,47,47,143,47,47,127,47,47,111,47,47,95,43,43,79,35,35,63,27,27,47,19,19,31,11,11,15,43,0,0,59,0,0,75,7,0,95,7,0,111,15,0,127,23,7,147,31,7,163,39,11,183,51,15,195,75,27,207,99,43,219,127,59,227,151,79,231,171,95,239,191,119,247,211,139,167,123,59,183,155,55,199,195,55,231,227,87,127,191,255,171,231,255,215,255,255,103,0,0,139,0,0,179,0,0,215,0,0,255,0,0,255,243,147,255,247,199,255,255,255,159,91,83 };
 
 // a quake sprite loader
+void LoadImage_QuakeSprite(FS_File *file, byte *filedata, size_t filesize, LoadedImage *image)
+{
+	MetaSprite_t *sprite;
+	MetaSpritePic_t *pic;
+	int i;
+
+	sprite = olLoadSprite(filedata, filesize);
+	if (sprite->errormsg[0])
+		Warning("%s%s.%s : failed to load Quake sprite: %s", file->path.c_str(), file->name.c_str(), file->ext.c_str(), sprite->errormsg);
+	else
+	{
+		// load frames
+		LoadedImage *frame = image;
+		for (i = 0; i < sprite->numPics; i++)
+		{
+			pic = sprite->pics[i];
+			if (pic->bpp != 4 && pic->bpp != 1)
+				Warning("%s%s.%s : failed to load Quake sprite frame %i: bpp %i not supported", file->path.c_str(), file->name.c_str(), file->ext.c_str(), i, pic->bpp);
+
+			// fill data
+			frame->useTexname = true;
+			sprintf(frame->texname, "%s.%s_%i", file->name.c_str(), file->ext.c_str(), i);
+			frame->width = pic->width;
+			frame->height = pic->height;
+			frame->filesize = pic->width*pic->height*pic->bpp;
+			if (pic->bpp == 1)
+				fiLoadDataRaw(frame->width, frame->height, 1, pic->pixels, frame->width * frame->height, pic->colormap->palette, false, frame);
+			else
+				fiLoadDataRaw(frame->width, frame->height, 4, pic->pixels, frame->width * frame->height * 4, NULL, false, frame);
+			Image_LoadFinish(frame);
+			// go next frame
+			if ((i+1) < sprite->numPics)
+			{
+				frame->next = Image_Create();
+				frame = frame->next;
+			}
+		}
+	}
+	mem_free(filedata);
+}
+
+/*
 #define MAX_QUAKESPRITE_SIZE 2048
 void LoadImage_QuakeSprite(FS_File *file, byte *filedata, size_t filesize, LoadedImage *image)
 {
@@ -663,6 +768,7 @@ void LoadImage_QuakeSprite(FS_File *file, byte *filedata, size_t filesize, Loade
 	}
 	mem_free(filedata);
 }
+*/
 
 // a quake bsp stored textures loader
 void LoadImage_QuakeBSP(FS_File *file, byte *filedata, size_t filesize, LoadedImage *image)
@@ -736,6 +842,49 @@ void Image_Load(FS_File *file, LoadedImage *image)
 /*
 ==========================================================================================
 
+  OMNILIB BINDING
+
+==========================================================================================
+*/
+
+// omnilib dynamic memory wrapper - malloc
+void *omnilib_malloc(size_t size)
+{
+	return mem_alloc(size);
+}
+
+// omnilib dynamic memory  - realloc
+void *omnilib_realloc(void *buf, size_t size)
+{
+	return mem_realloc(buf, size);
+}
+
+// omnilib dynamic memory  - free
+void omnilib_free(void *buf)
+{
+	return mem_free(buf);
+}
+
+// omnilib message wrapper
+void omnilib_print_message(int level, char *msg)
+{
+	if (level == 0)
+		Print(msg);
+	else if (level == 1)
+		Verbose(msg);
+	else if (level == 2)
+		Warning(msg);
+}
+
+// omnilib error wrapper
+void omnilib_error(char *msg)
+{
+	Error(msg);
+}
+
+/*
+==========================================================================================
+
   COMMON
 
 ==========================================================================================
@@ -752,6 +901,10 @@ void Image_Init(void)
 	FreeImage_Initialise();
 #endif
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
+
+	// init omnilib
+	OmnilibSetMemFunc(omnilib_malloc, omnilib_realloc, omnilib_free);
+	OmnilibSetMessageFunc(omnilib_print_message, omnilib_error);
 }
 
 void Image_Shutdown(void)

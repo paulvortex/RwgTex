@@ -62,7 +62,7 @@ const char *ToolBGRA_Version(void)
 
 size_t PackBGRAData(TexEncodeTask *t, byte *stream, byte *data, int width, int height)
 {
-	if (t->format->block == &B_BGRA || t->format->block == &B_BGR)
+	if (t->format->block == &B_BGRA || t->format->block == &B_BGR6 || t->format->block == &B_BGR3 || t->format->block == &B_BGR1)
 	{
 		byte *in = data;
 		byte *end = in + width * height * t->image->bpp;

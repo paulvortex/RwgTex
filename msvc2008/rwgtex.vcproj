@@ -562,39 +562,6 @@
 					RelativePath="..\libs\gimpdds\src\dxt.cpp"
 					>
 				</File>
-				<Filter
-					Name="nvDXT"
-					ParseFiles="false"
-					>
-					<File
-						RelativePath=".\..\libs\nvlibs\inc\dds\ConvertColor.h"
-						>
-					</File>
-					<File
-						RelativePath=".\..\libs\nvlibs\inc\dds\ddsTypes.h"
-						>
-					</File>
-					<File
-						RelativePath=".\..\libs\nvlibs\inc\dxtlib\dxtlib.h"
-						>
-					</File>
-					<File
-						RelativePath=".\..\libs\nvlibs\inc\dds\nvdxt_options.h"
-						>
-					</File>
-					<File
-						RelativePath=".\..\libs\nvlibs\inc\dds\nvErrorCodes.h"
-						>
-					</File>
-					<File
-						RelativePath=".\..\libs\nvlibs\inc\dds\tPixel.h"
-						>
-					</File>
-					<File
-						RelativePath=".\..\libs\nvlibs\inc\dds\tVector.h"
-						>
-					</File>
-				</Filter>
 			</Filter>
 			<Filter
 				Name="EtcPack"
@@ -785,6 +752,59 @@
 						>
 					</File>
 				</Filter>
+			</Filter>
+			<Filter
+				Name="nvDXT"
+				ParseFiles="false"
+				>
+				<File
+					RelativePath=".\..\libs\nvlibs\inc\dds\ConvertColor.h"
+					>
+				</File>
+				<File
+					RelativePath=".\..\libs\nvlibs\inc\dds\ddsTypes.h"
+					>
+				</File>
+				<File
+					RelativePath=".\..\libs\nvlibs\inc\dxtlib\dxtlib.h"
+					>
+				</File>
+				<File
+					RelativePath=".\..\libs\nvlibs\inc\dds\nvdxt_options.h"
+					>
+				</File>
+				<File
+					RelativePath=".\..\libs\nvlibs\inc\dds\nvErrorCodes.h"
+					>
+				</File>
+				<File
+					RelativePath=".\..\libs\nvlibs\inc\dds\tPixel.h"
+					>
+				</File>
+				<File
+					RelativePath=".\..\libs\nvlibs\inc\dds\tVector.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="OmniLib"
+				>
+				<File
+					RelativePath="..\src\omnilib\dpomnilib.h"
+					>
+				</File>
+				<File
+					RelativePath="..\src\omnilib\dpomnilibinternal.h"
+					>
+				</File>
+				<File
+					RelativePath="..\src\omnilib\libinternal.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\src\omnilib\libsprite.cpp"
+					>
+				</File>
 			</Filter>
 		</Filter>
 		<Filter

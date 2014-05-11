@@ -24,7 +24,8 @@ TexTool TOOL_ETCPACK =
 
 // tool options
 int        etcpack_speed[NUM_PROFILES];
-OptionList  etcpack_speedOption[] = 
+int        etcpack_colormode;
+OptionList etcpack_speedOption[] = 
 { 
 	{ "normal", 0 }, 
 	{ "exhaustive", 1 }, 
@@ -44,9 +45,9 @@ void ETCPack_Init(void)
 	// ETC1-based
 	RegisterFormat(&F_ETC1, &TOOL_ETCPACK);
 	// ETC2-based
-	RegisterFormat(&F_ETC2_RGB, &TOOL_ETCPACK);
-	RegisterFormat(&F_ETC2_RGBA, &TOOL_ETCPACK);
-	RegisterFormat(&F_ETC2_RGBA1, &TOOL_ETCPACK);
+	RegisterFormat(&F_ETC2, &TOOL_ETCPACK);
+	RegisterFormat(&F_ETC2A, &TOOL_ETCPACK);
+	RegisterFormat(&F_ETC2A1, &TOOL_ETCPACK);
 	RegisterFormat(&F_EAC1, &TOOL_ETCPACK);
 	RegisterFormat(&F_EAC2, &TOOL_ETCPACK);
 	// options
@@ -137,34 +138,75 @@ void ETCPack_Free(byte *imagedata, byte *decoded, bool resized)
 	mem_free(decoded);
 }
 
-// ETC1
-size_t ETCPack_CompressSingleImage_ETC1(byte *stream, TexEncodeTask *t, int imagewidth, int imageheight, byte *imagedata)
+void ETCPack_WriteColorBlock(byte **stream, unsigned int block1, unsigned int block2)
+{
+	byte *data;
+
+	data = *stream;
+	data[0] = (block1 >> 24) & 0xFF;
+	data[1] = (block1 >> 16) & 0xFF;
+	data[2] = (block1 >> 8) & 0xFF;
+	data[3] =  block1 & 0xFF;
+	data[4] = (block2 >> 24) & 0xFF;
+	data[5] = (block2 >> 16) & 0xFF;
+	data[6] = (block2 >> 8) & 0xFF;
+	data[7] =  block2 & 0xFF;
+	*stream = data + 8;
+}
+
+// compress ETC1 RGB block
+void ETCPack_CompressBlockETC1(byte **stream, byte *imagedata, byte *decoded, int imagewidth, int imageheight, int ofsx, int ofsy)
 {
 	unsigned int block1, block2;
+	if (etcpack_speed[tex_profile])
+		compressBlockETC1ExhaustivePerceptual(imagedata, decoded, imagewidth, imageheight, ofsx, ofsy, block1, block2);
+	else
+		compressBlockDiffFlipFastPerceptual(imagedata, decoded, imagewidth, imageheight, ofsx, ofsy, block1, block2);
+	ETCPack_WriteColorBlock(stream, block1, block2);
+}
+
+// compress ETC2 RGB block
+void ETCPack_CompressBlockETC2(byte **stream, byte *imagedata, byte *decoded, int imagewidth, int imageheight, int ofsx, int ofsy)
+{
+	unsigned int block1, block2;
+	if (etcpack_speed[tex_profile])
+		compressBlockETC2ExhaustivePerceptual(imagedata, decoded, imagewidth, imageheight, ofsx, ofsy, block1, block2);
+	else
+		compressBlockETC2FastPerceptual(imagedata, decoded, imagewidth, imageheight, ofsx, ofsy, block1, block2);
+	ETCPack_WriteColorBlock(stream, block1, block2);
+}
+
+// compress ETC2 RGBA block
+void ETCPack_CompressBlockETC2A(byte **stream, byte *imagedata, byte *decoded, int imagewidth, int imageheight, int ofsx, int ofsy)
+{
+	unsigned int block1, block2;
+	//byte alphadata[8], alphasrcblock[16];
+	// compress color block
+	if (etcpack_speed[tex_profile])
+		compressBlockETC2ExhaustivePerceptual(imagedata, decoded, imagewidth, imageheight, ofsx, ofsy, block1, block2);
+	else
+		compressBlockETC2FastPerceptual(imagedata, decoded, imagewidth, imageheight, ofsx, ofsy, block1, block2);
+	ETCPack_WriteColorBlock(stream, block1, block2);
+	// compress alpha block
+	//CodecETC2_ExtractBlockAlpha(imagedata, ofsx, ofsy, 4, 4, alphasrcblock);
+	//if (etcpack_speed[tex_profile])
+	//	compressBlockAlphaSlow(alphaimg, 0, 0, 4, 4, alphadata);
+	//else
+	//	compressBlockAlphaFast(alphaimg, 0, 0, 4, 4, alphadata);
+	//memcpy(stream, alphadata, 8);
+	//stream += 8;
+}
+
+size_t ETCPack_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth, int imageheight, byte *imagedata, void (*compressBlockFunction)(byte **stream, byte *imagedata, byte *decoded, int imagewidth, int imageheight, int blockx, int blocky))
+{
 	bool resized = false;
-	byte *decoded;
 	size_t out = 0;
+	byte *decoded;
 
 	ETCPack_PrescaleImage(t, &imagedata, &imagewidth, &imageheight, &decoded, &resized, 3);
 	for (int y = 0; y < imageheight / 4; y++)
-	{
 		for (int x = 0; x < imagewidth / 4; x++)
-		{
-			if (etcpack_speed[tex_profile])
-				compressBlockETC1ExhaustivePerceptual(imagedata, decoded, imagewidth, imageheight, x*4, y*4, block1, block2);
-			else
-				compressBlockDiffFlipFastPerceptual(imagedata, decoded, imagewidth, imageheight, x*4, y*4, block1, block2);
-			stream[0] = (block1 >> 24) & 0xFF;
-			stream[1] = (block1 >> 16) & 0xFF;
-			stream[2] = (block1 >> 8) & 0xFF;
-			stream[3] =  block1 & 0xFF;
-			stream[4] = (block2 >> 24) & 0xFF;
-			stream[5] = (block2 >> 16) & 0xFF;
-			stream[6] = (block2 >> 8) & 0xFF;
-			stream[7] =  block2 & 0xFF;
-			stream += 8;
-		}
-	}
+			compressBlockFunction(&stream, imagedata, decoded, imagewidth, imageheight, x*4, y*4);
 	ETCPack_Free(imagedata, decoded, resized);
 
 	return imagewidth*imageheight/2;
@@ -172,22 +214,30 @@ size_t ETCPack_CompressSingleImage_ETC1(byte *stream, TexEncodeTask *t, int imag
 
 bool ETCPack_Compress(TexEncodeTask *t)
 {
-	size_t (*compressImageFunction)(byte *stream, TexEncodeTask *t, int imagewidth, int imageheight, byte *imagedata);
+	void (*compressBlockFunction)(byte **stream, byte *imagedata, byte *decoded, int imagewidth, int imageheight, int ofsx, int ofsy);
 	size_t output_size;
 
 	// options
-	compressImageFunction = ETCPack_CompressSingleImage_ETC1;
+	if (t->format->block == &B_ETC1)
+		compressBlockFunction = ETCPack_CompressBlockETC1;
+	else if (t->format->block == &B_ETC2)
+		compressBlockFunction = ETCPack_CompressBlockETC2;
+	else
+	{
+		Warning("ETCPack: %s%s.dds - unsupported compression %s/%s", t->file->path.c_str(), t->file->name.c_str(), t->format->name, t->format->block->name);
+		return 0;
+	}
 
 	// compress
 	byte *stream = t->stream;
-	output_size = compressImageFunction(stream, t, t->image->width, t->image->height, Image_GetData(t->image, NULL));
+	output_size = ETCPack_CompressSingleImage(stream, t, t->image->width, t->image->height, Image_GetData(t->image, NULL), compressBlockFunction);
 	if (output_size)
 	{
 		// compress mipmaps
 		stream += output_size;
 		for (MipMap *mipmap = t->image->mipMaps; mipmap; mipmap = mipmap->nextmip)
 		{
-			output_size = compressImageFunction(stream, t, mipmap->width, mipmap->height, mipmap->data);
+			output_size = ETCPack_CompressSingleImage(stream, t, mipmap->width, mipmap->height, mipmap->data, compressBlockFunction);
 			if (output_size)
 				stream += output_size;
 		}

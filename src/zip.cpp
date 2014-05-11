@@ -2281,10 +2281,10 @@ class TZip
   unsigned read(char *buf, unsigned size);
   ZRESULT iclose();
 
-  ZRESULT ideflate(TZipFileInfo *zfi);
+  ZRESULT ideflate(TZipFileInfo *zfi,int compressionlevel);
   ZRESULT istore();
 
-  ZRESULT Add(const TCHAR *odstzn, void *src,unsigned int len, DWORD flags);
+  ZRESULT Add(const TCHAR *odstzn, void *src,unsigned int len, DWORD flags,int compressionlevel);
   ZRESULT AddCentral();
 
 };
@@ -2518,13 +2518,13 @@ ZRESULT TZip::iclose()
 
 
 
-ZRESULT TZip::ideflate(TZipFileInfo *zfi)
+ZRESULT TZip::ideflate(TZipFileInfo *zfi,int compressionlevel)
 { if (state==0) state=new TState();
   // It's a very big object! 500k! We allocate it on the heap, because PocketPC's
   // stack breaks if we try to put it all on the stack. It will be deleted lazily
   state->err=0;
   state->readfunc=sread; state->flush_outbuf=sflush;
-  state->param=this; state->level=8; state->seekable=iseekable; state->err=NULL;
+  state->param=this; state->level=compressionlevel; state->seekable=iseekable; state->err=NULL;
   // the following line will make ct_init realise it has to perform the init
   state->ts.static_dtree[0].dl.len = 0;
   // Thanks to Alvin77 for this crucial fix:
@@ -2556,7 +2556,7 @@ ZRESULT TZip::istore()
 
 
 bool has_seeded=false;
-ZRESULT TZip::Add(const TCHAR *odstzn, void *src,unsigned int len, DWORD flags)
+ZRESULT TZip::Add(const TCHAR *odstzn, void *src,unsigned int len, DWORD flags,int compressionlevel)
 { if (oerr) return ZR_FAILED;
   if (hasputcen) return ZR_ENDED;
 
@@ -2569,7 +2569,7 @@ ZRESULT TZip::Add(const TCHAR *odstzn, void *src,unsigned int len, DWORD flags)
   TCHAR *d=dstzn; while (*d!=0) {if (*d=='\\') *d='/'; d++;}
   bool isdir = (flags==ZIP_FOLDER);
   bool needs_trailing_slash = (isdir && dstzn[_tcslen(dstzn)-1]!='/');
-  int method=DEFLATE; if (isdir || HasZipSuffix(dstzn)) method=STORE;
+  int method=DEFLATE; if (isdir || HasZipSuffix(dstzn) || compressionlevel == 0) method=STORE;
 
   // now open whatever was our input source:
   ZRESULT openres;
@@ -2661,7 +2661,7 @@ ZRESULT TZip::Add(const TCHAR *odstzn, void *src,unsigned int len, DWORD flags)
   //(2) Write deflated/stored file to zip file
   ZRESULT writeres=ZR_OK;
   encwriting = (password!=0 && !isdir);  // an object member variable to say whether we write to disk encrypted
-  if (!isdir && method==DEFLATE) writeres=ideflate(&zfi);
+  if (!isdir && method==DEFLATE) writeres=ideflate(&zfi,compressionlevel);
   else if (!isdir && method==STORE) writeres=istore();
   else if (isdir) csize=0;
   encwriting = false;
@@ -2785,20 +2785,19 @@ HZIP CreateZipHandle(HANDLE h, const char *password) {return CreateZipInternal(h
 HZIP CreateZip(const TCHAR *fn, const char *password) {return CreateZipInternal((void*)fn,0,ZIP_FILENAME,password);}
 HZIP CreateZip(void *z,unsigned int len, const char *password) {return CreateZipInternal(z,len,ZIP_MEMORY,password);}
 
-
-ZRESULT ZipAddInternal(HZIP hz,const TCHAR *dstzn, void *src,unsigned int len, DWORD flags)
+ZRESULT ZipAddInternal(HZIP hz,const TCHAR *dstzn, void *src,unsigned int len, DWORD flags,int compressionlevel)
 { if (hz==0) {lasterrorZ=ZR_ARGS;return ZR_ARGS;}
   TZipHandleData *han = (TZipHandleData*)hz;
   if (han->flag!=2) {lasterrorZ=ZR_ZMODE;return ZR_ZMODE;}
   TZip *zip = han->zip;
-  lasterrorZ = zip->Add(dstzn,src,len,flags);
+  lasterrorZ = zip->Add(dstzn,src,len,flags,compressionlevel);
   return lasterrorZ;
 }
-ZRESULT ZipAdd(HZIP hz,const TCHAR *dstzn, const TCHAR *fn) {return ZipAddInternal(hz,dstzn,(void*)fn,0,ZIP_FILENAME);}
-ZRESULT ZipAdd(HZIP hz,const TCHAR *dstzn, void *src,unsigned int len) {return ZipAddInternal(hz,dstzn,src,len,ZIP_MEMORY);}
-ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, HANDLE h) {return ZipAddInternal(hz,dstzn,h,0,ZIP_HANDLE);}
-ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, HANDLE h, unsigned int len) {return ZipAddInternal(hz,dstzn,h,len,ZIP_HANDLE);}
-ZRESULT ZipAddFolder(HZIP hz,const TCHAR *dstzn) {return ZipAddInternal(hz,dstzn,0,0,ZIP_FOLDER);}
+ZRESULT ZipAdd(HZIP hz,const TCHAR *dstzn, const TCHAR *fn,int compressionlevel) {return ZipAddInternal(hz,dstzn,(void*)fn,0,ZIP_FILENAME,compressionlevel);}
+ZRESULT ZipAdd(HZIP hz,const TCHAR *dstzn, void *src,unsigned int len,int compressionlevel) {return ZipAddInternal(hz,dstzn,src,len,ZIP_MEMORY,compressionlevel);}
+ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, HANDLE h,int compressionlevel) {return ZipAddInternal(hz,dstzn,h,0,ZIP_HANDLE,compressionlevel);}
+ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, HANDLE h, unsigned int len,int compressionlevel) {return ZipAddInternal(hz,dstzn,h,len,ZIP_HANDLE,compressionlevel);}
+ZRESULT ZipAddFolder(HZIP hz,const TCHAR *dstzn,int compressionlevel) {return ZipAddInternal(hz,dstzn,0,0,ZIP_FOLDER,compressionlevel);}
 
 
 

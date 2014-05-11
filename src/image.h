@@ -99,6 +99,10 @@ typedef struct LoadedImage_s
 	char         texname[128];  // null if there is no custom texture name
 	bool         useTexname;
 
+	// texture average color (used by exporter)
+	byte         averagecolor[4];
+	bool         hasAverageColor;
+
 	// set by texture tool
 	DATATYPE     datatype;
 
@@ -126,6 +130,7 @@ void  Image_Delete(LoadedImage *image);
 // internal color conversion
 byte* Image_ConvertBPP(LoadedImage *image, int bpp);
 void  Image_SwapColors(LoadedImage *image, bool swappedColor);
+void  Image_CalcAverageColor(LoadedImage *image);
 byte *Image_GenerateTarga(size_t *outsize, int width, int height, int bpp, byte *data, bool flip, bool rgb, bool grayscale);
 bool  Image_Save(LoadedImage *image, char *filename);
 byte *Image_ExportTarga(LoadedImage *image, size_t *tgasize);

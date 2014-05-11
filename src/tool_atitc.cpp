@@ -180,9 +180,9 @@ bool ATITC_Compress(TexEncodeTask *t)
 			options.bDXT1UseAlpha = false;
 		compress = ATI_TC_FORMAT_DXT1;
 	}
-	else if (t->format->block == &B_DXT3)
+	else if (t->format->block == &B_DXT2 || t->format->block == &B_DXT3)
 		compress = ATI_TC_FORMAT_DXT3;
-	else if (t->format->block == &B_DXT5)
+	else if (t->format->block == &B_DXT4 || t->format->block == &B_DXT5)
 		compress = ATI_TC_FORMAT_DXT5;
 	else if (t->format->block == &B_ETC1)
 		compress = ATI_TC_FORMAT_ETC_RGB;

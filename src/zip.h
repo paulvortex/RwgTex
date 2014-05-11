@@ -50,12 +50,12 @@ HZIP CreateZipHandle(HANDLE h, const char *password);
 // but for real windows, the zip makes its own copy of your handle, so you
 // can close yours anytime.
 
-
-ZRESULT ZipAdd(HZIP hz,const TCHAR *dstzn, const TCHAR *fn);
-ZRESULT ZipAdd(HZIP hz,const TCHAR *dstzn, void *src,unsigned int len);
-ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, HANDLE h);
-ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, HANDLE h, unsigned int len);
-ZRESULT ZipAddFolder(HZIP hz,const TCHAR *dstzn);
+// set zip compression level
+ZRESULT ZipAdd(HZIP hz,const TCHAR *dstzn, const TCHAR *fn,int compressionlevel);
+ZRESULT ZipAdd(HZIP hz,const TCHAR *dstzn, void *src,unsigned int len,int compressionlevel);
+ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, HANDLE h,int compressionlevel);
+ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, HANDLE h, unsigned int len,int compressionlevel);
+ZRESULT ZipAddFolder(HZIP hz,const TCHAR *dstzn,int compressionlevel);
 // ZipAdd - call this for each file to be added to the zip.
 // dstzn is the name that the file will be stored as in the zip file.
 // The file to be added to the zip can come

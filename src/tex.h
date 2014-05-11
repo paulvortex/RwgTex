@@ -46,6 +46,7 @@ enum texprofile
 // compression block
 typedef struct TexBlock_s
 {
+	DWORD fourCC;
 	char  *name;
 	size_t width;     // width of block element in pixels
 	size_t height;    // height of block element in pixels
@@ -258,6 +259,7 @@ extern bool          tex_generateArchive;
 extern string        tex_gameDir;
 extern bool          tex_allowNPOT;
 extern bool          tex_noMipmaps;
+extern bool          tex_noAvgColor;
 extern bool          tex_forceScale2x;
 extern bool          tex_forceScale4x;
 extern bool          tex_useSign;
@@ -277,6 +279,7 @@ extern float         tex_binaryAlphaThreshold;
 extern FCLIST        tex_archiveFiles;
 extern string        tex_addPath;
 extern int           tex_zipInMemory;
+extern int           tex_zipCompression;
 extern FCLIST        tex_scale2xFiles;
 extern FCLIST        tex_scale4xFiles;
 extern ImageScaler   tex_firstScaler;
@@ -285,6 +288,7 @@ extern int           tex_useSuffix;
 extern bool          tex_testCompresion;
 extern bool          tex_testCompresionError;
 extern bool          tex_testCompresionAllErrors;
+
 extern TexErrorMetric tex_errorMetric;
 extern TexContainer *tex_container;
 extern texprofile    tex_profile;

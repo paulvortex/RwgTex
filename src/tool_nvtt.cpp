@@ -26,13 +26,17 @@ TexTool TOOL_NVTT =
 
 void NvTT_Init(void)
 {
-	RegisterFormat(&F_DXT1, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_DXT1A, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_DXT2, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_DXT3, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_DXT4, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_DXT5, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_RXGB, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_DXT1, &TOOL_NVTT);
+	RegisterFormat(&F_DXT1A, &TOOL_NVTT);
+	RegisterFormat(&F_DXT2, &TOOL_NVTT);
+	RegisterFormat(&F_DXT3, &TOOL_NVTT);
+	RegisterFormat(&F_DXT4, &TOOL_NVTT);
+	RegisterFormat(&F_DXT5, &TOOL_NVTT);
+	RegisterFormat(&F_RXGB, &TOOL_NVTT);
+	RegisterFormat(&F_YCG1, &TOOL_NVTT);
+	RegisterFormat(&F_YCG2, &TOOL_NVTT);
+	RegisterFormat(&F_YCG3, &TOOL_NVTT);
+	RegisterFormat(&F_YCG4, &TOOL_NVTT);
 }
 
 void NvTT_Option(const char *group, const char *key, const char *val, const char *filename, int linenum)
@@ -119,9 +123,9 @@ bool NvTT_Compress(TexEncodeTask *t)
 		else
 			compressionOptions.setFormat(nvtt::Format_DXT1);
 	}
-	else if (t->format->block == &B_DXT3)
+	else if (t->format->block == &B_DXT2 || t->format->block == &B_DXT3)
 		compressionOptions.setFormat(nvtt::Format_DXT3);
-	else if (t->format->block == &B_DXT5)
+	else if (t->format->block == &B_DXT4 || t->format->block == &B_DXT5)
 		compressionOptions.setFormat(nvtt::Format_DXT5);
 	else
 	{

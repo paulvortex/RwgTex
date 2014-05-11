@@ -65,6 +65,10 @@ void PVRTex_Init(void)
 	RegisterFormat(&F_DXT4, &TOOL_PVRTEX);
 	RegisterFormat(&F_DXT5, &TOOL_PVRTEX);
 	RegisterFormat(&F_RXGB, &TOOL_PVRTEX);
+	RegisterFormat(&F_YCG1, &TOOL_PVRTEX);
+	RegisterFormat(&F_YCG2, &TOOL_PVRTEX);
+	RegisterFormat(&F_YCG3, &TOOL_PVRTEX);
+	RegisterFormat(&F_YCG4, &TOOL_PVRTEX);
 
 	// options
 	pvrtex_quality_prvtc[PROFILE_FAST] = pvrtexture::ePVRTCNormal;
@@ -176,7 +180,7 @@ size_t PVRTex_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth
 		quality = pvrtex_quality_etc1[tex_profile];
 		pixeltype = pvrtex_pixeltype_etc1;
 	}
-	else if (t->format->block == &B_PVRTC_2BPP)
+	else if (t->format->block == &B_PVRTC_2BPP_RGB || t->format->block == &B_PVRTC_2BPP_RGBA)
 	{
 		quality = pvrtex_quality_prvtc[tex_profile];
 		if (t->image->hasAlpha)
@@ -184,7 +188,7 @@ size_t PVRTex_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth
 		else
 			pixeltype = pvrtex_pixeltype_pvrtc_2bpp_rgb;
 	}
-	else if (t->format->block == &B_PVRTC_4BPP)
+	else if (t->format->block == &B_PVRTC_4BPP_RGB || t->format->block == &B_PVRTC_4BPP_RGBA)
 	{
 		quality = pvrtex_quality_prvtc[tex_profile];
 		if (t->image->hasAlpha)
@@ -197,12 +201,12 @@ size_t PVRTex_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth
 		quality = pvrtex_quality_prvtc[tex_profile];
 		pixeltype = pvrtex_pixeltype_dxt1;
 	}
-	else if (t->format->block == &B_DXT3)
+	else if (t->format->block == &B_DXT2 || t->format->block == &B_DXT3)
 	{
 		quality = pvrtex_quality_prvtc[tex_profile];
 		pixeltype = pvrtex_pixeltype_dxt3;
 	}
-	else if (t->format->block == &B_DXT5)
+	else if (t->format->block == &B_DXT4 || t->format->block == &B_DXT5)
 	{
 		quality = pvrtex_quality_prvtc[tex_profile];
 		pixeltype = pvrtex_pixeltype_dxt5;

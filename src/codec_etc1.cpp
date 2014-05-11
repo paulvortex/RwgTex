@@ -9,13 +9,13 @@
 #include "tex.h"
 #include "etcpack/etcpack_lib.h"
 
-TexBlock  B_ETC1 = { "ETC1", 4, 4, 64 };
+TexBlock  B_ETC1 = { FOURCC('E','T','C','1'), "ETC1", 4, 4, 64 };
 
 TexFormat F_ETC1 = { FOURCC('E','T','C','1'), "ETC1", "Ericsson Texture Compression", "etc1", &B_ETC1, &CODEC_ETC1, GL_COMPRESSED_ETC1_RGB8_OES, GL_RGB };
 
 TexCodec  CODEC_ETC1 = 
 {
-	"ETC1", "Ericsson Texture Compression", "etc",
+	"ETC1", "ETC1 Texture Compression", "etc1",
 	&CodecETC1_Init,
 	&CodecETC1_Option,
 	&CodecETC1_Load,
@@ -65,8 +65,8 @@ bool CodecETC1_Accept(TexEncodeTask *task)
 	return true;
 }
 
-// extract 4x4 block from source image
-void ETC1_ExtractBlock(const unsigned char *src, int x, int y, int w, int h, unsigned char *block)
+// extract 4x4 RGBA block from source image
+void CodecETC1_ExtractBlockRGBA(const unsigned char *src, int x, int y, int w, int h, unsigned char *block)
 {
 	static const int map[] = { 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 2, 0, 0, 1, 2, 3 };
 	int bx, by, bw, bh;

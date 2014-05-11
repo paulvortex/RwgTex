@@ -32,9 +32,9 @@ bool DDS_Scan(byte *data)
 
 void DDS_PrintHeader(byte *data)
 {
-	DDSD2 *dds;
+	DDSHeader_t *dds;
 
-	dds = (DDSD2 *)(data + 4);
+	dds = (DDSHeader_t *)(data + 4);
 	Print("DDS headers:\n");
 	Print("  PixelFormat:\n");
 	Print("    flags = %i\n", dds->ddpfPixelFormat.dwFlags);
@@ -51,21 +51,22 @@ void DDS_PrintHeader(byte *data)
 byte *DDS_CreateHeader(LoadedImage *image, TexFormat *format, size_t *outsize)
 {
 	byte *head;
-	DDSD2 *dds;
-	
-	head = (byte *)mem_alloc(4 + sizeof(DDSD2));
+	DDSHeader_t *dds;
+
+	head = (byte *)mem_alloc(4 + sizeof(DDSHeader_t));
 	memcpy(head, &DDS_HEADER, sizeof(DWORD));
-	dds = (DDSD2 *)(head + 4);
+	dds = (DDSHeader_t *)(head + 4);
 
 	// write header
-	memset(dds, 0, sizeof(DDSD2));
-	dds->dwSize = sizeof(DDSD2);
+	memset(dds, 0, sizeof(DDSHeader_t));
+	dds->dwSize = sizeof(DDSHeader_t);
 	dds->dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT | DDSD_MIPMAPCOUNT;
 	dds->dwWidth = image->width;
 	dds->dwHeight = image->height;
 	dds->dwMipMapCount = 1;
-	for (MipMap *mipmap = image->mipMaps; mipmap; mipmap = mipmap->nextmip) dds->dwMipMapCount++;
-	dds->ddpfPixelFormat.dwSize = sizeof(DDPIXELFORMAT);
+	for (MipMap *mipmap = image->mipMaps; mipmap; mipmap = mipmap->nextmip)
+		dds->dwMipMapCount++;
+	dds->ddpfPixelFormat.dwSize = DDS_SIZE_PIXELFORMAT;
 	dds->ddsCaps.dwCaps = DDSCAPS_TEXTURE | DDSCAPS_COMPLEX | DDSCAPS_MIPMAP;
 	if (format->fourCC == FOURCC('B','G','R','A'))
 	{
@@ -77,9 +78,9 @@ byte *DDS_CreateHeader(LoadedImage *image, TexFormat *format, size_t *outsize)
         dds->ddpfPixelFormat.dwFlags = DDPF_ALPHAPIXELS | DDPF_RGB;
 		dds->ddpfPixelFormat.dwRGBAlphaBitMask = 0xff000000;
 	}
-	else if (format->fourCC == FOURCC('Y','C','G','1') || format->fourCC == FOURCC('Y','C','G','2') || format->fourCC == FOURCC('Y','C','G','3') || format->fourCC == FOURCC('Y','C','G','4'))
+	else if (format->block->fourCC != format->fourCC)
 	{
-		dds->ddpfPixelFormat.dwFourCC = FOURCC('D','X','T','5');
+		dds->ddpfPixelFormat.dwFourCC = format->block->fourCC;
 		dds->ddpfPixelFormat.dwRBitMask = 0x00ff0000;
 		dds->ddpfPixelFormat.dwGBitMask = 0x0000ff00;
 		dds->ddpfPixelFormat.dwBBitMask = 0x000000ff;
@@ -95,12 +96,16 @@ byte *DDS_CreateHeader(LoadedImage *image, TexFormat *format, size_t *outsize)
 		dds->ddpfPixelFormat.dwFlags = DDPF_FOURCC;
 	}
 
-	// set DDS magic works (GIMP uses it as special info)
+	// set DDS magic words (GIMP uses it as special info)
 	if (tex_useSign)
 	{
 		dds->dwAlphaBitDepth = tex_signWord1;
 		dds->dwReserved = tex_signWord2;
 	}
+
+	// fill average color information
+	if (image->hasAverageColor)
+		dds->lpSurface = (LPVOID)(((unsigned long)image->averagecolor[0] | ((unsigned long)image->averagecolor[1] << 8) | ((unsigned long)image->averagecolor[2] << 16) | ((unsigned long)image->averagecolor[3] << 24 )));
 
 	// fill alphapixels information, ensure that our texture have actual alpha channel
 	// also texture may truncate it's alpha by forcing DXT1 compression no it
@@ -111,7 +116,7 @@ byte *DDS_CreateHeader(LoadedImage *image, TexFormat *format, size_t *outsize)
 	if (format->colorSwizzle == &Swizzle_Premult)
 		dds->ddpfPixelFormat.dwFlags |= DDPF_ALPHAPREMULT;
 	
-	*outsize = 4 + sizeof(DDSD2);
+	*outsize = 4 + sizeof(DDSHeader_t);
 	return head;
 }
 
@@ -122,7 +127,7 @@ size_t DDS_WriteMipHeader(byte *stream, size_t width, size_t height, size_t pixe
 
 bool DDS_Read(TexDecodeTask *task)
 {
-	DDSD2 *dds;
+	DDSHeader_t *dds;
 
 	// validate header
 	if (task->datasize < DDS_HEADER_SIZE)
@@ -130,7 +135,7 @@ bool DDS_Read(TexDecodeTask *task)
 		sprintf(task->errorMessage, "failed to read DDS header");
 		return false;
 	}
-	dds = (DDSD2 *)(task->data + 4);
+	dds = (DDSHeader_t *)(task->data + 4);
 	if (!(dds->dwFlags & DDSD_WIDTH)) { sprintf(task->errorMessage, "DDSD_WIDTH not specified"); return false; }
 	if (!(dds->dwFlags & DDSD_HEIGHT)) { sprintf(task->errorMessage, "DDSD_HEIGHT not specified"); return false; }
 

@@ -15,7 +15,9 @@ void CodecDXT_Decode(TexDecodeTask *task);
 
 // associated compression block format and texture format
 extern TexBlock  B_DXT1;
+extern TexBlock  B_DXT2;
 extern TexBlock  B_DXT3;
+extern TexBlock  B_DXT4;
 extern TexBlock  B_DXT5;
 extern TexFormat F_DXT1;
 extern TexFormat F_DXT1A;

@@ -197,9 +197,9 @@ bool GimpDDS_Compress(TexEncodeTask *t)
 	// get options
 	if (t->format->block == &B_DXT1)
 		options.compressionType = DDS_COMPRESS_BC1;
-	else if (t->format->block == &B_DXT3)
+	else if (t->format->block == &B_DXT2 || t->format->block == &B_DXT3)
 		options.compressionType = DDS_COMPRESS_BC2;
-	else if (t->format->block == &B_DXT5)
+	else if (t->format->block == &B_DXT4 || t->format->block == &B_DXT5)
 	{
 		if (t->format == &F_YCG1 || t->format == &F_YCG3)
 			options.compressionType = DDS_COMPRESS_YCOCG;

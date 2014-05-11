@@ -15,7 +15,9 @@ void CodecBGRA_Decode(TexDecodeTask *task);
 
 // associated compression block format and texture format
 extern TexBlock B_BGRA;
-extern TexBlock B_BGR;
+extern TexBlock B_BGR6;
+extern TexBlock B_BGR3;
+extern TexBlock B_BGR1;
 
 extern TexFormat F_BGRA;
 extern TexFormat F_BGR6;

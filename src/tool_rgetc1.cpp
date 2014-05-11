@@ -109,8 +109,8 @@ size_t RgEtc1_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth
 	{
 		for (int x = 0; x < imagewidth / 4; x++)
 		{
-			// extract block
-			ETC1_ExtractBlock(imagedata, x * 4, y * 4, imagewidth, imageheight, (unsigned char*)block);
+			// extract block 
+			CodecETC1_ExtractBlockRGBA(imagedata, x * 4, y * 4, imagewidth, imageheight, (unsigned char*)block);
 			// pack block
 			rg_etc1::pack_etc1_block(stream, block, options);
 			stream += 8;

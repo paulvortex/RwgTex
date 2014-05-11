@@ -9,13 +9,15 @@
 #include "tex.h"
 #include "pvrtextool/pvrtextool_lib.h"
 
-TexBlock  B_PVRTC_2BPP = { "PVR2", 1, 1, 2, 32 };
-TexBlock  B_PVRTC_4BPP = { "PVR4", 1, 1, 4, 32 };
+TexBlock  B_PVRTC_2BPP_RGB   = { FOURCC('P','T','C','1'), "PTC1", 1, 1, 2, 32 };
+TexBlock  B_PVRTC_2BPP_RGBA  = { FOURCC('P','T','C','2'), "PTC2", 1, 1, 4, 32 };
+TexBlock  B_PVRTC_4BPP_RGB   = { FOURCC('P','T','C','3'), "PTC3", 1, 1, 2, 32 };
+TexBlock  B_PVRTC_4BPP_RGBA  = { FOURCC('P','T','C','4'), "PTC4", 1, 1, 4, 32 };
 
-TexFormat F_PVRTC_2BPP_RGB   = { FOURCC('P','V','R','1'), "PVRTC/2BPP/RGB",  "PVRTC 2 bits-per-pixel RGB",  "pvr2",  &B_PVRTC_2BPP, &CODEC_PVRTC, COMPRESSED_RGB_PVRTC_2BPPV1_IMG,  GL_RGB,  0, FF_SQUARE };
-TexFormat F_PVRTC_2BPP_RGBA  = { FOURCC('P','V','R','2'), "PVRTC/2BPP/RGBA", "PVRTC 2 bits-per-pixel RGBA", "pvr2a", &B_PVRTC_2BPP, &CODEC_PVRTC, COMPRESSED_RGBA_PVRTC_2BPPV1_IMG, GL_RGBA, 0, FF_SQUARE | FF_ALPHA };
-TexFormat F_PVRTC_4BPP_RGB   = { FOURCC('P','V','R','3'), "PVRTC/4BPP/RGB",  "PVRTC 4 bits-per-pixel RGB",  "pvr4",  &B_PVRTC_4BPP, &CODEC_PVRTC, COMPRESSED_RGB_PVRTC_4BPPV1_IMG,  GL_RGB,  0, FF_SQUARE };
-TexFormat F_PVRTC_4BPP_RGBA  = { FOURCC('P','V','R','4'), "PVRTC/4BPP/RGBA", "PVRTC 4 bits-per-pixel RGBA", "pvr4a", &B_PVRTC_4BPP, &CODEC_PVRTC, COMPRESSED_RGBA_PVRTC_4BPPV1_IMG, GL_RGBA, 0, FF_SQUARE | FF_ALPHA };
+TexFormat F_PVRTC_2BPP_RGB   = { FOURCC('P','T','C','1'), "PVRTC/2BPP/RGB",  "PVRTC 2 bits-per-pixel RGB",  "pvr2",  &B_PVRTC_2BPP_RGB,  &CODEC_PVRTC, COMPRESSED_RGB_PVRTC_2BPPV1_IMG,  GL_RGB,  0, FF_SQUARE };
+TexFormat F_PVRTC_2BPP_RGBA  = { FOURCC('P','T','C','2'), "PVRTC/2BPP/RGBA", "PVRTC 2 bits-per-pixel RGBA", "pvr2a", &B_PVRTC_2BPP_RGBA, &CODEC_PVRTC, COMPRESSED_RGBA_PVRTC_2BPPV1_IMG, GL_RGBA, 0, FF_SQUARE | FF_ALPHA };
+TexFormat F_PVRTC_4BPP_RGB   = { FOURCC('P','T','C','3'), "PVRTC/4BPP/RGB",  "PVRTC 4 bits-per-pixel RGB",  "pvr4",  &B_PVRTC_4BPP_RGB,  &CODEC_PVRTC, COMPRESSED_RGB_PVRTC_4BPPV1_IMG,  GL_RGB,  0, FF_SQUARE };
+TexFormat F_PVRTC_4BPP_RGBA  = { FOURCC('P','T','C','4'), "PVRTC/4BPP/RGBA", "PVRTC 4 bits-per-pixel RGBA", "pvr4a", &B_PVRTC_4BPP_RGBA, &CODEC_PVRTC, COMPRESSED_RGBA_PVRTC_4BPPV1_IMG, GL_RGBA, 0, FF_SQUARE | FF_ALPHA };
 
 TexCodec  CODEC_PVRTC = 
 {

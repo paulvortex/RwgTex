@@ -9,7 +9,7 @@ Features
 - detect special file types (normalmaps, heightmaps) and use best looking
   compression and compressor for them
 - for textures with alpha channels, alpha is scanned to check if it can be
-  represented with one bit (DXT1) or requires compression with gradiant
+  represented with one bit (DXT1) or requires compression with gradient
   alpha (DXT5)
 - multiple threads to compress
 - supported input files: TGA, JPG, PNG
@@ -17,7 +17,7 @@ Features
 - textures read/export for .ZIP archives
 - wide range of options to get it run with particlular engine/mod
 - supported compression formats: DXT1-5
-- supported DXT swizzled formats: Doom 3 RXGB, YCoCg Unscaled, YCoCg Scaled
+- supported DXT swizzled formats: Doom 3 RXGB, YCoCg, YCoCg Scaled, YCoCg Gamma 2.0, YCoCg Scaled Gamma 2.0
 - support uncompressed BGRA DDS
 - saves a cache of files crc32 to check if they were modified (speeds up
   compression when run next time by only compressing files that was changed)
@@ -71,7 +71,7 @@ Commandline parms
 -dxt4      : forces DXT4 compression
 -dxt5      : forces DXT5 compression
 -rxgb      : forces RXGB compression
--ycg1      : forces YCoCg Unscaled compression
+-ycg1      : forces YCoCg compression
 -ycg2      : forces YCoCg Scaled compression
 -ycg3      : forces YCoCg Gamma 2.0 compression
 -ycg4      : forces YCoCg Scaled Gamma 2.0 compression
@@ -90,28 +90,70 @@ Commandline parms
 Trick: commandline parms could be included to exe name, this way they become defaults.
 Example: rwgdds-ati-w.exe
 
+Compression formats
+------
+DXT1   : DirectX Block Texture Compression (was S3TC)
+         4 bits per pixel, RGB
+DXT1A  : 4 bits per pixel, RGBA with punch-through alpha
+DXT2   : 8 bits per pixel, RGBA, sharp alpha, color premultiplied
+DXT3   : 8 bits per pixel, RGBA, sharp alpha
+DXT4   : 8 bits per pixel, RGBA, gradient alpha, color premultiplied
+DXT5   : 8 bits per pixel, RGBA, gradient alpha      
+YCG1   : Swizzled DXT5 compression that uses YCoCg Colorspace
+         better color quality than DXT5 but much worse alpha
+YCG2   : Swizzled DXT5 compression that uses YCoCg Colorspace with Scaling
+         better color quality than YCG1, no alpha support
+YCG3   : YCG1 using Gamma 2.0 RGB colorspace
+         better precision for dark colors
+YCG4   : YCG2 using Gamma 2.0 RGB colorspace
+         better precision for dark colors        
+RXGB   : Swizzled DXT5 compression used by Doom 3
+         green channel moved to alpha, used for normalmaps
+ETC1   : Ericsson Texture Compression, a part of OpenGL ES specification
+         4 bits per pixel, RGB
+ETC2   : ETC2 compression, a part of OpenGL ES/OpenGL 4.3 specification
+         4 bits per pixel, RGB
+ETC2A  : 8 bits per pixel, RGBA
+ETC2A1 : 4 bits per pixel, RGBA with punch-through alpha
+EAC1   : 4 bits per pixel, alpha-only
+EAC2   : 8 bits per pixel, two channels (RG)
+PVR2   : PowerVR Texture compression, used in Apple devices
+       : 2 bits per pixel, RGB
+PVR2A  : 2 bits per pixel, RGBA
+PVR4   : 4 bits per pixel, RGB
+PVR2A  : 4 bits per pixel, RGBA
 
 Compression modes
 ------
 1. "ATI" - AMD's The Compressonator tool.
-   Supported compressions: DXT1-5, Doom 3 RXGB
-2. "NVidia" - NVidia DXTlib compressor.
-   Supported compressions: DXT1-5, Doom 3 RXGB
-3. "Hybrid" - mixed compressor which uses ATI mode for color textures (as The
+   Supported compressions: DXT1-5, RXGB, YCG1-4
+2. "NV" - NVidia DXTlib compressor.
+   Supported compressions: DXT1-5, RXGB, YCG1-4
+3. "Hybrid"  - mixed compressor which uses ATI mode for color textures (as The
    Compressonator generally gives better perceptural quality, which is good for
-   color textures. NVidia DXTlib is used for normammaps and heightmaps
+   color textures. NVidia DXTlib is used for normalmaps and heightmaps
    (as it gives better PSNR).
-   Supported compressions: DXT1-5, Doom 3 RXGB
-4. "Gimp DDS" - GIMP DDS plugin.
-   Supported compressions: DXT YCoCg Unscaled, DXT YCoCg Scaled, DXT1-5
- 
+   Supported compressions: DXT1-5, RXGB, YCG1-4
+4. "CrnLib" - Crunch Library.
+   Supported compressions: DXT1-5, RXGB, YCG1-4
+5. "PvrTex" - PowerVR's PvrTex tool.
+   Supported compressions: PVR2, PVR2A, PVR4, PVR4A, DXT1-5, RXGB, YCG1-4, ETC1
+6. "RgEtc1" - Fast, high quality ETC1 compression tool
+   Supported compressions: ETC1
+7. "EtcPack" - Official ETC/ETC2 compression tool
+   Supported compressions: ETC1, ETC2, ETC2A, ETC2A1, EAC1, EAC2
+8. "Gimp DDS" - GIMP DDS plugin
+   Supported compressions: DXT1-5, YCG1-4
+9. "BRGA" - simple tool that write 32-bit BGRA files
+   Supported compressions: none
+
 Trick: .ini file have parms to set compression mode on a per-file basis using name masks.
 
 
 Known issues
 ------
 - Archives larger than 2GB are not supported
-- When using archeves, file cache are not supported
+- When using archives, file cache are not supported
 - DXT2/DXT4 cannot be represented by KTX format without additional key-pairs (they are used to be 'swizzled' format)
 
 --------------------------------------------------------------------------------
@@ -119,25 +161,11 @@ Known issues
 --------------------------------------------------------------------------------
 
 1.4
+------
 - Added support for ETC compression using etcpack.
--etcpack 
--etc1
--etc2
--etc2b
--etc2s
--etc2sb
--etc2r
--etc2rg
-
-opt:
-force_etc1
-force_etc2
-force_etc2b
-force_etc2s
-force_etc2sb
-force_etc2r
-force_etc2rg
-force_etcpack
+- New compressor: ETCPack
+- New keys: -etcpack, -etc1, -etc2, -etc2a, -etc2a1, -eac1, -eac2
+- New options: force_etc1, force_etc2, force_etc2am force_etc2a1, force_eac1, force_eac2
 
 1.3
 ------

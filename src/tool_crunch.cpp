@@ -53,6 +53,10 @@ void Crunch_Init(void)
 	RegisterFormat(&F_DXT4, &TOOL_CRUNCH);
 	RegisterFormat(&F_DXT5, &TOOL_CRUNCH);
 	RegisterFormat(&F_RXGB, &TOOL_CRUNCH);
+	RegisterFormat(&F_YCG1, &TOOL_CRUNCH);
+	RegisterFormat(&F_YCG2, &TOOL_CRUNCH);
+	RegisterFormat(&F_YCG3, &TOOL_CRUNCH);
+	RegisterFormat(&F_YCG4, &TOOL_CRUNCH);
 
 	// options
 	crnlib_speed[PROFILE_FAST]    = cCRNDXTQualityFast;
@@ -160,9 +164,9 @@ size_t Crunch_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth
 		else
 			options.set_flag(cCRNCompFlagDXT1AForTransparency, false);
 	}
-	else if (t->format->block == &B_DXT3)
+	else if (t->format->block == &B_DXT2 || t->format->block == &B_DXT3)
 		options.m_format = cCRNFmtDXT3;
-	else if (t->format->block == &B_DXT5)
+	else if (t->format->block == &B_DXT4 || t->format->block == &B_DXT5)
 		options.m_format = cCRNFmtDXT5;
 	else
 	{

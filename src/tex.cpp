@@ -28,6 +28,7 @@ bool          tex_generateArchive;
 string        tex_gameDir;
 bool          tex_allowNPOT;
 bool          tex_noMipmaps;
+bool          tex_noAvgColor;
 bool          tex_forceScale2x;
 bool          tex_forceScale4x;
 bool          tex_useSign;
@@ -47,6 +48,7 @@ float         tex_binaryAlphaThreshold;
 FCLIST        tex_archiveFiles;
 string        tex_addPath;
 int           tex_zipInMemory;
+int           tex_zipCompression;
 FCLIST        tex_scale2xFiles;
 FCLIST        tex_scale4xFiles;
 ImageScaler   tex_firstScaler;
@@ -141,7 +143,7 @@ void UseCodec(TexCodec *codec)
 	for (c = tex_active_codecs; c; c = c->nextActive)
 		if (!strcmp(c->name, codec->name))
 			return;
-	// register
+	// register and use
 	codec->nextActive = tex_active_codecs;
 	tex_active_codecs = codec;
 }
@@ -492,6 +494,8 @@ void CommandLineOptions(void)
 	if (CheckParm("-npot"))       tex_allowNPOT = true;
 	// COMMANDLINEPARM: -nomip: do not generate mipmaps
 	if (CheckParm("-nomip"))      tex_noMipmaps = true;
+	// COMMANDLINEPARM: -noavgcolor: do not generate average color informatiom
+	if (CheckParm("-noavgcolor")) tex_noAvgColor = true;
 	// COMMANDLINEPARM: -nearest: select nearest filter for scaler (2x and 4x)
 	if (CheckParm("-nearest"))    tex_firstScaler = tex_secondScaler = IMAGE_SCALER_BOX;
 	// COMMANDLINEPARM: -bilinear: select bilinear filter for scaler (2x and 4x)
@@ -562,6 +566,18 @@ void CommandLineOptions(void)
 				tex_zipInMemory = atoi(myargv[i]);
 			continue;
 		}
+		// COMMANDLINEPARM: -zipmem: keep generated zip file in memory until (avoids many file writes)
+		if (!stricmp(myargv[i], "-zipcompression"))
+		{
+			i++;
+			if (i < myargc)
+				tex_zipCompression = atoi(myargv[i]);
+			if (tex_zipCompression < 0)
+				tex_zipCompression = 0;
+			if (tex_zipCompression > 9)
+				tex_zipCompression = 9;
+			continue;
+		}
 		// COMMANDLINEPARM: -scaler: set a filter to be used for scaling (2x and 4x)
 		if (!stricmp(myargv[i], "-scaler"))
 		{
@@ -587,6 +603,9 @@ void CommandLineOptions(void)
 			continue;
 		}
 	}
+	// auto-enable codecs 
+	for (TexCodec *c = tex_active_codecs; c; c = c->next)
+		c->disabled = false;
 }
 
 
@@ -608,12 +627,20 @@ void Tex_Init(void)
 	RegisterContainer(&CONTAINER_DDS);
 	RegisterContainer(&CONTAINER_KTX);
 
-	// codecs chain
+	// determine active codecs
 	for (TexCodec *c = tex_codecs; c; c = c->next)
 	{
 		c->fallback = &CODEC_BGRA;
 		if (CheckParm(c->cmdParm))
 			UseCodec(c);
+	}
+	if (!tex_active_codecs)
+	{
+		// no codecs given, check for particular format
+		for (TexFormat *f = tex_formats; f; f = f->next)
+			if (CheckParm(f->cmdParm))
+				if (f->codec)
+					UseCodec(f->codec);
 	}
 
 	// set default options
@@ -632,6 +659,7 @@ void Tex_Init(void)
 	tex_scale2xFiles.clear();
 	tex_scale4xFiles.clear();
 	tex_noMipmaps = false;
+	tex_noAvgColor = false;
 	tex_allowNPOT = false;
 	tex_forceScale2x = false;
 	tex_forceScale4x = false;
@@ -642,6 +670,7 @@ void Tex_Init(void)
 	tex_forceBestPSNR = false;
 	tex_firstScaler = tex_secondScaler = IMAGE_SCALER_SUPER2X;
 	tex_zipInMemory = 0;
+	tex_zipCompression = 8;
 	tex_useSuffix = 0;
 	tex_testCompresion = false;
 	tex_container = findContainer("DDS", false);

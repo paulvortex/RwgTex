@@ -14,8 +14,11 @@ void CodecPVRTC_Encode(TexEncodeTask *task);
 void CodecPVRTC_Decode(TexDecodeTask *task);
 
 // associated compression block format and texture format
-extern TexBlock  B_PVRTC_2BPP;
-extern TexBlock  B_PVRTC_4BPP;
+extern TexBlock  B_PVRTC_2BPP_RGB;
+extern TexBlock  B_PVRTC_2BPP_RGBA;
+extern TexBlock  B_PVRTC_4BPP_RGB;
+extern TexBlock  B_PVRTC_4BPP_RGBA;
+
 extern TexFormat F_PVRTC_2BPP_RGB;
 extern TexFormat F_PVRTC_2BPP_RGBA;
 extern TexFormat F_PVRTC_4BPP_RGB;

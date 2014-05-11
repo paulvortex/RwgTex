@@ -65,6 +65,7 @@ void Compress(TexEncodeTask *task)
 	else
 		Verbose("Compressing %s as %s:%s (%s/%s)\n", task->file->fullpath.c_str(), task->tool->name, task->format->name, task->format->block->name, OptionEnumName(tex_profile, tex_profiles));
 	Image_SwapColors(task->image, (task->tool->inputflags & (TEXINPUT_BGR|TEXINPUT_BGRA)) ? true : false);
+	Image_CalcAverageColor(task->image);
 	if (!(task->tool->inputflags & (TEXINPUT_BGR|TEXINPUT_RGB)))
 		Image_ConvertBPP(task->image, 4);
 	Image_Swizzle(task->image, task->format->colorSwizzle, false);
@@ -276,6 +277,7 @@ void TexCompress_MainThread(ThreadData *thread)
 			SharedData->zip_maxlen = 1048576 * tex_zipInMemory;
 			SharedData->zip_data = mem_alloc(SharedData->zip_maxlen);
 			outzip = CreateZip(SharedData->zip_data, SharedData->zip_maxlen, "");
+
 		}
 		if (!outzip)
 		{
@@ -283,7 +285,7 @@ void TexCompress_MainThread(ThreadData *thread)
 			Print("Failed to create output archive file %s\n", tex_destPath);
 			return;
 		}
-		Print("Generating to \"%s\" (ZIP archive)\n", tex_destPath);
+		Print("Generating to \"%s\" (ZIP archive, compression %i)\n", tex_destPath, tex_zipCompression);
 		tex_destPathUseCodecDir = true;
 		if (tex_zipInMemory > 0)
 			Print("Keeping ZIP in memory (max size %i MBytes)\n", tex_zipInMemory);
@@ -336,7 +338,7 @@ void TexCompress_MainThread(ThreadData *thread)
 				if (tex_zipInMemory)
 					if ((SharedData->zip_len + WriteData->datasize) >= SharedData->zip_maxlen)
 						Error("TexCompress: Out of free ZIP memory (reached %i MB), consider increasing -zipmem!\n", (float)SharedData->zip_maxlen / 1048576.0f);
-				ZRESULT zr = ZipAdd(outzip, WriteData->outfile, WriteData->data, WriteData->datasize);
+				ZRESULT zr = ZipAdd(outzip, WriteData->outfile, WriteData->data, WriteData->datasize, tex_zipCompression);
 				if (zr != ZR_OK)
 				{
 					if (zr == ZR_MEMSIZE)
@@ -416,6 +418,8 @@ void TexCompress_Option(const char *section, const char *group, const char *key,
 			tex_allowNPOT = OptionBoolean(val);
 		else if (!stricmp(key, "generatemipmaps"))
 			tex_noMipmaps = OptionBoolean(val) ? false : true;
+		else if (!stricmp(key, "averagecolorinfo"))
+			tex_noAvgColor = OptionBoolean(val) ? false : true;
 		else if (!stricmp(key, "binaryalpha_0"))
 			tex_binaryAlphaMin = (byte)(min(max(0, atoi(val)), 255));
 		else if (!stricmp(key, "binaryalpha_1"))
@@ -623,6 +627,8 @@ void TexCompress_Load(void)
 		Print("Allowed non-power-of-two texture dimensions\n");
 	if (tex_noMipmaps)
 		Print("Not generating mipmaps\n");
+	if (tex_noAvgColor)
+		Print("Not generating texture average color info\n");
 	//if (tex_useSign)
 	//{
 	//	char comment[9];
