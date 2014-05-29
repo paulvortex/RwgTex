@@ -70,6 +70,8 @@ double compressBlockDiffFlipFast(uint8 *img, uint8 *imgdec,int width,int height,
 void   compressBlockDiffFlipFastPerceptual(uint8 *img, uint8 *imgdec,int width,int height,int startx,int starty, unsigned int &compressed1, unsigned int &compressed2);
 void   compressBlockETC1Exhaustive(uint8 *img, uint8 *imgdec,int width,int height,int startx,int starty, unsigned int &compressed1, unsigned int &compressed2);
 void   compressBlockETC1ExhaustivePerceptual(uint8 *img, uint8 *imgdec,int width,int height,int startx,int starty, unsigned int &compressed1, unsigned int &compressed2);
+void   compressBlockAlphaSlow(uint8* data, int ix, int iy, int width, int height, uint8* returnData);
+void   compressBlockAlphaFast(uint8 * data, int ix, int iy, int width, int height, uint8* returnData);
 void   decompressBlockDiffFlipC(unsigned int block_part1, unsigned int block_part2, uint8 *img, int width, int height, int startx, int starty, int channels);
 
 // ETC2 compression

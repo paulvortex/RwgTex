@@ -58,7 +58,7 @@ Commandline parms
 -mem       : show memory usage stats at end
 -threads X : manually sets the number of threads
 -cd X      : change to this dir once started
--nomip     : do not generate any mipmaps
+-nomip     : do not generate any mip-maps
 -opt X     : load custom option file
 -ati       : use ATI compressor instead of mixed mode
 -nv        : use Nvidia DXTlib instead of mixed mode

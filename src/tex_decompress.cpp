@@ -87,13 +87,13 @@ void rgb_to_yuv(int r, int g, int b, float *yuv)
 void CalculateCompressionError(LoadedImage *compressed, LoadedImage *original, LoadedImage *destination, TexErrorMetric metric)
 {
 	size_t uncsize, cmpsize, dstsize;
-	byte *dst, *unc, *cmp, *end;
+	byte *dst, *dst_data, *unc, *unc_data, *cmp, *cmp_data, *end;
 	byte ur, ug, ub, cr, cg, cb;
+	int dstpitch, uncpitch, cmppitch, y;
 	
-	dst = Image_GetData(destination, &dstsize);
-	unc = Image_GetData(original, &uncsize);
-	cmp = Image_GetData(compressed, &cmpsize);
-	end = cmp + compressed->width * compressed->height * compressed->bpp;
+	dst_data = Image_GetData(destination, &dstsize, &dstpitch);
+	unc_data = Image_GetData(original, &uncsize, &uncpitch);
+	cmp_data = Image_GetData(compressed, &cmpsize, &cmppitch);
 	if (compressed->width != original->width || compressed->height != original->height)
 		Error("Compressed mismatched original dimensions (width: %i != %i, height: %i != %i)", compressed->width, original->width, compressed->height, original->height); 
 	if (destination->width != original->width || destination->height != original->height)
@@ -134,15 +134,25 @@ void CalculateCompressionError(LoadedImage *compressed, LoadedImage *original, L
 	// calculate 
 	if (metric == ERRORMETRIC_LINEAR)
 	{
-		while(cmp < end)
+		for (y = 0; y < original->height; y++)
 		{
-			float error = fabs((float)cmp[cr] - (float)unc[ur])
-				        + fabs((float)cmp[cg] - (float)unc[ug]) 
-						+ fabs((float)cmp[cb] - (float)unc[ub]);
-			dst[cr] = dst[cg] = dst[cb] = (byte)min(255, max(0, floor(error * 3)));
-			cmp += compressed->bpp;
-			unc += original->bpp;
-			dst += destination->bpp;
+			cmp = cmp_data;
+			unc = unc_data;
+			dst = dst_data;
+			end = cmp + compressed->width * compressed->bpp;
+			while(cmp < end)
+			{
+				float error = fabs((float)cmp[cr] - (float)unc[ur])
+							+ fabs((float)cmp[cg] - (float)unc[ug]) 
+							+ fabs((float)cmp[cb] - (float)unc[ub]);
+				dst[cr] = dst[cg] = dst[cb] = (byte)min(255, max(0, floor(error * 3)));
+				cmp += compressed->bpp;
+				unc += original->bpp;
+				dst += destination->bpp;
+			}
+			cmp_data += cmppitch;
+			unc_data += uncpitch;
+			dst_data += dstpitch;
 		}
 		compressed->datatype = IMAGE_GRAYSCALE;
 		return;
@@ -151,18 +161,28 @@ void CalculateCompressionError(LoadedImage *compressed, LoadedImage *original, L
 	if (metric == ERRORMETRIC_HUE)
 	{
 		float chsb[3], uhsb[3];
-		while(cmp < end)
+		for (y = 0; y < original->height; y++)
 		{
-			rgb_to_hsb(cmp[cr], cmp[cg], cmp[cb], chsb);
-			rgb_to_hsb(unc[ur], unc[ug], unc[ub], uhsb);
-			float error = (chsb[0] - uhsb[0]) * 10;
-			if (error > 0)
-				dst[cr] = (byte)min(255, max(0, floor(fabs(error))));
-			else
-				dst[cb] = (byte)min(255, max(0, floor(fabs(error))));
-			cmp += compressed->bpp;
-			unc += original->bpp;
-			dst += destination->bpp;
+			cmp = cmp_data;
+			unc = unc_data;
+			dst = dst_data;
+			end = cmp + compressed->width * compressed->bpp;
+			while(cmp < end)
+			{
+				rgb_to_hsb(cmp[cr], cmp[cg], cmp[cb], chsb);
+				rgb_to_hsb(unc[ur], unc[ug], unc[ub], uhsb);
+				float error = (chsb[0] - uhsb[0]) * 10;
+				if (error > 0)
+					dst[cr] = (byte)min(255, max(0, floor(fabs(error))));
+				else
+					dst[cb] = (byte)min(255, max(0, floor(fabs(error))));
+				cmp += compressed->bpp;
+				unc += original->bpp;
+				dst += destination->bpp;
+			}
+			cmp_data += cmppitch;
+			unc_data += uncpitch;
+			dst_data += dstpitch;
 		}
 		compressed->datatype = IMAGE_GRAYSCALE;
 		return;
@@ -171,18 +191,28 @@ void CalculateCompressionError(LoadedImage *compressed, LoadedImage *original, L
 	if (metric == ERRORMETRIC_SATURATION)
 	{
 		float chsb[3], uhsb[3];
-		while(cmp < end)
+		for (y = 0; y < original->height; y++)
 		{
-			rgb_to_hsb(cmp[cr], cmp[cg], cmp[cb], chsb);
-			rgb_to_hsb(unc[ur], unc[ug], unc[ub], uhsb);
-			float error = (chsb[1] - uhsb[1]) * 10;
-			if (error > 0)
-				dst[cr] = (byte)min(255, max(0, floor(fabs(error))));
-			else
-				dst[cb] = (byte)min(255, max(0, floor(fabs(error))));
-			cmp += compressed->bpp;
-			unc += original->bpp;
-			dst += destination->bpp;
+			cmp = cmp_data;
+			unc = unc_data;
+			dst = dst_data;
+			end = cmp + compressed->width * compressed->bpp;
+			while(cmp < end)
+			{
+				rgb_to_hsb(cmp[cr], cmp[cg], cmp[cb], chsb);
+				rgb_to_hsb(unc[ur], unc[ug], unc[ub], uhsb);
+				float error = (chsb[1] - uhsb[1]) * 10;
+				if (error > 0)
+					dst[cr] = (byte)min(255, max(0, floor(fabs(error))));
+				else
+					dst[cb] = (byte)min(255, max(0, floor(fabs(error))));
+				cmp += compressed->bpp;
+				unc += original->bpp;
+				dst += destination->bpp;
+			}
+			cmp_data += cmppitch;
+			unc_data += uncpitch;
+			dst_data += dstpitch;
 		}
 		compressed->datatype = IMAGE_GRAYSCALE;
 		return;
@@ -191,15 +221,25 @@ void CalculateCompressionError(LoadedImage *compressed, LoadedImage *original, L
 	if (metric == ERRORMETRIC_LUMA)
 	{
 		float cyuv[3], uyuv[3];
-		while(cmp < end)
+		for (y = 0; y < original->height; y++)
 		{
-			rgb_to_yuv(cmp[cr], cmp[cg], cmp[cb], cyuv);
-			rgb_to_yuv(unc[ur], unc[ug], unc[ub], uyuv);
-			float error = fabs(cyuv[0] - uyuv[0]) * 10;
-			dst[cr] = dst[cg] = dst[cb] = (byte)min(255, max(0, floor(error)));
-			cmp += compressed->bpp;
-			unc += original->bpp;
-			dst += destination->bpp;
+			cmp = cmp_data;
+			unc = unc_data;
+			dst = dst_data;
+			end = cmp + compressed->width * compressed->bpp;
+			while(cmp < end)
+			{
+				rgb_to_yuv(cmp[cr], cmp[cg], cmp[cb], cyuv);
+				rgb_to_yuv(unc[ur], unc[ug], unc[ub], uyuv);
+				float error = fabs(cyuv[0] - uyuv[0]) * 10;
+				dst[cr] = dst[cg] = dst[cb] = (byte)min(255, max(0, floor(error)));
+				cmp += compressed->bpp;
+				unc += original->bpp;
+				dst += destination->bpp;
+			}
+			cmp_data += cmppitch;
+			unc_data += uncpitch;
+			dst_data += dstpitch;
 		}
 		compressed->datatype = IMAGE_GRAYSCALE;
 		return;
@@ -208,16 +248,26 @@ void CalculateCompressionError(LoadedImage *compressed, LoadedImage *original, L
 	if (metric == ERRORMETRIC_CHROMA)
 	{
 		float cyuv[3], uyuv[3];
-		while(cmp < end)
+		for (y = 0; y < original->height; y++)
 		{
-			rgb_to_yuv(cmp[cr], cmp[cg], cmp[cb], cyuv);
-			rgb_to_yuv(unc[ur], unc[ug], unc[ub], uyuv);
-			float error = fabs(cyuv[1] - uyuv[1]) * 10
-						+ fabs(cyuv[2] - uyuv[2]) * 10;
-			dst[cr] = dst[cg] = dst[cb] = (byte)min(255, max(0, floor(error)));
-			cmp += compressed->bpp;
-			unc += original->bpp;
-			dst += destination->bpp;
+			cmp = cmp_data;
+			unc = unc_data;
+			dst = dst_data;
+			end = cmp + compressed->width * compressed->bpp;
+			while(cmp < end)
+			{
+				rgb_to_yuv(cmp[cr], cmp[cg], cmp[cb], cyuv);
+				rgb_to_yuv(unc[ur], unc[ug], unc[ub], uyuv);
+				float error = fabs(cyuv[1] - uyuv[1]) * 10
+							+ fabs(cyuv[2] - uyuv[2]) * 10;
+				dst[cr] = dst[cg] = dst[cb] = (byte)min(255, max(0, floor(error)));
+				cmp += compressed->bpp;
+				unc += original->bpp;
+				dst += destination->bpp;
+			}
+			cmp_data += cmppitch;
+			unc_data += uncpitch;
+			dst_data += dstpitch;
 		}
 		compressed->datatype = IMAGE_GRAYSCALE;
 		return;
@@ -226,17 +276,27 @@ void CalculateCompressionError(LoadedImage *compressed, LoadedImage *original, L
 	if (metric == ERRORMETRIC_PERCEPTURAL)
 	{
 		float cyuv[3], uyuv[3];
-		while(cmp < end)
+		for (y = 0; y < original->height; y++)
 		{
-			rgb_to_yuv(cmp[cr], cmp[cg], cmp[cb], cyuv);
-			rgb_to_yuv(unc[ur], unc[ug], unc[ub], uyuv);
-			float error = fabs(cyuv[0] - uyuv[0]) * 8
-				        + fabs(cyuv[1] - uyuv[1])
-						+ fabs(cyuv[2] - uyuv[2]);
-			dst[cr] = dst[cg] = dst[cb] = (byte)min(255, max(0, floor(error)));
-			cmp += compressed->bpp;
-			unc += original->bpp;
-			dst += destination->bpp;
+			cmp = cmp_data;
+			unc = unc_data;
+			dst = dst_data;
+			end = cmp + compressed->width * compressed->bpp;
+			while(cmp < end)
+			{
+				rgb_to_yuv(cmp[cr], cmp[cg], cmp[cb], cyuv);
+				rgb_to_yuv(unc[ur], unc[ug], unc[ub], uyuv);
+				float error = fabs(cyuv[0] - uyuv[0]) * 8
+							+ fabs(cyuv[1] - uyuv[1])
+							+ fabs(cyuv[2] - uyuv[2]);
+				dst[cr] = dst[cg] = dst[cb] = (byte)min(255, max(0, floor(error)));
+				cmp += compressed->bpp;
+				unc += original->bpp;
+				dst += destination->bpp;
+			}
+			cmp_data += cmppitch;
+			unc_data += uncpitch;
+			dst_data += dstpitch;
 		}
 		compressed->datatype = IMAGE_GRAYSCALE;
 		return;
@@ -271,12 +331,15 @@ void Decompress(TexDecodeTask *task, bool exportFile, LoadedImage *original_imag
 	task->image = Image_Create();
 	task->image->width = task->width;
 	task->image->height = task->height;
+	if (task->sRGB)
 
-	// decode base image and mipmaps
+	// decode base image and maps
 	levels = 1 + task->numMipmaps;
 	for (int level = 0; level < levels; level++)
 	{
 		// decompress (and unswizzle swizzled format)
+		task->image->sRGB = task->sRGB;
+		task->image->datatype = task->isNormalmap ? IMAGE_NORMALMAP : IMAGE_COLOR;
 		task->image->bpp = compressedTextureBPP(task->image, task->format, task->container);
 		task->image->bitmap = fiCreate(task->image->width, task->image->height, task->image->bpp);
 		size_t compressedSize = compressedTextureSize(task->image, task->format, task->container, true, false);
@@ -288,6 +351,8 @@ void Decompress(TexDecodeTask *task, bool exportFile, LoadedImage *original_imag
 			Error("TexDecompress(%s): %s codec does not support decoding of %s format\n", task->filename, task->codec->name, task->format->name);
 		if (!nounswizzle)
 			Image_Swizzle(task->image, task->format->colorSwizzle, true);
+		if (task->image->sRGB) // convert to linear color as TGA does not support sRGB
+			Image_ConvertSRGB(task->image, false);
 		Image_ConvertBPP(task->image, (task->format->features & FF_ALPHA) ? 4 : 3);
 		Image_LoadFinish(task->image);
 

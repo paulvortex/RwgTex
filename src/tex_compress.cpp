@@ -59,11 +59,14 @@ void Compress(TexEncodeTask *task)
 	if (!task->tool)
 		Error("%s: uninitialized texture tool for image '%s", task->codec->name, task->file->fullpath.c_str());
 
+
 	// postprocess
+	bool srgb = (tex_allowSRGB && (task->format->features & FF_SRGB)) && (task->image->sRGB  || tex_forceSRGB || FS_FileMatchList(task->file, task->image, tex_sRGBcolorspace));
 	if (tex_mode == TEXMODE_DROP_FILE)
 		Print("Compressing %s as %s:%s (%s/%s)\n", task->file->fullpath.c_str(), task->tool->name, task->format->name, task->format->block->name, OptionEnumName(tex_profile, tex_profiles));
 	else
 		Verbose("Compressing %s as %s:%s (%s/%s)\n", task->file->fullpath.c_str(), task->tool->name, task->format->name, task->format->block->name, OptionEnumName(tex_profile, tex_profiles));
+	Image_ConvertSRGB(task->image, srgb);
 	Image_SwapColors(task->image, (task->tool->inputflags & (TEXINPUT_BGR|TEXINPUT_BGRA)) ? true : false);
 	Image_CalcAverageColor(task->image);
 	if (!(task->tool->inputflags & (TEXINPUT_BGR|TEXINPUT_RGB)))
@@ -80,11 +83,10 @@ void Compress(TexEncodeTask *task)
 		Image_MakeDimensions(task->image, true, (task->format->features & FF_SQUARE) ? true : false);
 	if (task->format->features & FF_BINARYALPHA)
 		Image_MakeAlphaBinary(task->image, tex_binaryAlphaCenter);
-	if (!tex_noMipmaps && !FS_FileMatchList(task->file, task->image, tex_noMipFiles) && !(task->format->features & FF_NOMIP))
-		Image_GenerateMipmaps(task->image, false);
-	else
-		Image_FreeMipmaps(task->image);
+	Image_ConvertSRGB(task->image, srgb);
+	Image_GenerateMaps(task->image, false, (!tex_noMipmaps && !FS_FileMatchList(task->file, task->image, tex_noMipFiles) && !(task->format->features & FF_NOMIP)) ? true : false, (task->format->features & FF_BINARYALPHA) ? true : false);
 
+	
 	// allocate memory for destination file
 	size_t headersize;
 	byte  *header = task->container->fCreateHeader(task->image, task->format, &headersize);
@@ -195,7 +197,7 @@ void TexCompress_WorkerThread(ThreadData *thread)
 				task.codec->stat_outputRamMB += (float)(task.streamLen - task.container->headerSize)/1048576.0f;
 				task.codec->stat_numTextures++;
 				task.codec->stat_numImages++;
-				for (MipMap *mipmap = frame->mipMaps; mipmap; mipmap = mipmap->nextmip)
+				for (ImageMap *map = frame->maps; map; map = map->next)
 					codec->stat_numImages++;
 
 				// save for saving thread
@@ -208,7 +210,11 @@ void TexCompress_WorkerThread(ThreadData *thread)
 														task.file->path.c_str(), 
 														frame->useTexname ? frame->texname : task.file->name.c_str());
 				if (tex_useSuffix & TEXSUFF_FORMAT)
+				{
 					strcat(WriteData->outfile, task.format->suffix);
+					if (task.image->sRGB)
+						strcat(WriteData->outfile, "_sRGB");
+				}
 				if (tex_useSuffix & TEXSUFF_TOOL)
 					strcat(WriteData->outfile, task.tool->suffix);
 				if (tex_useSuffix & TEXSUFF_PROFILE)
@@ -416,6 +422,8 @@ void TexCompress_Option(const char *section, const char *group, const char *key,
 			tex_addPath = val;
 		else if (!stricmp(key, "nonpoweroftwotextures"))
 			tex_allowNPOT = OptionBoolean(val);
+		else if (!stricmp(key, "srgbtextures"))
+			tex_allowSRGB = OptionBoolean(val);
 		else if (!stricmp(key, "generatemipmaps"))
 			tex_noMipmaps = OptionBoolean(val) ? false : true;
 		else if (!stricmp(key, "averagecolorinfo"))
@@ -435,10 +443,7 @@ void TexCompress_Option(const char *section, const char *group, const char *key,
 		else if (!stricmp(key, "sign"))
 			tex_useSign = OptionBoolean(val);
 		else if (!stricmp(key, "signword"))
-		{
-			tex_signWord1 = FOURCC( strlen(val) < 1 ? 0 : val[0], strlen(val) < 2 ? 0 : val[1], strlen(val) < 3 ? 0 : val[2], strlen(val) < 4 ? 0 : val[3] );
-			tex_signWord2 = FOURCC( strlen(val) < 5 ? 0 : val[4], strlen(val) < 6 ? 0 : val[5], strlen(val) < 7 ? 0 : val[6], strlen(val) < 8 ? 0 : val[7] );
-		}
+			strlcpy(tex_sign, val, sizeof(tex_sign));
 		else if (!stricmp(key, "signversion"))
 			tex_signVersion = FOURCC( strlen(val) < 1 ? 0 : val[0], strlen(val) < 2 ? 0 : val[1], strlen(val) < 3 ? 0 : val[2], strlen(val) < 4 ? 0 : val[3] );
 		else
@@ -452,6 +457,7 @@ void TexCompress_Option(const char *section, const char *group, const char *key,
 	if (!stricmp(group, "archives")) { OptionFCList(&tex_archiveFiles, key, val); return; }
 	if (!stricmp(group, "scale") || !stricmp(group, "scale_2x")) { OptionFCList(&tex_scale2xFiles, key, val); return; }
 	if (!stricmp(group, "scale_4x")) { OptionFCList(&tex_scale2xFiles, key, val); return; }
+	if (!stricmp(group, "srgb")) { OptionFCList(&tex_sRGBcolorspace, key, val); return; }
 	Warning("%s:%i: unknown group '%s'", filename, linenum, group);
 }
 
@@ -629,16 +635,10 @@ void TexCompress_Load(void)
 		Print("Not generating mipmaps\n");
 	if (tex_noAvgColor)
 		Print("Not generating texture average color info\n");
-	//if (tex_useSign)
-	//{
-	//	char comment[9];
-	//	memset(comment, 0, sizeof(comment));
-	//	memcpy(comment, &tex_signWord1, 4);
-	//	memcpy(comment + 4, &tex_signWord2, 4);
-	//	Print("Adding comment '%s' to generated files\n", comment);
-	//}
 	if (tex_useSuffix)
 		Print("Adding file suffix for tool/format\n");
+	if (tex_forceSRGB)
+		Print("Forcing sRGB colorspace on all textures");
 	if (tex_testCompresionError)
 	{
 		if (tex_testCompresionAllErrors)
