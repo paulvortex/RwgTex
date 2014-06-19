@@ -19,6 +19,6 @@ extern TexFormat F_ETC1;
 
 // functions
 // extract 4x4 block from source BGRA image
-void CodecETC1_ExtractBlockRGBA(const unsigned char *src, int x, int y, int w, int h, unsigned char *block);
+void CodecETC1_ExtractBlockRGBA(const unsigned char *src, int x, int y, int w, int h, int pitch, unsigned char *block);
 
 #endif

@@ -13,7 +13,6 @@
 TexTool TOOL_ETCPACK =
 {
 	"ETCPack", "Ericsson ETCPack", "etcpack",
-	"ETC1",
 	TEXINPUT_RGB | TEXINPUT_RGBA,
 	&ETCPack_Init,
 	&ETCPack_Option,
@@ -24,7 +23,11 @@ TexTool TOOL_ETCPACK =
 
 // tool options
 int        etcpack_speed[NUM_PROFILES];
-int        etcpack_colormode;
+bool       etcpack_linearcolormetric = false;
+bool       etcpack_onlylinearmode = false;
+bool       etcpack_onlyplanarmode = false;
+bool       etcpack_onlytmode = false;
+bool       etcpack_onlyhmode = false;
 OptionList etcpack_speedOption[] = 
 { 
 	{ "normal", 0 }, 
@@ -55,7 +58,8 @@ void ETCPack_Init(void)
 	etcpack_speed[PROFILE_REGULAR] = 1;
 	etcpack_speed[PROFILE_BEST] = 1;
 	// ETCPack startup
-	readCompressParams();
+	etcpack_readCompressParams();
+	etcpack_setupAlphaTableAndValtab();
 }
 
 void ETCPack_Option(const char *group, const char *key, const char *val, const char *filename, int linenum)
@@ -82,6 +86,10 @@ void ETCPack_Option(const char *group, const char *key, const char *val, const c
 
 void ETCPack_Load(void)
 {
+	etcpack_onlyplanarmode = CheckParm("-etc2onlyplanarmode");
+	etcpack_onlylinearmode = CheckParm("-etc2onlylinearmode");
+	etcpack_onlytmode = CheckParm("-etc2onlytmode");
+	etcpack_onlyhmode  = CheckParm("-etc2onlyhmode");
 }
 
 
@@ -98,51 +106,134 @@ const char *ETCPack_Version(void)
 ==========================================================================================
 */
 
-void ETCPack_PrescaleImage(TexEncodeTask *t, byte **imagedata, int *w, int *h, byte **decoded, bool *resized, int bpp)
+void ETCPack_Prepare(byte *imagedata, int sw, int sh, int imagebpp, byte **prescaled, byte **alpha, int *w, int *h, byte **decoded, int *resized, bool binaryalpha)
 {
-	int sw = *w;
-	int sh = *h;
-	int dw = (int)(ceil((float)(sw)/4.0f)*4);
-	int dh = (int)(ceil((float)(sh)/4.0f)*4);
-	
-	*imagedata = Image_ConvertBPP(t->image, bpp);
-	*decoded = (byte *)mem_alloc(dw * dh * bpp);
+	byte *tempimg, *tempimg2, *in, *out, *end, *alpha1, *alpha2;
+	int x, y, dw, dh;
+
+	dw = (int)(ceil((float)(sw)/4.0f)*4);
+	dh = (int)(ceil((float)(sh)/4.0f)*4);
+
+	// get alpha
+	if (alpha != NULL)
+	{
+		// get
+		alpha1 = (byte *)mem_alloc(sw * sh);
+		if (imagebpp == 4)
+		{
+			in = imagedata;
+			end = in + sh*sw*imagebpp;
+			out = alpha1;
+			while(in < end)
+			{
+				*out++ = in[3];
+				in += 4;
+			}
+		}
+		else
+			memset(alpha1, 255, sw * sh);
+		// resize to match div/4
+		if (dw != sw || dh != sh)
+		{
+			alpha2 = (byte *)mem_alloc(dw * dh);
+			for (y = 0; y < sh; y++)
+			{
+				memcpy(alpha2 + dw*y, alpha1 + sw*y, sw);
+				for(x = sw; x < dw; x++)
+					memcpy(alpha2 + (dw*y + x), alpha1 + (sw*y - 1), 1);
+			}
+			for(y = sh; y < dh; y++)
+				memcpy(alpha2 + y*dw, alpha2 + (sh-1)*dw, dw);
+			mem_free(alpha1);
+			alpha1 = alpha2;
+		}
+		// binary alpha
+		if (binaryalpha)
+		{
+			byte *in = alpha1;
+			byte *end = alpha1 + dw * dh;
+			while(in < end)
+				*in++ = (in[0] < tex_binaryAlphaCenter) ? 0 : 255;
+		}
+		// set
+		*alpha = alpha1;
+	}
+
+	// get RGB
+	// convert
+	if (imagebpp != 3)
+	{
+		tempimg = (byte *)mem_alloc(sw * sh * 3);
+		in = imagedata;
+		end = in + sh*sw*imagebpp;
+		out = tempimg;
+		if (imagebpp == 4)
+		{
+			while(in < end)
+			{
+				out[0] = in[0];
+				out[1] = in[1];
+				out[2] = in[2];
+				out += 3;
+				in += 4;
+			}
+		}
+		else if (imagebpp == 3)
+		{
+			while(in < end)
+			{
+				out[0] = in[0];
+				out[1] = in[1];
+				out[2] = in[2];
+				out[3] = 255;
+				out += 4;
+				in += 3;
+			}
+		}
+		else
+			Error("ETCPack_PrepareImage: bad source BPP (%i) and dest BPP 3", imagebpp);
+	}
+	else
+		tempimg = imagedata;
+
 	// resize to match div/4
 	if (dw != sw || dh != sh)
 	{
-		byte *tempimg = (byte *)mem_alloc(dw * dh * bpp);
-		for (int y = 0; y < sh; y++)
+		tempimg2 = (byte *)mem_alloc(dw * dh * 3);
+		for (y = 0; y < sh; y++)
 		{
-			memcpy(tempimg + dw*bpp*y, imagedata + sw*bpp*y, sw*bpp);
-			for(int x = sw; x < dw; x++)
-				memcpy(tempimg + (dw*y + sw + x), imagedata + (sw*y - 1)*bpp, bpp);
+			memcpy(tempimg2 + dw*y*3, tempimg + sw*y*3, sw*3);
+			for(x = sw; x < dw; x++)
+				memcpy(tempimg2 + (dw*y + x)*3, tempimg + (sw*y + sw - 1)*3, 3);
 		}
-		for(int y = sh; y < dh; y++)
-			memcpy(tempimg + y*dw*bpp, tempimg + sh*dw*bpp, dw*bpp);
-		*imagedata = tempimg;
-		*resized = true;
-		*w = dw;
-		*h = dh;
-		return;
+		for(y = sh; y < dh; y++)
+			memcpy(tempimg2 + dw*y*3, tempimg2 + dw*(sh-1)*3, dw*3);
 	}
-	// no prescale
-	*resized = false;
+	else
+		tempimg2 = tempimg;
+
+	// return
+	*prescaled = tempimg2;
+	*resized = (tempimg2 == imagedata) ? 0 : 1;
+	if (tempimg != imagedata && tempimg2 != tempimg)
+		mem_free(tempimg);
+	*decoded = (byte *)mem_alloc(dw * dh * 3);
 	*w = dw;
 	*h = dh;
 }
 
-void ETCPack_Free(byte *imagedata, byte *decoded, bool resized)
+void ETCPack_Free(byte *imagedata, byte *imagealpha, byte *decoded, int resized)
 {
-	if (resized)
+	if (resized != 0)
 		mem_free(imagedata);
+	if (imagealpha)
+		mem_free(imagealpha);
 	mem_free(decoded);
 }
 
 void ETCPack_WriteColorBlock(byte **stream, unsigned int block1, unsigned int block2)
 {
-	byte *data;
-
-	data = *stream;
+	byte *data = *stream;
 	data[0] = (block1 >> 24) & 0xFF;
 	data[1] = (block1 >> 16) & 0xFF;
 	data[2] = (block1 >> 8) & 0xFF;
@@ -154,67 +245,123 @@ void ETCPack_WriteColorBlock(byte **stream, unsigned int block1, unsigned int bl
 	*stream = data + 8;
 }
 
+void ETCPack_WriteAlphaBlock(byte **stream, byte *alphadata)
+{
+	byte *data = *stream;
+	memcpy(data, alphadata, 8);
+	*stream = data + 8;
+}
+
 // compress ETC1 RGB block
-void ETCPack_CompressBlockETC1(byte **stream, byte *imagedata, byte *decoded, int imagewidth, int imageheight, int ofsx, int ofsy)
+void ETCPack_CompressBlockETC1(byte **stream, byte *imagedata, byte *imagealpha, byte *decoded, int w, int h, int x, int y)
 {
 	unsigned int block1, block2;
-	if (etcpack_speed[tex_profile])
-		compressBlockETC1ExhaustivePerceptual(imagedata, decoded, imagewidth, imageheight, ofsx, ofsy, block1, block2);
+
+	if (etcpack_linearcolormetric)
+	{
+		if (etcpack_speed[tex_profile])
+			etcpack_compressBlockETC1Exhaustive(imagedata, decoded, w, h, x, y, block1, block2);
+		else
+			etcpack_compressBlockDiffFlipFast(imagedata, decoded, w, h, x, y, block1, block2);
+	}
 	else
-		compressBlockDiffFlipFastPerceptual(imagedata, decoded, imagewidth, imageheight, ofsx, ofsy, block1, block2);
+	{
+		if (etcpack_speed[tex_profile])
+			etcpack_compressBlockETC1ExhaustivePerceptual(imagedata, decoded, w, h, x, y, block1, block2);
+		else
+			etcpack_compressBlockDiffFlipFastPerceptual(imagedata, decoded, w, h, x, y, block1, block2);
+	}
 	ETCPack_WriteColorBlock(stream, block1, block2);
 }
 
 // compress ETC2 RGB block
-void ETCPack_CompressBlockETC2(byte **stream, byte *imagedata, byte *decoded, int imagewidth, int imageheight, int ofsx, int ofsy)
+void ETCPack_CompressBlockETC2(byte **stream, byte *imagedata, byte *imagealpha, byte *decoded, int w, int h, int x, int y)
 {
 	unsigned int block1, block2;
-	if (etcpack_speed[tex_profile])
-		compressBlockETC2ExhaustivePerceptual(imagedata, decoded, imagewidth, imageheight, ofsx, ofsy, block1, block2);
+
+	// compress color block
+	if (etcpack_linearcolormetric)
+	{
+		if (etcpack_speed[tex_profile])
+			etcpack_compressBlockETC2Exhaustive(imagedata, decoded, w, h, x, y, block1, block2);
+		else
+			etcpack_compressBlockETC2Fast(imagedata, NULL, decoded, w, h, x, y, block1, block2);
+	}
 	else
-		compressBlockETC2FastPerceptual(imagedata, decoded, imagewidth, imageheight, ofsx, ofsy, block1, block2);
+	{
+		if (etcpack_speed[tex_profile])
+			etcpack_compressBlockETC2ExhaustivePerceptual(imagedata, decoded, w, h, x, y, block1, block2);
+		else
+			etcpack_compressBlockETC2FastPerceptual(imagedata, decoded, w, h, x, y, block1, block2);
+	}
 	ETCPack_WriteColorBlock(stream, block1, block2);
 }
 
 // compress ETC2 RGBA block
-void ETCPack_CompressBlockETC2A(byte **stream, byte *imagedata, byte *decoded, int imagewidth, int imageheight, int ofsx, int ofsy)
+void ETCPack_CompressBlockETC2A(byte **stream, byte *imagedata, byte *imagealpha, byte *decoded, int w, int h, int x, int y)
 {
 	unsigned int block1, block2;
-	//byte alphadata[8], alphasrcblock[16];
+	byte alphadata[8];
+
 	// compress color block
-	if (etcpack_speed[tex_profile])
-		compressBlockETC2ExhaustivePerceptual(imagedata, decoded, imagewidth, imageheight, ofsx, ofsy, block1, block2);
+	if (etcpack_linearcolormetric)
+	{
+		if (etcpack_speed[tex_profile])
+			etcpack_compressBlockETC2Exhaustive(imagedata, decoded, w, h, x, y, block1, block2);
+		else
+			etcpack_compressBlockETC2Fast(imagedata, NULL, decoded, w, h, x, y, block1, block2);
+	}
 	else
-		compressBlockETC2FastPerceptual(imagedata, decoded, imagewidth, imageheight, ofsx, ofsy, block1, block2);
+	{
+		if (etcpack_speed[tex_profile])
+			etcpack_compressBlockETC2ExhaustivePerceptual(imagedata, decoded, w, h, x, y, block1, block2);
+		else
+			etcpack_compressBlockETC2FastPerceptual(imagedata, decoded, w, h, x, y, block1, block2);
+	}
+
+	// compress and write EAC block
+	if (etcpack_speed[tex_profile])
+		etcpack_compressBlockAlphaSlow(imagealpha, x, y, w, h, alphadata);
+	else
+		etcpack_compressBlockAlphaFast(imagealpha, x, y, w, h, alphadata);
+	ETCPack_WriteAlphaBlock(stream, alphadata);
+	// compress and write ETC2 block
 	ETCPack_WriteColorBlock(stream, block1, block2);
-	// compress alpha block
-	//CodecETC2_ExtractBlockAlpha(imagedata, ofsx, ofsy, 4, 4, alphasrcblock);
-	//if (etcpack_speed[tex_profile])
-	//	compressBlockAlphaSlow(alphaimg, 0, 0, 4, 4, alphadata);
-	//else
-	//	compressBlockAlphaFast(alphaimg, 0, 0, 4, 4, alphadata);
-	//memcpy(stream, alphadata, 8);
-	//stream += 8;
 }
 
-size_t ETCPack_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth, int imageheight, byte *imagedata, void (*compressBlockFunction)(byte **stream, byte *imagedata, byte *decoded, int imagewidth, int imageheight, int blockx, int blocky))
+// compress ETC2 RGBA1 block
+void ETCPack_CompressBlockETC2A1(byte **stream, byte *imagedata, byte *imagealpha, byte *decoded, int w, int h, int x, int y)
 {
-	bool resized = false;
+	unsigned int block1, block2;
+
+	// compress color block
+	// vortex: for ETC2A1 etcpack provides only non-perceptural fast compression
+	etcpack_compressBlockETC2RGBA1(imagedata, imagealpha, decoded, w, h, x, y, block1, block2);
+	ETCPack_WriteColorBlock(stream, block1, block2);
+}
+
+size_t ETCPack_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth, int imageheight, byte *imagedata, void (*compressBlockFunction)(byte **stream, byte *imagedata, byte *imagealpha, byte *decoded, int w, int h, int x, int y))
+{
+	byte *data, *dec, *src, *src_alpha, *block_src, *block_src_alpha, *block_dec;
+	int resized, x, y, w, h;
 	size_t out = 0;
-	byte *decoded;
-
-	ETCPack_PrescaleImage(t, &imagedata, &imagewidth, &imageheight, &decoded, &resized, 3);
-	for (int y = 0; y < imageheight / 4; y++)
-		for (int x = 0; x < imagewidth / 4; x++)
-			compressBlockFunction(&stream, imagedata, decoded, imagewidth, imageheight, x*4, y*4);
-	ETCPack_Free(imagedata, decoded, resized);
-
-	return imagewidth*imageheight/2;
+	
+	resized = 0;
+	data = stream;
+	ETCPack_Prepare(imagedata, imagewidth, imageheight, t->image->bpp, &src, &src_alpha, &w, &h, &dec, &resized, (compressBlockFunction == ETCPack_CompressBlockETC2A1) ? true : false);
+	block_src = src;
+	block_src_alpha = src_alpha;
+	block_dec = dec;
+	for (y = 0; y < h / 4; y++)
+		for (x = 0; x < w / 4; x++)
+			compressBlockFunction(&data, block_src, block_src_alpha, block_dec, w, h, x*4, y*4);
+	ETCPack_Free(src, src_alpha, dec, resized);
+	return data - stream;
 }
 
 bool ETCPack_Compress(TexEncodeTask *t)
 {
-	void (*compressBlockFunction)(byte **stream, byte *imagedata, byte *decoded, int imagewidth, int imageheight, int ofsx, int ofsy);
+	void (*compressBlockFunction)(byte **stream, byte *imagedata, byte *imagealpha, byte *decoded, int w, int h, int x, int y);
 	size_t output_size;
 
 	// options
@@ -222,6 +369,10 @@ bool ETCPack_Compress(TexEncodeTask *t)
 		compressBlockFunction = ETCPack_CompressBlockETC1;
 	else if (t->format->block == &B_ETC2)
 		compressBlockFunction = ETCPack_CompressBlockETC2;
+	else if (t->format->block == &B_ETC2A)
+		compressBlockFunction = ETCPack_CompressBlockETC2A;
+	else if (t->format->block == &B_ETC2A1)
+		compressBlockFunction = ETCPack_CompressBlockETC2A1;
 	else
 	{
 		Warning("ETCPack: %s%s.dds - unsupported compression %s/%s", t->file->path.c_str(), t->file->name.c_str(), t->format->name, t->format->block->name);
@@ -230,17 +381,11 @@ bool ETCPack_Compress(TexEncodeTask *t)
 
 	// compress
 	byte *stream = t->stream;
-	output_size = ETCPack_CompressSingleImage(stream, t, t->image->width, t->image->height, Image_GetData(t->image, NULL), compressBlockFunction);
-	if (output_size)
+	for (ImageMap *map = t->image->maps; map; map = map->next)
 	{
-		// compress mipmaps
-		stream += output_size;
-		for (MipMap *mipmap = t->image->mipMaps; mipmap; mipmap = mipmap->nextmip)
-		{
-			output_size = ETCPack_CompressSingleImage(stream, t, mipmap->width, mipmap->height, mipmap->data, compressBlockFunction);
-			if (output_size)
-				stream += output_size;
-		}
+		output_size = ETCPack_CompressSingleImage(stream, t, map->width, map->height, map->data, compressBlockFunction);
+		if (output_size)
+			stream += output_size;
 	}
 	return true;
 }

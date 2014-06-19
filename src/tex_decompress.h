@@ -45,11 +45,19 @@ typedef struct TexDecodeTask_s
 	int               width;
 	int               height;
 	int               numMipmaps;
-	int               hasAlpha;
-	bool              colorSwap; // true - BGR, false - RGB
 	byte             *pixeldata;
 	size_t            pixeldatasize;
 	char             *comment;
+	// image parameters (initialized by container loader)
+	struct
+	{
+		int               hasAlpha;
+		bool              colorSwap; // true - BGR, false - RGB
+		bool              hasAverageColor;
+		byte              averagecolor[3];
+		bool              isNormalmap;
+		bool              sRGB;
+	}ImageParms;
 	// initialized by exporter code
 	LoadedImage      *image;
 	// error message

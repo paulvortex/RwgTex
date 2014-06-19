@@ -128,9 +128,17 @@ void LoadOptions(char *filename)
 				{
 					strncpy(section, group + 1, sizeof(section));
 					if (!strnicmp(section, "CODEC:", 6))
+					{
 						codec = findCodec(section + 6, true);
+						if (!codec)
+							Error("LoadOptions: unknown codec section [%s], please fix your config file\n", section);
+					}
 					if (!strnicmp(section, "TOOL:", 5))
+					{
 						tool = findTool(section + 5, true);
+						if (!tool)
+							Error("LoadOptions: unknown tool section [%s], please fix your config file\n", tool);
+					}
 					strcpy(group, "options");
 				}
 			}

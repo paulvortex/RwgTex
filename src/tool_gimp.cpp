@@ -12,7 +12,6 @@
 TexTool TOOL_GIMPDDS =
 {
 	"GimpDDS", "Gimp DDS Plugin", "gimp",
-	"YCoGg, DXT",
 	TEXINPUT_BGRA,
 	&GimpDDS_Init,
 	&GimpDDS_Option,
@@ -41,11 +40,7 @@ void GimpDDS_Init(void)
 	RegisterFormat(&F_DXT3, &TOOL_GIMPDDS);
 	RegisterFormat(&F_DXT4, &TOOL_GIMPDDS);
 	RegisterFormat(&F_DXT5, &TOOL_GIMPDDS);
-	RegisterFormat(&F_RXGB, &TOOL_GIMPDDS);
-	RegisterFormat(&F_YCG1, &TOOL_GIMPDDS);
-	RegisterFormat(&F_YCG2, &TOOL_GIMPDDS);
-	RegisterFormat(&F_YCG3, &TOOL_GIMPDDS);
-	RegisterFormat(&F_YCG4, &TOOL_GIMPDDS);
+
 	// options
 	gimpdds_dithering = false;
 	gimpdds_colorBlockMethod = DDS_COLOR_MAX;
@@ -201,9 +196,9 @@ bool GimpDDS_Compress(TexEncodeTask *t)
 		options.compressionType = DDS_COMPRESS_BC2;
 	else if (t->format->block == &B_DXT4 || t->format->block == &B_DXT5)
 	{
-		if (t->format == &F_YCG1 || t->format == &F_YCG3)
+		if (t->format == &F_DXT5_YCG1 || t->format == &F_DXT5_YCG3)
 			options.compressionType = DDS_COMPRESS_YCOCG;
-		else if (t->format == &F_YCG2 || t->format == &F_YCG4)
+		else if (t->format == &F_DXT5_YCG2 || t->format == &F_DXT5_YCG4)
 			options.compressionType = DDS_COMPRESS_YCOCGS;
 		else
 			options.compressionType = DDS_COMPRESS_BC3;
@@ -218,18 +213,12 @@ bool GimpDDS_Compress(TexEncodeTask *t)
 
 	// compress
 	data = t->stream;
-	res = GimpDDS_CompressSingleImage(data, Image_GetData(t->image, NULL), t->image->width, t->image->height, &options);
-	if (res >= 0)
+	for (ImageMap *map = t->image->maps; map; map = map->next)
 	{
+		res = GimpDDS_CompressSingleImage(data, map->data, map->width, map->height, &options);
+		if (res < 0)
+			break;
 		data += res;
-		// mipmaps
-		for (MipMap *mipmap = t->image->mipMaps; mipmap; mipmap = mipmap->nextmip)
-		{
-			res = GimpDDS_CompressSingleImage(data, mipmap->data, mipmap->width, mipmap->height, &options);
-			if (res < 0)
-				break;
-			data += res;
-		}
 	}
 
 	// end, advance stats

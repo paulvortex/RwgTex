@@ -137,12 +137,13 @@ byte *KTX_CreateHeader(LoadedImage *image, TexFormat *format, size_t *outsize)
 	KTX_WriteKeyPair("KTXorientation", "S=r,T=d,R=i", &keyData, &keyDataSize);
 	KTX_WriteKeyPair("fourCC", (byte *)format->fourCC, 4, &keyData, &keyDataSize);
 	if (tex_useSign)
-	{
-		char comment[9] = { 0 };
-		memcpy(comment, &tex_signWord1, 4);
-		memcpy(comment + 4, &tex_signWord2, 4);
-		KTX_WriteKeyPair("comment", comment, &keyData, &keyDataSize);
-	}
+		KTX_WriteKeyPair("comment", tex_sign, &keyData, &keyDataSize);
+	if (image->hasAverageColor)
+		KTX_WriteKeyPair("avgColor", image->averagecolor, 3, &keyData, &keyDataSize);
+	if (image->maps->sRGB)
+		KTX_WriteKeyPair("sRGBcolorspace", 0, 0, &keyData, &keyDataSize);
+	if (image->datatype == IMAGE_NORMALMAP)
+		KTX_WriteKeyPair("normalmap", 0, 0, &keyData, &keyDataSize);
 
 	// create header
 	byte *head = (byte *)mem_alloc(sizeof(KTX_HEADER) + keyDataSize);
@@ -161,8 +162,8 @@ byte *KTX_CreateHeader(LoadedImage *image, TexFormat *format, size_t *outsize)
 	ktx->pixelDepth = 0;
 	ktx->numberOfArrayElements = 0;
 	ktx->numberOfFaces = 0;
-	ktx->numberOfMipmapLevels = 1;
-	for (MipMap *mipmap = image->mipMaps; mipmap; mipmap = mipmap->nextmip) ktx->numberOfMipmapLevels++;
+	ktx->numberOfMipmapLevels = 0;
+	for (ImageMap *map = image->maps; map; map = map->next) ktx->numberOfMipmapLevels++;
 	ktx->bytesOfKeyValueData = keyDataSize;
 
 	return head;

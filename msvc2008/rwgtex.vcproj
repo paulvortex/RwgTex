@@ -53,10 +53,11 @@
 				FavorSizeOrSpeed="1"
 				EnableFiberSafeOptimizations="false"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories=".\..\libs;.\..\libs\astcevaluationcodec\inc"
+				AdditionalIncludeDirectories=".\..\libs;.\..\libs\astcevaluationcodec\inc;.\..\libs\freeimage\"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				RuntimeLibrary="0"
+				StructMemberAlignment="0"
 				EnableFunctionLevelLinking="true"
 				FloatingPointModel="2"
 				PrecompiledHeaderFile=".\Release/rwgtex.pch"
@@ -152,11 +153,12 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories=".\..\libs;.\..\libs\astcevaluationcodec\inc"
+				AdditionalIncludeDirectories=".\..\libs;.\..\libs\astcevaluationcodec\inc;.\..\libs\freeimage\"
 				PreprocessorDefinitions="WIN32;DEBUG;_CONSOLE;_CRT_SECURE_NO_DEPRECATE"
 				StringPooling="true"
 				BasicRuntimeChecks="0"
 				RuntimeLibrary="0"
+				StructMemberAlignment="0"
 				EnableFunctionLevelLinking="true"
 				PrecompiledHeaderFile=".\Release/rwgtex.pch"
 				AssemblerListingLocation=".\Debug/"
@@ -296,10 +298,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\tool_bgra.h"
-				>
-			</File>
-			<File
 				RelativePath="..\src\tool_crunch.h"
 				>
 			</File>
@@ -325,6 +323,10 @@
 			</File>
 			<File
 				RelativePath="..\src\tool_rgetc1.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\tool_rwgtt.h"
 				>
 			</File>
 			<Filter
@@ -567,7 +569,7 @@
 				Name="EtcPack"
 				>
 				<File
-					RelativePath="..\libs\etcpack\source\etcdec.cxx"
+					RelativePath="..\libs\etcpack\etcdecwrap.cpp"
 					>
 					<FileConfiguration
 						Name="Release|Win32"
@@ -576,24 +578,13 @@
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							InlineFunctionExpansion="2"
-							EnableIntrinsicFunctions="true"
 							FavorSizeOrSpeed="1"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							InlineFunctionExpansion="0"
-							EnableIntrinsicFunctions="false"
-							FavorSizeOrSpeed="0"
+							FloatingPointModel="2"
 						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\libs\etcpack\source\etcpack.cxx"
+					RelativePath="..\libs\etcpack\etcimagewrap.cpp"
 					>
 					<FileConfiguration
 						Name="Release|Win32"
@@ -602,51 +593,29 @@
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							InlineFunctionExpansion="2"
-							EnableIntrinsicFunctions="true"
 							FavorSizeOrSpeed="1"
+							FloatingPointModel="2"
 						/>
 					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							InlineFunctionExpansion="0"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\libs\etcpack\source\etcpack_image.cxx"
-					>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							InlineFunctionExpansion="2"
-							EnableIntrinsicFunctions="true"
-							FavorSizeOrSpeed="1"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							InlineFunctionExpansion="0"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\libs\etcpack\source\etcpack_image.h"
-					>
 				</File>
 				<File
 					RelativePath="..\libs\etcpack\etcpack_lib.h"
 					>
+				</File>
+				<File
+					RelativePath="..\libs\etcpack\etcpackwrap.cpp"
+					>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							Optimization="2"
+							InlineFunctionExpansion="2"
+							FavorSizeOrSpeed="1"
+							FloatingPointModel="2"
+						/>
+					</FileConfiguration>
 				</File>
 			</Filter>
 			<Filter
@@ -662,7 +631,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="RG_etc1"
+				Name="rg_etc1"
 				>
 				<File
 					RelativePath="..\libs\rg_etc1\rg_etc1.cpp"
@@ -790,19 +759,19 @@
 				Name="OmniLib"
 				>
 				<File
-					RelativePath="..\src\omnilib\dpomnilib.h"
+					RelativePath="..\libs\omnilib\dpomnilib.h"
 					>
 				</File>
 				<File
-					RelativePath="..\src\omnilib\dpomnilibinternal.h"
+					RelativePath="..\libs\omnilib\dpomnilibinternal.h"
 					>
 				</File>
 				<File
-					RelativePath="..\src\omnilib\libinternal.cpp"
+					RelativePath="..\libs\omnilib\libinternal.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\src\omnilib\libsprite.cpp"
+					RelativePath="..\libs\omnilib\libsprite.cpp"
 					>
 				</File>
 			</Filter>
@@ -876,10 +845,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\tool_bgra.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\src\tool_crunch.cpp"
 				>
 			</File>
@@ -905,6 +870,10 @@
 			</File>
 			<File
 				RelativePath="..\src\tool_rgetc1.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\tool_rwgtt.cpp"
 				>
 			</File>
 			<Filter

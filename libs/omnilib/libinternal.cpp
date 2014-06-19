@@ -11,12 +11,40 @@
 namespace omnilib
 {
 
+// base functions
+void _omnilib_default_free(void *data, char *file, int line);
+void *_omnilib_default_malloc( size_t size, char *file, int line);
+void *_omnilib_default_realloc(void *data, size_t size, char *file, int line);
+
 // function pointers
-void *(*_omnilib_ptr_malloc)(size_t) = malloc;
-void *(*_omnilib_ptr_realloc)(void *,size_t) = realloc;
-void  (*_omnilib_ptr_free)(void*) = free;
+void *(*_omnilib_ptr_malloc)(size_t,char *,int) = _omnilib_default_malloc;
+void *(*_omnilib_ptr_realloc)(void *,size_t,char *,int) = _omnilib_default_realloc;
+void  (*_omnilib_ptr_free)(void*,char *,int) = _omnilib_default_free;
 void  (*_omnilib_ptr_print)(int, char *) = NULL;
 void  (*_omnilib_ptr_error)(char *) = NULL;
+
+/*
+==========================================================================================
+
+  DEFAULT MEMORY FUNCTIONS
+
+==========================================================================================
+*/
+
+void _omnilib_default_free(void *data, char *file, int line)
+{
+	free(data);
+}
+
+void *_omnilib_default_malloc( size_t size, char *file, int line)
+{
+	return malloc(size);
+}
+
+void *_omnilib_default_realloc(void *data, size_t size, char *file, int line)
+{
+	return realloc(data, size);
+}
 
 /*
 ==========================================================================================
@@ -100,7 +128,7 @@ void _omnilib_error(char *str, ...)
 
 // _omnilib_malloc
 // allocate new memory chunk
-void *_omnilib_malloc(size_t size)
+void *__omnilib_malloc(size_t size, char *file, int line)
 {
 	void *ptr;
 
@@ -108,7 +136,7 @@ void *_omnilib_malloc(size_t size)
 	if (size == 0 || _omnilib_ptr_malloc == NULL)
 		return NULL;
 	// allocate
-	ptr = _omnilib_ptr_malloc(size);
+	ptr = _omnilib_ptr_malloc(size, file, line);
 	if (ptr == NULL)
 		return NULL;
 	// zero out and return
@@ -118,7 +146,7 @@ void *_omnilib_malloc(size_t size)
 
 // _omnilib_realloc
 // resize current memory chunk (keeps data)
-void *_omnilib_realloc(void *buf, size_t size)
+void *__omnilib_realloc(void *buf, size_t size, char *file, int line)
 {
 	void *ptr;
 
@@ -126,7 +154,7 @@ void *_omnilib_realloc(void *buf, size_t size)
 	if (size == 0 || _omnilib_ptr_realloc == NULL)
 		return NULL;
 	// allocate
-	ptr = _omnilib_ptr_realloc(buf, size);
+	ptr = _omnilib_ptr_realloc(buf, size, file, line);
 	if (ptr == NULL)
 		return NULL;
 	// return
@@ -135,13 +163,13 @@ void *_omnilib_realloc(void *buf, size_t size)
 
 // _omnilib_free
 // release memory chunk
-void _omnilib_free(void *ptr)
+void __omnilib_free(void *ptr, char *file, int line)
 {
 	// sanity check
 	if (ptr == NULL || _omnilib_ptr_free == NULL)
 		return;
 	// free
-	_omnilib_ptr_free(ptr);
+	_omnilib_ptr_free(ptr, file, line);
 }
 
 /*
@@ -302,7 +330,7 @@ void _omnilib_createpath(char *createpath)
 
 // OmnilibSetMemFunc
 // set the memory functions
-void OmnilibSetMemFunc(void *(*allocfunc)(size_t), void *(*reallocfunc)(void *,size_t), void (*freefunc)(void *))
+void OmnilibSetMemFunc(void *(*allocfunc)(size_t,char *,int), void *(*reallocfunc)(void *,size_t,char *,int), void (*freefunc)(void *,char *,int))
 {
 	_omnilib_ptr_malloc = allocfunc;
 	_omnilib_ptr_realloc = reallocfunc;

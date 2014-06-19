@@ -25,11 +25,12 @@ extern TexFormat F_DXT2;
 extern TexFormat F_DXT3;
 extern TexFormat F_DXT4;
 extern TexFormat F_DXT5;
-extern TexFormat F_RXGB;
-extern TexFormat F_YCG1;
-extern TexFormat F_YCG2;
-extern TexFormat F_YCG3;
-extern TexFormat F_YCG4;
+extern TexFormat F_DXT5_RXGB;
+extern TexFormat F_DXT5_YCG1;
+extern TexFormat F_DXT5_YCG2;
+extern TexFormat F_DXT5_YCG3;
+extern TexFormat F_DXT5_YCG4;
+extern TexFormat *F_SWIZZLED_DXT5[];
 
 // swizzle functions
 void Swizzle_Premult(LoadedImage *image, bool decode);

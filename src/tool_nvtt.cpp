@@ -15,7 +15,6 @@
 TexTool TOOL_NVTT =
 {
 	"NVTT", "NVidia Texture Tools", "nvtt",
-	"DXT",
 	TEXINPUT_BGR | TEXINPUT_BGRA,
 	&NvTT_Init,
 	&NvTT_Option,
@@ -32,11 +31,6 @@ void NvTT_Init(void)
 	RegisterFormat(&F_DXT3, &TOOL_NVTT);
 	RegisterFormat(&F_DXT4, &TOOL_NVTT);
 	RegisterFormat(&F_DXT5, &TOOL_NVTT);
-	RegisterFormat(&F_RXGB, &TOOL_NVTT);
-	RegisterFormat(&F_YCG1, &TOOL_NVTT);
-	RegisterFormat(&F_YCG2, &TOOL_NVTT);
-	RegisterFormat(&F_YCG3, &TOOL_NVTT);
-	RegisterFormat(&F_YCG4, &TOOL_NVTT);
 }
 
 void NvTT_Option(const char *group, const char *key, const char *val, const char *filename, int linenum)
@@ -145,16 +139,12 @@ bool NvTT_Compress(TexEncodeTask *t)
 	outputOptions.setOutputHandler(&outputHandler);
 	outputHandler.stream = t->stream; 
 
-	// write base texture and mipmaps
-	NvTT_CompressSingleImage(inputOptions, outputOptions, Image_GetData(t->image, NULL), t->image->width, t->image->height, compressionOptions);
-	if (errorHandler.errorCode == nvtt::Error_Unknown)
+	// write base texture and maps
+	for (ImageMap *map = t->image->maps; map; map = map->next)
 	{
-		for (MipMap *mipmap = t->image->mipMaps; mipmap; mipmap = mipmap->nextmip)
-		{
-			NvTT_CompressSingleImage(inputOptions, outputOptions, mipmap->data, mipmap->width, mipmap->height, compressionOptions);
-			if (errorHandler.errorCode != nvtt::Error_Unknown)
-				break;
-		}
+		NvTT_CompressSingleImage(inputOptions, outputOptions, map->data, map->width, map->height, compressionOptions);
+		if (errorHandler.errorCode != nvtt::Error_Unknown)
+			break;
 	}
 	
 	// end, advance stats

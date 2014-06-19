@@ -15,7 +15,6 @@
 TexTool TOOL_NVDXTLIB =
 {
 	"NvDXTlib", "NVidia DXTlib", "nv",
-	"DXT",
 	TEXINPUT_BGR | TEXINPUT_BGRA,
 	&NvDXTLib_Init,
 	&NvDXTLib_Option,
@@ -52,11 +51,6 @@ void NvDXTLib_Init(void)
 	RegisterFormat(&F_DXT3, &TOOL_NVDXTLIB);
 	RegisterFormat(&F_DXT4, &TOOL_NVDXTLIB);
 	RegisterFormat(&F_DXT5, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_RXGB, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_YCG1, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_YCG2, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_YCG3, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_YCG4, &TOOL_NVDXTLIB);
 
 	// options
 	nvdxtlib_quality[PROFILE_FAST] = kQualityNormal;
@@ -133,6 +127,7 @@ bool NvDXTLib_Compress(TexEncodeTask *t)
 {
 	nvCompressionOptions options;
 	nvWriteInfo writeOptions;
+	NV_ERROR_CODE res;
 
 	// options
 	options.SetDefaultOptions();
@@ -166,16 +161,12 @@ bool NvDXTLib_Compress(TexEncodeTask *t)
 	writeOptions.stream = t->stream;
 
 	// compress
-	NV_ERROR_CODE res = nvDDS::nvDXTcompress(Image_GetData(t->image, NULL), t->image->width, t->image->height, t->image->width*t->image->bpp, (t->image->bpp == 4) ? nvBGRA : nvBGR, &options, NvDXTLib_WriteDDS, 0);
-	if (res == NV_OK)
+	for (ImageMap *map = t->image->maps; map; map = map->next)
 	{
-		for (MipMap *mipmap = t->image->mipMaps; mipmap; mipmap = mipmap->nextmip)
-		{
-			writeOptions.numwrites = 0;
-			res = nvDDS::nvDXTcompress(mipmap->data, mipmap->width, mipmap->height, mipmap->width*t->image->bpp, (t->image->bpp == 4) ? nvBGRA : nvBGR, &options, NvDXTLib_WriteDDS, 0);
-			if (res != NV_OK)
-				break;
-		}
+		writeOptions.numwrites = 0;
+		res = nvDDS::nvDXTcompress(map->data, map->width, map->height, map->width*t->image->bpp, (t->image->bpp == 4) ? nvBGRA : nvBGR, &options, NvDXTLib_WriteDDS, 0);
+		if (res != NV_OK)
+			break;
 	}
 	if (res != NV_OK)
 	{

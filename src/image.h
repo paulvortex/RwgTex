@@ -6,23 +6,25 @@
 #include "fs.h"
 #include "options.h"
 
-typedef struct MipMap_s
+typedef struct ImageMap_s
 {
-	int       width;
-	int       height;
-	int       level;
-	byte     *data;
-	size_t    datasize;
-	MipMap_s *nextmip;
-}MipMap;
+	int         level;
+	int         width;
+	int         height;
+	byte       *data;
+	size_t      datasize; // size of data
+	bool        external; // using external data, do not free
+	bool        sRGB;     // using sRGB colorspace
+	ImageMap_s *next;
+}ImageMap;
 
 // data type
 typedef enum
 {
 	IMAGE_COLOR,
 	IMAGE_NORMALMAP,
-	IMAGE_GRAYSCALE,
-}DATATYPE;
+	IMAGE_GRAYSCALE
+}ImageType;
 
 // scalers
 typedef enum
@@ -35,8 +37,7 @@ typedef enum
 	IMAGE_SCALER_LANCZOS,
 	IMAGE_SCALER_SCALE2X,
 	IMAGE_SCALER_SUPER2X
-}
-ImageScaler;
+}ImageScaler;
 #ifdef F_IMAGE_C
 	OptionList ImageScalers[] =
 	{
@@ -63,6 +64,7 @@ typedef struct ImageState_s
 	bool         swizzled;         // colors was explicitly altered
 	bool         hasAlpha;         // have alpha channel (this indicates if SOURCE file actually have alpha and may differ from bpp)
 	bool         hasGradientAlpha; // alpha channel is a gradient type (not binary
+	bool         sRGB;             // use sRGB for color
 	bool         scaled;           // set to true if image was scaled
 	bool         converted;        // BPP was converted
 	bool         unused2; 
@@ -86,6 +88,7 @@ typedef struct LoadedImage_s
 	bool         swizzled;         // colors was explicitly altered
 	bool         hasAlpha;         // have alpha channel (this indicates if SOURCE file actually have alpha and may differ from bpp)
 	bool         hasGradientAlpha; // alpha channel is a gradient type (not binary
+	bool         sRGB;             // use sRGB for color
 	bool         scaled;           // set to true if image was scaled
 	bool         converted;        // BPP was converted        
 	bool         unused2; 
@@ -95,16 +98,16 @@ typedef struct LoadedImage_s
 	ImageState   loadedState;
 
 	// special
-	MipMap      *mipMaps;       // generated mipmaps
+	ImageMap    *maps;          // generated maps
 	char         texname[128];  // null if there is no custom texture name
 	bool         useTexname;
 
 	// texture average color (used by exporter)
-	byte         averagecolor[4];
+	byte         averagecolor[3];
 	bool         hasAverageColor;
 
 	// set by texture tool
-	DATATYPE     datatype;
+	ImageType    datatype;
 
 	// next image's frame
 	LoadedImage_s *next;
@@ -116,19 +119,26 @@ void  Image_Generate(LoadedImage *image, int width, int height, int bpp);
 void  Image_Load(FS_File *file, LoadedImage *image);
 void  Image_LoadFinish(LoadedImage *image);
 bool  Image_Changed(LoadedImage *image);
-void  Image_GenerateMipmaps(LoadedImage *image, bool overwrite);
-void  Image_FreeMipmaps(LoadedImage *image);
+void  Image_GenerateMaps(LoadedImage *image, bool overwrite, bool miplevels, bool binaryalpha, bool srgb);
+void  Image_FreeMaps(LoadedImage *image);
 void  Image_Scale2x(LoadedImage *image, ImageScaler scaler, bool makePowerOfTwo);
 void  Image_MakeDimensions(LoadedImage *image, bool powerOfTwo, bool square);
 void  Image_MakeAlphaBinary(LoadedImage *image, int thresh);
 void  Image_SetAlpha(LoadedImage *image, byte value);
 void  Image_Swizzle(LoadedImage *image, void (*swizzleFunction)(LoadedImage *image, bool decode), bool decode);
-byte *Image_GetData(LoadedImage *image, size_t *datasize);
+byte *Image_GetData(LoadedImage *image, size_t *datasize, int *pitch);
+byte *Image_GetUnalignedData(LoadedImage *image, size_t *datasize, bool *data_allocated, bool force_allocate);
+void  Image_StoreUnalignedData(LoadedImage *image, byte *dataptr, size_t datasize);
+void  Image_FreeUnalignedData(byte *dataptr, bool data_allocated);
 void  Image_Unload(LoadedImage *image);
 void  Image_Delete(LoadedImage *image);
 
+// raw data functions
+void ImageData_ConvertSRGB(byte *data, int width, int height, int pitch, int bpp, bool srcSRGB, bool dstSRGB);
+
 // internal color conversion
-byte* Image_ConvertBPP(LoadedImage *image, int bpp);
+void  Image_ConvertBPP(LoadedImage *image, int bpp);
+void  Image_ConvertSRGB(LoadedImage *image, bool useSRGB);
 void  Image_SwapColors(LoadedImage *image, bool swappedColor);
 void  Image_CalcAverageColor(LoadedImage *image);
 byte *Image_GenerateTarga(size_t *outsize, int width, int height, int bpp, byte *data, bool flip, bool rgb, bool grayscale);

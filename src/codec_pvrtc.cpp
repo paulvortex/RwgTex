@@ -14,14 +14,14 @@ TexBlock  B_PVRTC_2BPP_RGBA  = { FOURCC('P','T','C','2'), "PTC2", 1, 1, 4, 32 };
 TexBlock  B_PVRTC_4BPP_RGB   = { FOURCC('P','T','C','3'), "PTC3", 1, 1, 2, 32 };
 TexBlock  B_PVRTC_4BPP_RGBA  = { FOURCC('P','T','C','4'), "PTC4", 1, 1, 4, 32 };
 
-TexFormat F_PVRTC_2BPP_RGB   = { FOURCC('P','T','C','1'), "PVRTC/2BPP/RGB",  "PVRTC 2 bits-per-pixel RGB",  "pvr2",  &B_PVRTC_2BPP_RGB,  &CODEC_PVRTC, COMPRESSED_RGB_PVRTC_2BPPV1_IMG,  GL_RGB,  0, FF_SQUARE };
-TexFormat F_PVRTC_2BPP_RGBA  = { FOURCC('P','T','C','2'), "PVRTC/2BPP/RGBA", "PVRTC 2 bits-per-pixel RGBA", "pvr2a", &B_PVRTC_2BPP_RGBA, &CODEC_PVRTC, COMPRESSED_RGBA_PVRTC_2BPPV1_IMG, GL_RGBA, 0, FF_SQUARE | FF_ALPHA };
-TexFormat F_PVRTC_4BPP_RGB   = { FOURCC('P','T','C','3'), "PVRTC/4BPP/RGB",  "PVRTC 4 bits-per-pixel RGB",  "pvr4",  &B_PVRTC_4BPP_RGB,  &CODEC_PVRTC, COMPRESSED_RGB_PVRTC_4BPPV1_IMG,  GL_RGB,  0, FF_SQUARE };
-TexFormat F_PVRTC_4BPP_RGBA  = { FOURCC('P','T','C','4'), "PVRTC/4BPP/RGBA", "PVRTC 4 bits-per-pixel RGBA", "pvr4a", &B_PVRTC_4BPP_RGBA, &CODEC_PVRTC, COMPRESSED_RGBA_PVRTC_4BPPV1_IMG, GL_RGBA, 0, FF_SQUARE | FF_ALPHA };
+TexFormat F_PVRTC_2BPP_RGB   = { FOURCC('P','T','C','1'), "PVRTC/2BPP/RGB",  "PVRTC 2 bits-per-pixel RGB",  "pvr2",  &B_PVRTC_2BPP_RGB,  &CODEC_PVRTC, GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG,  GL_COMPRESSED_SRGB_PVRTC_2BPPV1_EXT,       GL_RGB,  0, FF_SQUARE | FF_SRGB };
+TexFormat F_PVRTC_2BPP_RGBA  = { FOURCC('P','T','C','2'), "PVRTC/2BPP/RGBA", "PVRTC 2 bits-per-pixel RGBA", "pvr2a", &B_PVRTC_2BPP_RGBA, &CODEC_PVRTC, GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG, GL_COMPRESSED_SRGB_ALPHA_PVRTC_2BPPV1_EXT, GL_RGBA, 0, FF_SQUARE | FF_ALPHA | FF_SRGB };
+TexFormat F_PVRTC_4BPP_RGB   = { FOURCC('P','T','C','3'), "PVRTC/4BPP/RGB",  "PVRTC 4 bits-per-pixel RGB",  "pvr4",  &B_PVRTC_4BPP_RGB,  &CODEC_PVRTC, GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG,  GL_COMPRESSED_SRGB_PVRTC_4BPPV1_EXT,       GL_RGB,  0, FF_SQUARE | FF_SRGB };
+TexFormat F_PVRTC_4BPP_RGBA  = { FOURCC('P','T','C','4'), "PVRTC/4BPP/RGBA", "PVRTC 4 bits-per-pixel RGBA", "pvr4a", &B_PVRTC_4BPP_RGBA, &CODEC_PVRTC, GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG, GL_COMPRESSED_SRGB_ALPHA_PVRTC_4BPPV1_EXT, GL_RGBA, 0, FF_SQUARE | FF_ALPHA | FF_SRGB };
 
 TexCodec  CODEC_PVRTC = 
 {
-	"PVR", "PowerVR Texture Compression", "pvr",
+	"PVRTC", "PowerVR Texture Compression", "pvrtc",
 	&CodecPVRTC_Init,
 	&CodecPVRTC_Option,
 	&CodecPVRTC_Load,
@@ -122,7 +122,10 @@ void CodecPVRTC_Decode(TexDecodeTask *task)
 		do2bit = false;
 	else
 		Error("CodecPVRTC_Decode: wrong format '%s' block '%s' bitlength %i\n", task->format->name, task->format->block->name, task->format->block->bitlength);
-	byte *data = FreeImage_GetBits(task->image->bitmap);
+	
+	// decompress
+	// vortex: since BPP is 4, data is always properly aligned, so we dont need pitch
+	byte *data = Image_GetData(task->image, NULL, NULL);
 	PVRTDecompressPVRTC(task->pixeldata, do2bit, task->image->width, task->image->height, data);
 	if (havebpp != task->image->bpp)
 		Image_ConvertBPP(task->image, havebpp);

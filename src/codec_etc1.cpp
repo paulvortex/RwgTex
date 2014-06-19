@@ -11,7 +11,7 @@
 
 TexBlock  B_ETC1 = { FOURCC('E','T','C','1'), "ETC1", 4, 4, 64 };
 
-TexFormat F_ETC1 = { FOURCC('E','T','C','1'), "ETC1", "Ericsson Texture Compression", "etc1", &B_ETC1, &CODEC_ETC1, GL_COMPRESSED_ETC1_RGB8_OES, GL_RGB };
+TexFormat F_ETC1 = { FOURCC('E','T','C','1'), "ETC1", "ETC1", "etc1", &B_ETC1, &CODEC_ETC1, GL_COMPRESSED_ETC1_RGB8_OES, 0, GL_RGB };
 
 TexCodec  CODEC_ETC1 = 
 {
@@ -66,7 +66,7 @@ bool CodecETC1_Accept(TexEncodeTask *task)
 }
 
 // extract 4x4 RGBA block from source image
-void CodecETC1_ExtractBlockRGBA(const unsigned char *src, int x, int y, int w, int h, unsigned char *block)
+void CodecETC1_ExtractBlockRGBA(const unsigned char *src, int x, int y, int w, int h, int pitch, unsigned char *block)
 {
 	static const int map[] = { 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 2, 0, 0, 1, 2, 3 };
 	int bx, by, bw, bh;
@@ -79,22 +79,22 @@ void CodecETC1_ExtractBlockRGBA(const unsigned char *src, int x, int y, int w, i
 		for (int j = 0; j < 4; ++j)
 		{
 			bx = map[(bw - 1) * 4 + j] + x;
-			block[(i*4*4) + (j*4) + 0] = src[(by * (w*4)) + (bx*4) + 0];
-			block[(i*4*4) + (j*4) + 1] = src[(by * (w*4)) + (bx*4) + 1];
-			block[(i*4*4) + (j*4) + 2] = src[(by * (w*4)) + (bx*4) + 2];
-			block[(i*4*4) + (j*4) + 3] = src[(by * (w*4)) + (bx*4) + 3];
+			block[(i*4*4) + (j*4) + 0] = src[(by * pitch) + (bx*4) + 0];
+			block[(i*4*4) + (j*4) + 1] = src[(by * pitch) + (bx*4) + 1];
+			block[(i*4*4) + (j*4) + 2] = src[(by * pitch) + (bx*4) + 2];
+			block[(i*4*4) + (j*4) + 3] = src[(by * pitch) + (bx*4) + 3];
 		}
 	}
 }
 
 void CodecETC1_Encode(TexEncodeTask *task)
 {
-	// determine format
+	// select format
 	if (!task->format)
 		task->format = &F_ETC1;
 	// select compressor tool
 	if (!task->tool)
-		task->tool = &TOOL_ETCPACK;
+		task->tool = &TOOL_PVRTEX;
 }
 
 /*
@@ -110,10 +110,12 @@ void CodecETC1_Decode(TexDecodeTask *task)
 {
 	byte *data, *stream;
 	int x, y, w, h;
+	size_t size;
 
 	w = task->image->width;
 	h = task->image->height;
-	data = Image_GetData(task->image, NULL);
+	size = w * h * task->image->bpp;
+	data = (byte *)mem_alloc(size);
 	stream = task->pixeldata;
 	for (y = 0; y < h / 4; y++)
 	{
@@ -132,8 +134,10 @@ void CodecETC1_Decode(TexDecodeTask *task)
 			stream += 8;
 			// ETC2 is backwards compatible, which means that an ETC2-capable decompressor
 			// can also handle old ETC1 textures without any problems.
-			decompressBlockETC2c(block1, block2, data, w, h, x*4, y*4, task->image->bpp);
+			etcpack_decompressBlockETC2c(block1, block2, data, w, h, x*4, y*4, task->image->bpp);
 		}
 	}
+	Image_StoreUnalignedData(task->image, data, size);
+	free(data);
 	task->image->colorSwap = false;
 }

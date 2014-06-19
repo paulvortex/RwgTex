@@ -6,7 +6,7 @@ namespace omnilib
 {
 
 // internal functions
-void OmnilibSetMemFunc(void *(*allocfunc)(size_t), void *(*reallocfunc)(void *,size_t), void (*freefunc)(void *));
+void OmnilibSetMemFunc(void *(*allocfunc)(size_t,char *,int), void *(*reallocfunc)(void *,size_t,char *,int), void (*freefunc)(void *,char *,int));
 void OmnilibSetMessageFunc(void (*messagefunc)(int, char *), void (*errorfunc)(char *));
 
 // sprite formats

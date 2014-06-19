@@ -31,9 +31,12 @@ void _omnilib_warning(char *str, ...);
 void _omnilib_error(char *str, ...);
 
 // memory functions
-void *_omnilib_malloc(size_t size);
-void *_omnilib_realloc(void *buf, size_t size);
-void  _omnilib_free(void *ptr);
+#define _omnilib_malloc(size) __omnilib_malloc(size, __FILE__, __LINE__)
+void *__omnilib_malloc(size_t size, char *file, int line);
+#define _omnilib_realloc(data,size) __omnilib_realloc(data, size, __FILE__, __LINE__)
+void *__omnilib_realloc(void *buf, size_t size, char *file, int line);
+#define _omnilib_free(data) __omnilib_free(data, __FILE__, __LINE__)
+void  __omnilib_free(void *ptr, char *file, int line);
 
 // memory stream
 typedef struct

@@ -176,9 +176,9 @@ bool _mem_sentinel_free(char *name, void *ptr, char *file, int line)
 	if (found == 1)
 		return true;
 	if (found == -1)
-		Mem_Error("%s:%i (%s) - trying to free non-allocated page %i (sentinel not found)\n", name, file, line, ptr);
+		Mem_Error("%s:%i (%s) - trying to free non-allocated page %i (sentinel not found)\n", file, line, name, ptr);
 	if (found == -2)
-		Mem_Error("%s:%i (%s) - trying to free non-allocated page %i (sentinel already freed)\n", name, file, line, ptr);
+		Mem_Error("%s:%i (%s) - trying to free non-allocated page %i (sentinel already freed)\n", file, line, name, ptr);
 	return false;
 }
 
@@ -186,6 +186,8 @@ void *_mem_realloc(void *data, size_t size, char *file, int line)
 {
 	if (size <= 0)
 		return NULL;
+	if (data == NULL) // no data, just alloc
+		return _mem_alloc(size, file, line);
 	if (!_mem_sentinel_free("mem_realloc", data, file, line))
 		return NULL;
 	data = realloc(data, size);
@@ -201,6 +203,7 @@ void *_mem_alloc(size_t size, char *file, int line)
 {
 	void *data;
 
+	//printf("_mem_alloc: %i - %s:%i\n", size, file, line);
 	if (size <= 0)
 		return NULL;
 	data = malloc(size);
@@ -228,16 +231,20 @@ void _mem_calloc(void **bufferptr, size_t size, char *file, int line)
 	*bufferptr = data;
 }
 
-void _mem_free(void *data, char *file, int line)
+void _mem_free(void **data, char *file, int line)
 {
-	if (!data)
+	void *ptr;
+
+	ptr = *data;
+	if (!ptr)
 		return;
 	if (!initialized)
 	{
-		free(data);
+		free(ptr);
 		return;
 	}
-	if (!_mem_sentinel_free("mem_free", data, file, line))
+	if (!_mem_sentinel_free("mem_free", ptr, file, line))
 		return;
-	free(data);
+	free(ptr);
+	*data = NULL;
 }

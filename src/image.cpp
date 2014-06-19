@@ -32,25 +32,26 @@ void FreeImageBitmap(LoadedImage *image)
 	image->bitmap = NULL;
 }
 
-void FreeImageMipmaps(LoadedImage *image)
+void FreeImageMaps(LoadedImage *image)
 {
-	MipMap *mipmap, *nextmip;
+	ImageMap *map, *next;
 
-	if (!image->mipMaps)
+	if (!image->maps)
 		return;
-	for (mipmap = image->mipMaps; mipmap; mipmap = nextmip)
+	for (map = image->maps; map; map = next)
 	{
-		nextmip = mipmap->nextmip;
-		mem_free(mipmap->data);
-		mem_free(mipmap);
+		next = map->next;
+		if (map->data && map->external == false)
+			mem_free(map->data);
+		mem_free(map);
 	}
-	image->mipMaps = NULL;
+	image->maps = NULL;
 }
 
 void ClearImage(LoadedImage *image)
 {
 	FreeImageBitmap(image);
-	FreeImageMipmaps(image);
+	FreeImageMaps(image);
 	memset(image->texname, 0, 128); 
 	image->useTexname = false;
 }
@@ -89,19 +90,76 @@ void Image_Delete(LoadedImage *image)
 /*
 ==========================================================================================
 
+  IMAGE DATA PROCESS 
+
+==========================================================================================
+*/
+
+#define linear_to_srgb(c) (((c) < 0.0031308f) ? (c) * 12.92f : 1.055f * (float)pow((c), 1.0f/2.4f) - 0.055f)
+#define srgb_to_linear(c) (((c) <= 0.04045f) ? (c) * (1.0f / 12.92f) : (float)pow(((c) + 0.055f)*(1.0f/1.055f), 2.4f))
+void ImageData_ConvertSRGB(byte *data, int width, int height, int pitch, int bpp, bool srcSRGB, bool dstSRGB)
+{
+	byte *in, *end, *lines;
+	int y;
+
+	if (!data)
+		return;
+	if (srcSRGB == dstSRGB)
+		return;
+
+	if (dstSRGB == true)
+	{
+		// linear->sRGB
+		lines = data;
+		for (y = 0; y < height; y++)
+		{
+			in = lines;
+			end = in + width*bpp;
+			while(in < end)
+			{
+				in[0] = (byte)floor(linear_to_srgb((float)in[0] / 255.0f) * 255.0f + 0.5f);
+				in[1] = (byte)floor(linear_to_srgb((float)in[1] / 255.0f) * 255.0f + 0.5f);
+				in[2] = (byte)floor(linear_to_srgb((float)in[2] / 255.0f) * 255.0f + 0.5f);
+				in += bpp;
+			}
+			lines += pitch;
+		}
+		return;
+	}
+	// sRGB->linear
+	lines = data;
+	for (y = 0; y < height; y++)
+	{
+		in = lines;
+		end = in + width*bpp;
+		while(in < end)
+		{
+			in[0] = (byte)floor(srgb_to_linear((float)in[0] / 255.0f) * 255.0f + 0.5f);
+			in[1] = (byte)floor(srgb_to_linear((float)in[1] / 255.0f) * 255.0f + 0.5f);
+			in[2] = (byte)floor(srgb_to_linear((float)in[2] / 255.0f) * 255.0f + 0.5f);
+			in += bpp;
+		}
+		lines += pitch;
+	}
+}
+
+/*
+==========================================================================================
+
   IMAGE PROCESS
   this processes all filters requested by LoadedImage container
 
 ==========================================================================================
 */
 
-byte *Image_ConvertBPP(LoadedImage *image, int bpp)
+// convert bits-per-pixel
+void Image_ConvertBPP(LoadedImage *image, int bpp)
 {
 	if (!image)
-		return NULL;
+		return;
 	if (image->bpp == bpp)
-		return FreeImage_GetBits(image->bitmap);
-	image->bitmap = fiConvertBPP(image->bitmap, bpp);
+		return;
+	image->bitmap = fiConvertBPP(image->bitmap, bpp, 256, NULL);
 	image->converted = true;
 	if (image->bpp < 4)
 	{
@@ -117,13 +175,28 @@ byte *Image_ConvertBPP(LoadedImage *image, int bpp)
 		image->hasGradientAlpha = false;
 	}
 	image->bpp = FreeImage_GetBPP(image->bitmap)/8;
-	return FreeImage_GetBits(image->bitmap);
+}
+
+// convert RGB->sRGB
+void Image_ConvertSRGB(LoadedImage *image, bool useSRGB)
+{
+	byte *data;
+	int pitch;
+
+	if (!image->bitmap)
+		return;
+	if (useSRGB == image->sRGB)
+		return;
+	data = fiGetData(image->bitmap, &pitch);
+	ImageData_ConvertSRGB(data, image->width, image->height, pitch, image->bpp, image->sRGB, useSRGB);
+	image->sRGB = useSRGB;
 }
 
 // swap RGB->BGR
-void  Image_SwapColors(LoadedImage *image, bool swappedColor)
+void Image_SwapColors(LoadedImage *image, bool swappedColor)
 {
-	byte *data, *end;
+	byte *data, *in, *end;
+	int pitch, y;
 
 	if (!image->bitmap)
 		return;
@@ -131,14 +204,19 @@ void  Image_SwapColors(LoadedImage *image, bool swappedColor)
 		return;
 
 	// swap
-	data = FreeImage_GetBits(image->bitmap);
-	end  = data + FreeImage_GetWidth(image->bitmap)*FreeImage_GetHeight(image->bitmap)*image->bpp;
-	while(data < end)
+	data = fiGetData(image->bitmap, &pitch);
+	for (y = 0; y < image->height; y++)
 	{
-		byte saved = data[0];
-		data[0] = data[2];
-		data[2] = saved;
-		data += image->bpp;
+		in = data;
+		end = in + image->width*image->bpp;
+		while(in < end)
+		{
+			byte saved = in[0];
+			in[0] = in[2];
+			in[2] = saved;
+			in += image->bpp;
+		}
+		data += pitch;
 	}
 	image->colorSwap = swappedColor;
 }
@@ -146,18 +224,15 @@ void  Image_SwapColors(LoadedImage *image, bool swappedColor)
 // calculate image averaged color
 void Image_CalcAverageColor(LoadedImage *image)
 {
-	byte *data, *end;
-	double avgcolor[4];
+	double avgcolor[3];
 	long samples;
-	int r, g, b;
+	int w, r, g, b, pitch, y;
 
 	samples = 0;
 	avgcolor[0] = 0;
 	avgcolor[1] = 0;
 	avgcolor[2] = 0;
-	avgcolor[3] = 0;
-	data = FreeImage_GetBits(image->bitmap);
-	end  = data + FreeImage_GetWidth(image->bitmap)*FreeImage_GetHeight(image->bitmap)*image->bpp;
+	byte *data = fiGetData(image->bitmap, &pitch);
 	if (image->colorSwap == true)
 	{
 		r = 2;
@@ -170,89 +245,43 @@ void Image_CalcAverageColor(LoadedImage *image)
 		g = 1;
 		b = 2;
 	}
-	while(data < end)
+	w = FreeImage_GetWidth(image->bitmap);
+	for (y = 0; y < image->height; y++)
 	{
-		// only use not-black pixels
-		if (data[0] != 0 || data[1] != 0 || data[2] != 0)
+		byte *in = data;
+		byte *end = in + w*image->bpp;
+		while(in < end)
 		{
-			avgcolor[0] += (float)data[r] / 255.0f;
-			avgcolor[1] += (float)data[g] / 255.0f;
-			avgcolor[2] += (float)data[b] / 255.0f;
-			if (image->bpp == 4)
-				avgcolor[3] += (float)data[3] / 255.0f;
-			samples++;
+			// only use not-black pixels
+			if (in[0] != 0 || in[1] != 0 || in[2] != 0)
+			{
+				avgcolor[0] += (float)in[r] / 255.0f;
+				avgcolor[1] += (float)in[g] / 255.0f;
+				avgcolor[2] += (float)in[b] / 255.0f;
+				samples++;
+			}
+			in += image->bpp;
 		}
-		data += image->bpp;
+		data += pitch;
 	}
 	if (samples)
 	{
 		avgcolor[0] = min(1.0f, max(0.0f, avgcolor[0] / samples));
 		avgcolor[1] = min(1.0f, max(0.0f, avgcolor[1] / samples));
 		avgcolor[2] = min(1.0f, max(0.0f, avgcolor[2] / samples));
-		avgcolor[3] = min(1.0f, max(0.0f, avgcolor[3] / samples));
 	}
-	if (image->bpp < 4)
-		avgcolor[3] = 1.0f;
 
 	// store
 	image->hasAverageColor = true;
 	image->averagecolor[0] = (byte)(avgcolor[0] * 255.0f);
 	image->averagecolor[1] = (byte)(avgcolor[1] * 255.0f);
 	image->averagecolor[2] = (byte)(avgcolor[2] * 255.0f);
-	image->averagecolor[3] = (byte)(avgcolor[3] * 255.0f);
 }
 
-void Image_FreeMipmaps(LoadedImage *image)
+void Image_FreeMaps(LoadedImage *image)
 {
-	if (image->mipMaps)
-		FreeImageMipmaps(image);
-}
-
-void Image_GenerateMipmaps(LoadedImage *image, bool overwrite)
-{
-	MipMap *mipmap;
-	int s, w, h, l;
-	FIBITMAP *mipbitmap;
-		
-	if (image->mipMaps)
-	{
-		if (!overwrite)
-			return;
-		FreeImageMipmaps(image);
-	}
-
-	s = min(image->width, image->height);
-	w = image->width;
-	h = image->height;
-	l = 0;
-	while(s > 1)
-	{
-		l++;
-		w = w / 2;
-		h = h / 2;
-		s = s / 2;
-		if (image->mipMaps)
-		{
-			mipmap->nextmip = (MipMap *)mem_alloc(sizeof(MipMap));
-			mipmap = mipmap->nextmip;
-		}
-		else
-		{
-			image->mipMaps  = (MipMap *)mem_alloc(sizeof(MipMap));
-			mipmap = image->mipMaps;
-		}
-		memset(mipmap, 0, sizeof(MipMap));
-		mipmap->nextmip = NULL;
-		mipbitmap = fiRescale(image->bitmap, w, h, FILTER_LANCZOS3, false);
-		mipmap->width = w;
-		mipmap->height = h;
-		mipmap->level = l;
-		mipmap->datasize = mipmap->width*mipmap->height*image->bpp;
-		mipmap->data = (byte *)mem_alloc(mipmap->datasize);
-		memcpy(mipmap->data, FreeImage_GetBits(mipbitmap), mipmap->datasize);
-		if (mipbitmap != image->bitmap)
-			fiFree(mipbitmap);
-	}
+	if (image->maps)
+		FreeImageMaps(image);
 }
 
 int NextPowerOfTwo(int n) 
@@ -266,6 +295,7 @@ int NextPowerOfTwo(int n)
 void Image_Scale2x_Super2x(LoadedImage *image, bool makePowerOfTwo)
 {
 	byte *in, *end, *out;
+	byte palette[1024];
 
 	if (!image->bitmap)
 		return;
@@ -282,7 +312,7 @@ void Image_Scale2x_Super2x(LoadedImage *image, bool makePowerOfTwo)
 		return;
 	}
 
-	// get out desired sizes
+	// get our desired sizes
 	int w = image->width;
 	int h = image->height;
 	int nw = w * 2;
@@ -294,11 +324,12 @@ void Image_Scale2x_Super2x(LoadedImage *image, bool makePowerOfTwo)
 	}
 
 	// save out alpha to be scaled in separate pass
+	// vortex: since BPP is 4, data is always properly aligned, so we dont need pitch
 	byte *alpha = NULL;
 	if (image->hasAlpha)
 	{
 		alpha = (byte *)mem_alloc(w * h);
-		in  = FreeImage_GetBits(image->bitmap);
+		in  = fiGetData(image->bitmap, NULL);
 		end = in + w*h*4;
 		out = alpha;
 		while(in < end)
@@ -316,11 +347,25 @@ void Image_Scale2x_Super2x(LoadedImage *image, bool makePowerOfTwo)
 		}
 	}
 
-	// scale with lanczos
-	FIBITMAP *lanczos = fiRescale(image->bitmap, nw, nh, FILTER_LANCZOS3, false);
+	// get palette
+	FIBITMAP *paletted = fiConvertBPP(fiClone(image->bitmap), 1, 0, NULL);
+	if (!fiGetPalette(paletted, palette, 256))
+		Warning("Image_Scale2x_Super2x: fiGetPalette failed!");
+	fiFree(paletted);
 
-	// scale with scale 2x and backscale to desired size
-	fiBindToImage(fiRescale(fiScale2x(image->bitmap, 4, false), nw, nh, FILTER_LANCZOS3, true), image);
+	// scale with lanczos, restore palette
+	FIBITMAP *lanczos = fiRescale(image->bitmap, nw, nh, FILTER_LANCZOS3, false);
+	lanczos = fiConvertBPP(lanczos, 1, 256, palette);
+	lanczos = fiConvertBPP(lanczos, 4, 0, NULL);
+	lanczos = fiSharpen(lanczos, 1.1f, 3, true);
+
+	// scale with scale 4x, then apply median, then backscale to 2x
+	FIBITMAP *rescaled = fiScale2x(image->bitmap, 4, false);
+	//FIBITMAP *rescaled2 = fiClone(rescaled);
+	//fiApplyMedianFilter(&rescaled2, 1, 1, 1);
+	//fiCombine(rescaled, rescaled2, COMBINE_RGB, 1.0f, true);
+	rescaled = fiRescale(rescaled, nw, nh, FILTER_LANCZOS3, true);
+	fiBindToImage(rescaled, image);
 
 	// blend lanczos over scale2x
 	fiCombine(image->bitmap, lanczos, COMBINE_RGB, 0.4f, true);
@@ -330,7 +375,7 @@ void Image_Scale2x_Super2x(LoadedImage *image, bool makePowerOfTwo)
 		Image_ConvertBPP(image, 3);
 	else
 	{
-		FIBITMAP *alpha_scaled = fiRescale(fiScale2x(alpha, w, h, 1, 4, true), nw, nh, FILTER_CATMULLROM, true);
+		FIBITMAP *alpha_scaled = fiRescale(fiScale2x(alpha, w, w, h, 1, 4, true), nw, nh, FILTER_CATMULLROM, true);
 		alpha_scaled = fiSharpen(alpha_scaled, 1.2f, 1, true);
 		fiCombine(image->bitmap, alpha_scaled, COMBINE_R_TO_ALPHA, 1.0, true);
 		fiBindToImage(fiFixTransparentPixels(image->bitmap), image);
@@ -357,10 +402,13 @@ void Image_Scale2x_Scale2x(LoadedImage *image)
 	}
 
 	// scale
+	// vortex: since BPP is 4, data is always properly aligned, so we dont need pitch
 	int w = image->width;
 	int h = image->height;
 	FIBITMAP *scaled = fiCreate(w*2, h*2, 4);
-	sxScale(2, FreeImage_GetBits(scaled), w*2*4, FreeImage_GetBits(image->bitmap), w*4, 4, w, h);
+	byte *data_scaled = fiGetData(scaled, NULL);
+	byte *data_bitmap = fiGetData(image->bitmap, NULL);
+	sxScale(2, data_scaled, w*2*4, data_bitmap, w*4, 4, w, h);
 	fiBindToImage(scaled, image);
 
 	// finish
@@ -446,7 +494,8 @@ void Image_MakeAlphaBinary(LoadedImage *image, int thresh)
 	if (image->hasGradientAlpha == false)
 		return;
 	
-	byte *in = FreeImage_GetBits(image->bitmap);
+	// vortex: since BPP is 4, data is always properly aligned, so we dont need pitch
+	byte *in = fiGetData(image->bitmap, NULL);
 	byte *end = in + image->width * image->height * image->bpp;
 	while(in < end)
 	{
@@ -461,8 +510,9 @@ void Image_MakeAlphaBinary(LoadedImage *image, int thresh)
 void Image_SetAlpha(LoadedImage *image, byte value)
 {
 	Image_ConvertBPP(image, 4);
-	byte *data = FreeImage_GetBits(image->bitmap);
-	byte *end  = data + FreeImage_GetWidth(image->bitmap)*FreeImage_GetHeight(image->bitmap)*image->bpp;
+	// vortex: since BPP is 4, data is always properly aligned, so we dont need pitch
+	byte *data = fiGetData(image->bitmap, NULL);
+	byte *end = data + FreeImage_GetWidth(image->bitmap)*FreeImage_GetHeight(image->bitmap)*image->bpp;
 	while(data < end)
 	{
 		data[3] = value;
@@ -481,7 +531,7 @@ void Image_Swizzle(LoadedImage *image, void (*swizzleFunction)(LoadedImage *imag
 	image->swizzled = true;
 }
 
-byte *Image_GetData(LoadedImage *image, size_t *datasize)
+byte *Image_GetData(LoadedImage *image, size_t *datasize, int *pitch)
 {
 	size_t bitmapsize;
 
@@ -493,7 +543,29 @@ byte *Image_GetData(LoadedImage *image, size_t *datasize)
 	// compare real data size and structure
 	if ((image->bpp*image->width*image->height) != bitmapsize)
 		Error("Image_GetData: local bpp/width/height %i/%i/%i not match bitmap parameters %i/%i/%i", image->bpp, image->width, image->height, FreeImage_GetBPP(image->bitmap)/8, FreeImage_GetWidth(image->bitmap), FreeImage_GetHeight(image->bitmap));
-	return (byte *)FreeImage_GetBits(image->bitmap);
+	return fiGetData(image->bitmap, pitch);
+}
+
+byte *Image_GetUnalignedData(LoadedImage *image, size_t *datasize, bool *data_allocated, bool force_allocate)
+{
+	byte *data;
+
+	data = fiGetUnalignedData(image->bitmap, data_allocated, force_allocate);
+	if (datasize)
+		*datasize = image->width*image->height*image->bpp;
+	return data;
+}
+
+void Image_StoreUnalignedData(LoadedImage *image, byte *dataptr, size_t datasize)
+{
+	if (!image->bitmap)
+		return;
+	fiStoreUnalignedData(image->bitmap, dataptr, image->width, image->height, image->bpp);
+}
+
+void Image_FreeUnalignedData(byte *dataptr, bool data_allocated)
+{
+	fiFreeUnalignedData(dataptr, data_allocated);
 }
 
 byte *Image_GenerateTarga(size_t *outsize, int width, int height, int bpp, byte *data, bool flip, bool rgb, bool grayscale)
@@ -577,7 +649,13 @@ bool Image_Save(LoadedImage *image, char *filename)
 
 byte *Image_ExportTarga(LoadedImage *image, size_t *tgasize)
 {
-	byte *tga = Image_GenerateTarga(tgasize, FreeImage_GetWidth(image->bitmap), FreeImage_GetHeight(image->bitmap), FreeImage_GetBPP(image->bitmap) / 8, FreeImage_GetBits(image->bitmap), true, image->colorSwap ? false : true, (image->datatype == IMAGE_GRAYSCALE) ? true : false);
+	byte *data;
+	bool data_allocated;
+	size_t datasize;
+
+	data = Image_GetUnalignedData(image, &datasize, &data_allocated, false);
+	byte *tga = Image_GenerateTarga(tgasize, FreeImage_GetWidth(image->bitmap), FreeImage_GetHeight(image->bitmap), FreeImage_GetBPP(image->bitmap) / 8, data, true, image->colorSwap ? false : true, (image->datatype == IMAGE_GRAYSCALE) ? true : false);
+	Image_FreeUnalignedData(data, data_allocated);
 	return tga;
 }
 
@@ -654,10 +732,11 @@ void Image_LoadFinish(LoadedImage *image)
 	image->hasGradientAlpha = false;
 	if (image->bpp == 4)
 	{
-		int  num_grad = 0;
-		int  need_grad = (int)(image->width*image->height*(100.0f - tex_binaryAlphaThreshold)/100.0f);
+		int num_grad = 0;
+		int need_grad = (int)(image->width*image->height*(100.0f - tex_binaryAlphaThreshold)/100.0f);
 		long pixels = image->width*image->height*image->bpp;
-		byte *data = FreeImage_GetBits(image->bitmap);
+		// vortex: since BPP is 4, data is always properly aligned, so we dont need pitch
+		byte *data = fiGetData(image->bitmap, NULL);
 		image->hasAlpha = true;
 		if (!tex_detectBinaryAlpha)
 			image->hasGradientAlpha = true;
@@ -675,6 +754,9 @@ void Image_LoadFinish(LoadedImage *image)
 			}
 		}
 	}
+
+	// calc average color
+	Image_CalcAverageColor(image);
 
 	// save the loaded state (for comparison if image was altered)
 	memcpy(&image->loadedState, &image->width, sizeof(ImageState));
@@ -724,52 +806,6 @@ void LoadImage_QuakeSprite(FS_File *file, byte *filedata, size_t filesize, Loade
 	mem_free(filedata);
 }
 
-/*
-#define MAX_QUAKESPRITE_SIZE 2048
-void LoadImage_QuakeSprite(FS_File *file, byte *filedata, size_t filesize, LoadedImage *image)
-{
-	byte *buf;
-
-	if (filesize < 36 || *(unsigned int *)(filedata + 4) != 32)
-		Warning("%s%s.%s : only supports loading of Quake SPR32", file->path.c_str(), file->name.c_str(), file->ext.c_str());
-	else
-	{
-		// load frames
-		int framenum = 0;
-		int numframes = *(int *)(filedata + 24);
-		LoadedImage *frame = image;
-		filesize -= 36;
-		buf = filedata + 36;
-		while(1)
-		{
-			// group sprite?
-			if (*(unsigned int *)(buf) == 1) 
-				buf += *(unsigned int *)(buf + 4) * 4 + 4;
-			// fill data
-			frame->useTexname = true;
-			sprintf(frame->texname, "%s.%s_%i", file->name.c_str(), file->ext.c_str(), framenum);
-			frame->width  = *(unsigned int *)(buf + 12);
-			frame->height = *(unsigned int *)(buf + 16);
-			frame->filesize = frame->width*frame->height*4;
-			filesize -= 20; buf += 20;
-			if (frame->width < 0 || frame->width > MAX_QUAKESPRITE_SIZE || frame->height < 0 || frame->height > MAX_QUAKESPRITE_SIZE)
-				Error("LoadImage_QuakeSprite(%s) bogus frame %i size: %ix%i", frame->texname, framenum, frame->width, frame->height);
-			fiLoadDataRaw(frame->width, frame->height, 4, buf, filesize, NULL, false, frame);
-			Image_LoadFinish(frame);
-			// go next frame
-			framenum++;
-			filesize -= frame->filesize;
-			     buf += frame->filesize;
-			if (framenum >= numframes)
-				break;
-			frame->next = Image_Create();
-			frame = frame->next;
-		}
-	}
-	mem_free(filedata);
-}
-*/
-
 // a quake bsp stored textures loader
 void LoadImage_QuakeBSP(FS_File *file, byte *filedata, size_t filesize, LoadedImage *image)
 {
@@ -809,6 +845,9 @@ void LoadImage_QuakeBSP(FS_File *file, byte *filedata, size_t filesize, LoadedIm
 			texnum++;
 		}
 	}
+
+
+
 	mem_free(filedata);
 }
 
@@ -848,21 +887,21 @@ void Image_Load(FS_File *file, LoadedImage *image)
 */
 
 // omnilib dynamic memory wrapper - malloc
-void *omnilib_malloc(size_t size)
+void *omnilib_malloc(size_t size, char *file, int line)
 {
-	return mem_alloc(size);
+	return _mem_alloc(size, file, line);
 }
 
 // omnilib dynamic memory  - realloc
-void *omnilib_realloc(void *buf, size_t size)
+void *omnilib_realloc(void *buf, size_t size, char *file, int line)
 {
-	return mem_realloc(buf, size);
+	return _mem_realloc(buf, size, file, line);
 }
 
 // omnilib dynamic memory  - free
-void omnilib_free(void *buf)
+void omnilib_free(void *buf, char *file, int line)
 {
-	return mem_free(buf);
+	return _mem_free(&buf, file, line);
 }
 
 // omnilib message wrapper
@@ -905,6 +944,16 @@ void Image_Init(void)
 	// init omnilib
 	OmnilibSetMemFunc(omnilib_malloc, omnilib_realloc, omnilib_free);
 	OmnilibSetMessageFunc(omnilib_print_message, omnilib_error);
+
+	// test sRGB table
+	//int i;
+	//printf("sRGB table:\n");
+	//for (i = 0; i < 256; i++)
+	//{
+	//	byte c = (byte)floor(linear_to_srgb((float)i / 255.0f) * 255.0f + 0.5f);
+	//	float p = (i == 0) ? 0 : (linear_to_srgb((float)(i+1) / 255.0f) * 255.0f + 0.5f - linear_to_srgb((float)i / 255.0f) * 255.0f + 0.5f);
+	//	printf("%i: %i %f\n", i, c, p);
+	//}
 }
 
 void Image_Shutdown(void)

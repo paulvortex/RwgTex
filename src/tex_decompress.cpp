@@ -331,15 +331,14 @@ void Decompress(TexDecodeTask *task, bool exportFile, LoadedImage *original_imag
 	task->image = Image_Create();
 	task->image->width = task->width;
 	task->image->height = task->height;
-	if (task->sRGB)
 
 	// decode base image and maps
 	levels = 1 + task->numMipmaps;
 	for (int level = 0; level < levels; level++)
 	{
 		// decompress (and unswizzle swizzled format)
-		task->image->sRGB = task->sRGB;
-		task->image->datatype = task->isNormalmap ? IMAGE_NORMALMAP : IMAGE_COLOR;
+		task->image->sRGB = task->ImageParms.sRGB;
+		task->image->datatype = task->ImageParms.isNormalmap ? IMAGE_NORMALMAP : IMAGE_COLOR;
 		task->image->bpp = compressedTextureBPP(task->image, task->format, task->container);
 		task->image->bitmap = fiCreate(task->image->width, task->image->height, task->image->bpp);
 		size_t compressedSize = compressedTextureSize(task->image, task->format, task->container, true, false);
@@ -350,9 +349,10 @@ void Decompress(TexDecodeTask *task, bool exportFile, LoadedImage *original_imag
 		else
 			Error("TexDecompress(%s): %s codec does not support decoding of %s format\n", task->filename, task->codec->name, task->format->name);
 		if (!nounswizzle)
+		{
+			Image_ConvertSRGB(task->image, false); // convert to linear color as TGA does not support sRGB
 			Image_Swizzle(task->image, task->format->colorSwizzle, true);
-		if (task->image->sRGB) // convert to linear color as TGA does not support sRGB
-			Image_ConvertSRGB(task->image, false);
+		}
 		Image_ConvertBPP(task->image, (task->format->features & FF_ALPHA) ? 4 : 3);
 		Image_LoadFinish(task->image);
 
@@ -427,6 +427,14 @@ byte *TexDecompress(char *filename, TexEncodeTask *encodetask, size_t *outdatasi
 	task.container = encodetask->container;
 	task.data = encodetask->stream;
 	task.datasize = encodetask->streamLen;
+	task.ImageParms.sRGB = encodetask->image->maps->sRGB;
+	task.ImageParms.isNormalmap = (encodetask->image->datatype == IMAGE_NORMALMAP) ? true : false;
+	task.ImageParms.hasAverageColor = encodetask->image->hasAverageColor;
+	task.ImageParms.averagecolor[0] = encodetask->image->averagecolor[0]; 
+	task.ImageParms.averagecolor[1] = encodetask->image->averagecolor[1]; 
+	task.ImageParms.averagecolor[2] = encodetask->image->averagecolor[2]; 
+	task.ImageParms.colorSwap = encodetask->image->colorSwap;
+	task.ImageParms.hasAlpha = encodetask->image->hasAlpha;
 	Decompress(&task, false, encodetask->image);
 	*outdatasize = task.datasize;
 	return task.data;

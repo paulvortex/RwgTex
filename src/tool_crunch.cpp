@@ -14,7 +14,6 @@
 TexTool TOOL_CRUNCH =
 {
 	"CrnLib", "Crunch Library", "crunch",
-	"DXT",
 	TEXINPUT_RGBA,
 	&Crunch_Init,
 	&Crunch_Option,
@@ -52,11 +51,6 @@ void Crunch_Init(void)
 	RegisterFormat(&F_DXT3, &TOOL_CRUNCH);
 	RegisterFormat(&F_DXT4, &TOOL_CRUNCH);
 	RegisterFormat(&F_DXT5, &TOOL_CRUNCH);
-	RegisterFormat(&F_RXGB, &TOOL_CRUNCH);
-	RegisterFormat(&F_YCG1, &TOOL_CRUNCH);
-	RegisterFormat(&F_YCG2, &TOOL_CRUNCH);
-	RegisterFormat(&F_YCG3, &TOOL_CRUNCH);
-	RegisterFormat(&F_YCG4, &TOOL_CRUNCH);
 
 	// options
 	crnlib_speed[PROFILE_FAST]    = cCRNDXTQualityFast;
@@ -193,17 +187,11 @@ bool Crunch_Compress(TexEncodeTask *t)
 
 	// compress
 	byte *stream = t->stream;
-	output_size = Crunch_CompressSingleImage(stream, t, t->image->width, t->image->height, Image_GetData(t->image, NULL));
-	if (output_size)
+	for (ImageMap *map = t->image->maps; map; map = map->next)
 	{
-		// compress mipmaps
-		stream += output_size;
-		for (MipMap *mipmap = t->image->mipMaps; mipmap; mipmap = mipmap->nextmip)
-		{
-			output_size = Crunch_CompressSingleImage(stream, t, mipmap->width, mipmap->height, mipmap->data);
-			if (output_size)
-				stream += output_size;
-		}
+		output_size = Crunch_CompressSingleImage(stream, t, map->width, map->height, map->data);
+		if (output_size)
+			stream += output_size;
 	}
 	return true;
 }

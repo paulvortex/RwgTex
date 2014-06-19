@@ -15,7 +15,6 @@
 TexTool TOOL_PVRTEX =
 {
 	"PVRTex", "PowerVR SDK PVRTexTool", "pvrtex",
-	"PVRTC, ETC1, DXT",
 	TEXINPUT_RGB | TEXINPUT_RGBA | TEXINPUT_BGR | TEXINPUT_BGRA,
 	&PVRTex_Init,
 	&PVRTex_Option,
@@ -26,7 +25,7 @@ TexTool TOOL_PVRTEX =
 
 // tool option
 pvrtexture::ECompressorQuality pvrtex_quality_prvtc[NUM_PROFILES];
-pvrtexture::ECompressorQuality pvrtex_quality_etc1[NUM_PROFILES];
+pvrtexture::ECompressorQuality pvrtex_quality_etc[NUM_PROFILES];
 bool        pvrtex_dithering;
 OptionList  pvrtex_compressionOptionPVRTC[] = 
 { 
@@ -35,7 +34,7 @@ OptionList  pvrtex_compressionOptionPVRTC[] =
 	{ "best", pvrtexture::ePVRTCBest },
 	{ 0 }
 };
-OptionList  pvrtex_compressionOptionETC1[] = 
+OptionList  pvrtex_compressionOptionETC[] = 
 { 
 	{ "normal", pvrtexture::eETCFastPerceptual }, 
 	{ "high", pvrtexture::eETCFastPerceptual }, 
@@ -54,6 +53,11 @@ OptionList  pvrtex_compressionOptionETC1[] =
 void PVRTex_Init(void)
 {
 	RegisterFormat(&F_ETC1, &TOOL_PVRTEX);
+	RegisterFormat(&F_ETC2, &TOOL_PVRTEX);
+	RegisterFormat(&F_ETC2A, &TOOL_PVRTEX);
+	RegisterFormat(&F_ETC2A1, &TOOL_PVRTEX);
+	RegisterFormat(&F_EAC1, &TOOL_PVRTEX);
+	RegisterFormat(&F_EAC2, &TOOL_PVRTEX);
 	RegisterFormat(&F_PVRTC_2BPP_RGB, &TOOL_PVRTEX);
 	RegisterFormat(&F_PVRTC_2BPP_RGBA, &TOOL_PVRTEX);
 	RegisterFormat(&F_PVRTC_4BPP_RGB, &TOOL_PVRTEX);
@@ -64,19 +68,14 @@ void PVRTex_Init(void)
 	RegisterFormat(&F_DXT3, &TOOL_PVRTEX);
 	RegisterFormat(&F_DXT4, &TOOL_PVRTEX);
 	RegisterFormat(&F_DXT5, &TOOL_PVRTEX);
-	RegisterFormat(&F_RXGB, &TOOL_PVRTEX);
-	RegisterFormat(&F_YCG1, &TOOL_PVRTEX);
-	RegisterFormat(&F_YCG2, &TOOL_PVRTEX);
-	RegisterFormat(&F_YCG3, &TOOL_PVRTEX);
-	RegisterFormat(&F_YCG4, &TOOL_PVRTEX);
 
 	// options
 	pvrtex_quality_prvtc[PROFILE_FAST] = pvrtexture::ePVRTCNormal;
 	pvrtex_quality_prvtc[PROFILE_REGULAR] = pvrtexture::ePVRTCHigh;
 	pvrtex_quality_prvtc[PROFILE_BEST] = pvrtexture::ePVRTCBest;
-	pvrtex_quality_etc1[PROFILE_FAST] = pvrtexture::eETCFastPerceptual;
-	pvrtex_quality_etc1[PROFILE_REGULAR] = pvrtexture::eETCFastPerceptual;
-	pvrtex_quality_etc1[PROFILE_BEST] = pvrtexture::eETCSlowPerceptual;
+	pvrtex_quality_etc[PROFILE_FAST] = pvrtexture::eETCFastPerceptual;
+	pvrtex_quality_etc[PROFILE_REGULAR] = pvrtexture::eETCFastPerceptual;
+	pvrtex_quality_etc[PROFILE_BEST] = pvrtexture::eETCSlowPerceptual;
 	pvrtex_dithering = false;
 }
 
@@ -87,17 +86,17 @@ void PVRTex_Option(const char *group, const char *key, const char *val, const ch
 		if (!stricmp(key, "fast"))
 		{
 			pvrtex_quality_prvtc[PROFILE_FAST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionPVRTC, pvrtex_quality_prvtc[PROFILE_REGULAR], TOOL_PVRTEX.name);
-			pvrtex_quality_etc1[PROFILE_FAST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionETC1, pvrtex_quality_etc1[PROFILE_REGULAR], TOOL_PVRTEX.name);
+			pvrtex_quality_etc[PROFILE_FAST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionETC, pvrtex_quality_etc[PROFILE_REGULAR], TOOL_PVRTEX.name);
 		}
 		else if (!stricmp(key, "regular"))
 		{
 			pvrtex_quality_prvtc[PROFILE_REGULAR] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionPVRTC, pvrtex_quality_prvtc[PROFILE_REGULAR], TOOL_PVRTEX.name);
-			pvrtex_quality_etc1[PROFILE_REGULAR] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionETC1, pvrtex_quality_etc1[PROFILE_REGULAR], TOOL_PVRTEX.name);
+			pvrtex_quality_etc[PROFILE_REGULAR] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionETC, pvrtex_quality_etc[PROFILE_REGULAR], TOOL_PVRTEX.name);
 		}
 		else if (!stricmp(key, "best"))
 		{
 			pvrtex_quality_prvtc[PROFILE_BEST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionPVRTC, pvrtex_quality_prvtc[PROFILE_REGULAR], TOOL_PVRTEX.name);
-			pvrtex_quality_etc1[PROFILE_BEST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionETC1, pvrtex_quality_etc1[PROFILE_REGULAR], TOOL_PVRTEX.name);
+			pvrtex_quality_etc[PROFILE_BEST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionETC, pvrtex_quality_etc[PROFILE_REGULAR], TOOL_PVRTEX.name);
 		}
 		else
 			Warning("%s:%i: unknown key '%s'", filename, linenum, key);
@@ -137,6 +136,11 @@ const char *PVRTex_Version(void)
 */
 
 pvrtexture::PixelType *pvrtex_pixeltype_etc1            = new pvrtexture::PixelType(ePVRTPF_ETC1);
+pvrtexture::PixelType *pvrtex_pixeltype_etc2rgb         = new pvrtexture::PixelType(ePVRTPF_ETC2_RGB);
+pvrtexture::PixelType *pvrtex_pixeltype_etc2rgba        = new pvrtexture::PixelType(ePVRTPF_ETC2_RGBA);
+pvrtexture::PixelType *pvrtex_pixeltype_etc2rgba1       = new pvrtexture::PixelType(ePVRTPF_ETC2_RGB_A1);
+pvrtexture::PixelType *pvrtex_pixeltype_eac1            = new pvrtexture::PixelType(ePVRTPF_EAC_R11);
+pvrtexture::PixelType *pvrtex_pixeltype_eac2            = new pvrtexture::PixelType(ePVRTPF_EAC_RG11);
 pvrtexture::PixelType *pvrtex_pixeltype_pvrtc_2bpp_rgba = new pvrtexture::PixelType(ePVRTPF_PVRTCI_2bpp_RGBA);
 pvrtexture::PixelType *pvrtex_pixeltype_pvrtc_2bpp_rgb  = new pvrtexture::PixelType(ePVRTPF_PVRTCI_2bpp_RGB);
 pvrtexture::PixelType *pvrtex_pixeltype_pvrtc_4bpp_rgba = new pvrtexture::PixelType(ePVRTPF_PVRTCI_4bpp_RGBA);
@@ -177,8 +181,33 @@ size_t PVRTex_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth
 	}
 	if (t->format->block == &B_ETC1)
 	{
-		quality = pvrtex_quality_etc1[tex_profile];
+		quality = pvrtex_quality_etc[tex_profile];
 		pixeltype = pvrtex_pixeltype_etc1;
+	}
+	else if (t->format->block == &B_ETC2)
+	{
+		quality = pvrtex_quality_etc[tex_profile];
+		pixeltype = pvrtex_pixeltype_etc2rgb;
+	}
+	else if (t->format->block == &B_ETC2A)
+	{
+		quality = pvrtex_quality_etc[tex_profile];
+		pixeltype = pvrtex_pixeltype_etc2rgba;
+	}
+	else if (t->format->block == &B_ETC2A1)
+	{
+		quality = pvrtex_quality_etc[tex_profile];
+		pixeltype = pvrtex_pixeltype_etc2rgba1;
+	}
+	else if (t->format->block == &B_EAC1)
+	{
+		quality = pvrtex_quality_etc[tex_profile];
+		pixeltype = pvrtex_pixeltype_eac1;
+	}
+	else if (t->format->block == &B_EAC2)
+	{
+		quality = pvrtex_quality_etc[tex_profile];
+		pixeltype = pvrtex_pixeltype_eac2;
 	}
 	else if (t->format->block == &B_PVRTC_2BPP_RGB || t->format->block == &B_PVRTC_2BPP_RGBA)
 	{
@@ -232,17 +261,11 @@ bool PVRTex_Compress(TexEncodeTask *t)
 
 	// compress
 	byte *stream = t->stream;
-	output_size = PVRTex_CompressSingleImage(stream, t, t->image->width, t->image->height, Image_GetData(t->image, NULL));
-	if (output_size)
+	for (ImageMap *map = t->image->maps; map; map = map->next)
 	{
-		// compress mipmaps
-		stream += output_size;
-		for (MipMap *mipmap = t->image->mipMaps; mipmap; mipmap = mipmap->nextmip)
-		{
-			output_size = PVRTex_CompressSingleImage(stream, t, mipmap->width, mipmap->height, mipmap->data);
-			if (output_size)
-				stream += output_size;
-		}
+		output_size = PVRTex_CompressSingleImage(stream, t, map->width, map->height, map->data);
+		if (output_size)
+			stream += output_size;
 	}
 	return true;
 }

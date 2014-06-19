@@ -9,16 +9,15 @@
 #include "main.h"
 #include "tex.h"
 
-TexTool TOOL_BGRA =
+TexTool TOOL_RWGTP =
 {
-	"BGRA", "RwgTex BGRA exporter", "bgra",
-	"BGRA, BGRA6666, BGRA7773, BGRA8871",
+	"RWGTP", "RwgTex Packer", "rwgtp",
 	TEXINPUT_BGR | TEXINPUT_BGRA,
-	&ToolBGRA_Init,
-	&ToolBGRA_Option,
-	&ToolBGRA_Load,
-	&ToolBGRA_Compress,
-	&ToolBGRA_Version,
+	&ToolRWGTP_Init,
+	&ToolRWGTP_Option,
+	&ToolRWGTP_Load,
+	&ToolRWGTP_Compress,
+	&ToolRWGTP_Version,
 };
 
 /*
@@ -29,23 +28,23 @@ TexTool TOOL_BGRA =
 ==========================================================================================
 */
 
-void ToolBGRA_Init(void)
+void ToolRWGTP_Init(void)
 {
-	RegisterFormat(&F_BGRA, &TOOL_BGRA);
-	RegisterFormat(&F_BGR6, &TOOL_BGRA);
-	RegisterFormat(&F_BGR3, &TOOL_BGRA);
-	RegisterFormat(&F_BGR1, &TOOL_BGRA);
+	RegisterFormat(&F_BGRA, &TOOL_RWGTP);
+	RegisterFormat(&F_BGR6, &TOOL_RWGTP);
+	RegisterFormat(&F_BGR3, &TOOL_RWGTP);
+	RegisterFormat(&F_BGR1, &TOOL_RWGTP);
 }
 
-void ToolBGRA_Option(const char *group, const char *key, const char *val, const char *filename, int linenum)
-{
-}
-
-void ToolBGRA_Load(void)
+void ToolRWGTP_Option(const char *group, const char *key, const char *val, const char *filename, int linenum)
 {
 }
 
-const char *ToolBGRA_Version(void)
+void ToolRWGTP_Load(void)
+{
+}
+
+const char *ToolRWGTP_Version(void)
 {
 	static char versionstring[200];
 	sprintf(versionstring, "1.0");
@@ -98,11 +97,10 @@ size_t PackBGRAData(TexEncodeTask *t, byte *stream, byte *data, int width, int h
 	return false;
 }
 
-bool ToolBGRA_Compress(TexEncodeTask *t)
+bool ToolRWGTP_Compress(TexEncodeTask *t)
 {
 	byte *stream = t->stream;
-	stream += PackBGRAData(t, stream, Image_GetData(t->image, NULL), t->image->width, t->image->height);
-	for (MipMap *mipmap = t->image->mipMaps; mipmap; mipmap = mipmap->nextmip)
-		stream += PackBGRAData(t, stream, mipmap->data, mipmap->width, mipmap->height);
+	for (ImageMap *map = t->image->maps; map; map = map->next)
+		stream += PackBGRAData(t, stream, map->data, map->width, map->height);
 	return true;
 }

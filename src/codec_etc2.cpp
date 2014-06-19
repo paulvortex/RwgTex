@@ -15,12 +15,12 @@ TexBlock  B_ETC2A1  = { FOURCC('E','T','C','P'), "ETC2A1", 4, 4, 64  };
 TexBlock  B_EAC1    = { FOURCC('E','A','C','1'), "EAC1",   4, 4, 64  };
 TexBlock  B_EAC2    = { FOURCC('E','A','C','2'), "EAC2",   4, 4, 128 };
 
-TexFormat F_ETC2    = { FOURCC('E','T','C','2'), "ETC2",   "ETC2 RGB",                           "etc2",       &B_ETC2,  &CODEC_ETC2, GL_COMPRESSED_RGB8_ETC2,                     GL_RGB };
-TexFormat F_ETC2A   = { FOURCC('E','T','C','A'), "ETC2A",  "ETC2 RGBA",                          "etc2a",      &B_ETC2A, &CODEC_ETC2, GL_COMPRESSED_RGBA8_ETC2_EAC,                GL_RGBA, 0, FF_ALPHA };
-TexFormat F_ETC2A1  = { FOURCC('E','T','C','P'), "ETC2A1", "ETC2 RGBA with punch-through alpha", "etc2a1",     &B_ETC2A1,&CODEC_ETC2, GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2, GL_RGBA, 0, FF_ALPHA | FF_BINARYALPHA };
-TexFormat F_EAC1    = { FOURCC('E','A','C','1'), "EAC1",   "ETC2 Alpha Compression R",           "eac1",       &B_EAC1,  &CODEC_ETC2, GL_COMPRESSED_R11_EAC,                       GL_RED };
-TexFormat F_EAC2    = { FOURCC('E','A','C','2'), "EAC2",   "ETC2 Alpha Compression RG",          "eac2",       &B_EAC2,  &CODEC_ETC2, GL_COMPRESSED_RG11_EAC,                      GL_RG };
-
+TexFormat F_ETC2    = { FOURCC('E','T','C','2'), "ETC2",   "ETC2 RGB",    "etc2rgb",   &B_ETC2,  &CODEC_ETC2, GL_COMPRESSED_RGB8_ETC2,                     GL_COMPRESSED_SRGB8_ETC2,                     GL_RGBA, 0, FF_SRGB };
+TexFormat F_ETC2A   = { FOURCC('E','T','C','A'), "ETC2A",  "ETC2 RGBA",   "etc2rgba",  &B_ETC2A, &CODEC_ETC2, GL_COMPRESSED_RGBA8_ETC2_EAC,                GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC,          GL_RGBA, 0, FF_ALPHA | FF_SRGB };
+TexFormat F_ETC2A1  = { FOURCC('E','T','C','P'), "ETC2A1", "ETC2 RGBA1",  "etc2rgba1", &B_ETC2A1,&CODEC_ETC2, GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2, GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2, GL_RGBA, 0, FF_ALPHA | FF_BINARYALPHA | FF_SRGB };
+TexFormat F_EAC1    = { FOURCC('E','A','C','1'), "EAC1",   "ETC2 R",      "eac1",      &B_EAC1,  &CODEC_ETC2, GL_COMPRESSED_R11_EAC,                       0,                                            GL_RED };
+TexFormat F_EAC2    = { FOURCC('E','A','C','2'), "EAC2",   "ETC2 RG",     "eac2",      &B_EAC2,  &CODEC_ETC2, GL_COMPRESSED_RG11_EAC,                      0,                                            GL_RG };
+   
 TexCodec  CODEC_ETC2 = 
 {
 	"ETC2", "ETC2 Texture Compression", "etc2",
@@ -35,6 +35,7 @@ TexCodec  CODEC_ETC2 =
 void CodecETC2_Init(void)
 {
 	RegisterTool(&TOOL_ETCPACK, &CODEC_ETC2);
+	RegisterTool(&TOOL_PVRTEX, &CODEC_ETC2);
 }
 
 void CodecETC2_Option(const char *group, const char *key, const char *val, const char *filename, int linenum)
@@ -59,47 +60,6 @@ void CodecETC2_Load(void)
 ==========================================================================================
 */
 
-// extract 4x4 RGBA block from source image
-void CodecETC2_ExtractBlockRGBA(const unsigned char *src, int x, int y, int w, int h, unsigned char *block)
-{
-	static const int map[] = { 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 2, 0, 0, 1, 2, 3 };
-	int bx, by, bw, bh;
-   
-	bw = min(w - x, 4);
-	bh = min(h - y, 4);
-	for (int i = 0; i < 4; ++i)
-	{
-		by = map[(bh - 1) * 4 + i] + y;
-		for (int j = 0; j < 4; ++j)
-		{
-			bx = map[(bw - 1) * 4 + j] + x;
-			block[(i*4*4) + (j*4) + 0] = src[(by * (w*4)) + (bx*4) + 0];
-			block[(i*4*4) + (j*4) + 1] = src[(by * (w*4)) + (bx*4) + 1];
-			block[(i*4*4) + (j*4) + 2] = src[(by * (w*4)) + (bx*4) + 2];
-			block[(i*4*4) + (j*4) + 3] = src[(by * (w*4)) + (bx*4) + 3];
-		}
-	}
-}
-
-// extract 4x4 Alpha block from source image
-void CodecETC2_ExtractBlockAlpha(const unsigned char *src, int x, int y, int w, int h, unsigned char *block)
-{
-	static const int map[] = { 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 2, 0, 0, 1, 2, 3 };
-	int bx, by, bw, bh;
-   
-	bw = min(w - x, 4);
-	bh = min(h - y, 4);
-	for (int i = 0; i < 4; ++i)
-	{
-		by = map[(bh - 1) * 4 + i] + y;
-		for (int j = 0; j < 4; ++j)
-		{
-			bx = map[(bw - 1) * 4 + j] + x;
-			block[(i*4) + j + 3] = src[(by * (w*4)) + (bx*4) + 3];
-		}
-	}
-}
-
 bool CodecETC2_Accept(TexEncodeTask *task)
 {
 	// ETC2 can encode any data
@@ -110,7 +70,28 @@ void CodecETC2_Encode(TexEncodeTask *task)
 {
 	// determine format
 	if (!task->format)
-		task->format = &F_ETC2;
+	{
+		if (task->image->datatype == IMAGE_GRAYSCALE)
+			task->format = &F_ETC2;
+		else if (task->image->hasAlpha)
+			task->format = task->image->hasGradientAlpha ? &F_ETC2A : &F_ETC2A;
+		else
+			task->format = &F_ETC2;
+	}
+
+	// ETC2 with alpha == ETC2A
+	if (task->image->hasAlpha)
+	{
+		if (task->format == &F_ETC2)
+			task->format = &F_ETC2A;
+	}
+	else
+	{
+		// ETC2A with no alpha = ETC2
+		if (task->format == &F_ETC2A || task->format == &F_ETC2A1)
+			task->format = &F_ETC2;
+	}
+
 	// select compressor tool
 	if (!task->tool)
 		task->tool = &TOOL_ETCPACK;
@@ -124,43 +105,98 @@ void CodecETC2_Encode(TexEncodeTask *task)
 ==========================================================================================
 */
 
-/*
-==========================================================================================
-
-  DECODING
-
-==========================================================================================
-*/
+// read color block from data stream
+void readColorBlockETC(byte **stream, unsigned int &block1, unsigned int &block2)
+{
+	byte *data = *stream;
+	block1 = 0;           block1 |= data[0];
+	block1 = block1 << 8; block1 |= data[1];
+	block1 = block1 << 8; block1 |= data[2];
+	block1 = block1 << 8; block1 |= data[3];
+	block2 = 0;           block2 |= data[4];
+	block2 = block2 << 8; block2 |= data[5];
+	block2 = block2 << 8; block2 |= data[6];
+	block2 = block2 << 8; block2 |= data[7];
+	*stream = data + 8;
+}
 
 // using EtcPack to decode ETC2
 void CodecETC2_Decode(TexDecodeTask *task)
 {
-	byte *data, *stream;
-	int x, y, w, h;
+	byte *data, *stream, rgba[4*4*4], *lb;
+	unsigned int block1, block2;
+	int x, y, w, h, bpp;
+	int lx, ly, lw, lh;
 
+	// init
 	w = task->image->width;
 	h = task->image->height;
-	data = Image_GetData(task->image, NULL);
+	bpp = task->image->bpp;
+	data = (byte *)mem_alloc(w * h * bpp);
 	stream = task->pixeldata;
-	for (y = 0; y < h / 4; y++)
+
+	// decode
+	if (task->format->block == &B_ETC2)
 	{
-		for (x = 0; x < w / 4; x++)
+		for (y = 0; y < h; y+=4)
 		{
-			// get block
-			unsigned int block1, block2;
-			block1 = 0;           block1 |= stream[0];
-			block1 = block1 << 8; block1 |= stream[1];
-			block1 = block1 << 8; block1 |= stream[2];
-			block1 = block1 << 8; block1 |= stream[3];
-			block2 = 0;           block2 |= stream[4];
-			block2 = block2 << 8; block2 |= stream[5];
-			block2 = block2 << 8; block2 |= stream[6];
-			block2 = block2 << 8; block2 |= stream[7];
-			stream += 8;
-			// unpack ETC2 RGB
-			decompressBlockETC2c(block1, block2, data, w, h, x*4, y*4, task->image->bpp);
+			for (x = 0; x < w; x+=4)
+			{
+				readColorBlockETC(&stream, block1, block2);
+				etcpack_decompressBlockETC2c(block1, block2, rgba, 4, 4, 0, 0, 4);
+				lb = rgba;
+				lh = min(y + 4, h) - y;
+				lw = min(x + 4, w) - x;
+				for (ly = 0; ly < lh; ly++,lb+=4*4)
+					for(lx = 0; lx < lw; lx++)
+						memcpy(data + (w*(y + ly) + x + lx)*bpp, lb + lx*4, 3);
+			}
 		}
 	}
+	else if (task->format->block == &B_ETC2A)
+	{
+		for (y = 0; y < h; y+=4)
+		{
+			for (x = 0; x < w; x+=4)
+			{
+				// EAC block + ETC2 RGB block
+				etcpack_decompressBlockAlphaC(stream, rgba+3, 4, 4, 0, 0, 4);
+				stream += 8;
+				readColorBlockETC(&stream, block1, block2);
+				etcpack_decompressBlockETC2c(block1, block2, rgba, 4, 4, 0, 0, 4);
+				lb = rgba;
+				lh = min(y + 4, h) - y;
+				lw = min(x + 4, w) - x;
+				for (ly = 0; ly < lh; ly++,lb+=4*4)
+					for(lx = 0; lx < lw; lx++)
+						memcpy(data + (w*(y + ly) + x + lx)*bpp, lb + lx*4, 4);
+			}
+		}
+	}
+	else if (task->format->block == &B_ETC2A1)
+	{
+		for (y = 0; y < h; y+=4)
+		{
+			for (x = 0; x < w; x+=4)
+			{
+				// ETC2 RGB/punchthrough alpha block 
+				readColorBlockETC(&stream, block1, block2);
+				etcpack_decompressBlockETC21BitAlphaC(block1, block2, rgba, NULL, 4, 4, 0, 0, 4);
+				lb = rgba;
+				lh = min(y + 4, h) - y;
+				lw = min(x + 4, w) - x;
+				for (ly = 0; ly < lh; ly++,lb+=4*4)
+					for(lx = 0; lx < lw; lx++)
+						memcpy(data + (w*(y + ly) + x + lx)*bpp, lb + lx*4, 4);
+			}
+		}
+	}
+	else
+		Error("CodecETC2_Decode: block %s not supported\n", task->format->block->name);
+
+	// store decoded image
+	Image_StoreUnalignedData(task->image, data, w*h*bpp);
+	free(data);
 	task->image->colorSwap = false;
 }
 

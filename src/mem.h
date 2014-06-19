@@ -5,8 +5,8 @@
 void Mem_Init(void);
 void Mem_Shutdown(void);
 
-void _mem_free( void *data, char *file, int line);
-#define mem_free(data) _mem_free(data, __FILE__, __LINE__)
+void _mem_free( void **data, char *file, int line);
+#define mem_free(data) _mem_free((void **)(&(data)), __FILE__, __LINE__)
 void *_mem_alloc( size_t size, char *file, int line);
 #define mem_alloc(size) _mem_alloc(size, __FILE__, __LINE__)
 void _mem_calloc(void **bufferptr, size_t size, char *file, int line);

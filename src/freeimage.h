@@ -20,6 +20,14 @@ typedef enum
 
 // helper functions
 
+// get image pixel data and pitch (width*bpp, pitch is needed because image lines is aligned to 4)
+byte *fiGetData(FIBITMAP *bitmap, int *pitch);
+
+// copy out image pixel data, solves alignment
+byte *fiGetUnalignedData(FIBITMAP *bitmap, bool *data_allocated, bool force_allocate);
+void fiStoreUnalignedData(FIBITMAP *bitmap, byte *dataptr, int width, int height, int bpp);
+void fiFreeUnalignedData(byte *dataptr, bool data_allocated);
+
 // remove bitmap and set pointer
 FIBITMAP *_fiFree(FIBITMAP *bitmap, char *file, int line);
 #define fiFree(bitmap) _fiFree(bitmap, __FILE__, __LINE__)
@@ -52,13 +60,16 @@ bool fiSave(FIBITMAP *bitmap, FREE_IMAGE_FORMAT format, const char *filename);
 void fiCombine(FIBITMAP *source, FIBITMAP *combine, FREE_IMAGE_COMBINE mode, float blend, bool destroyCombine);
 
 // converts image to requested BPP
-FIBITMAP *fiConvertBPP(FIBITMAP *bitmap, int want_bpp);
+FIBITMAP *fiConvertBPP(FIBITMAP *bitmap, int want_bpp, int want_palette_size, byte *want_external_palette);
+
+// get image palette
+bool fiGetPalette(FIBITMAP *bitmap, byte *palette, int palettesize);
 
 // converts image to requested type
 FIBITMAP *fiConvertType(FIBITMAP *bitmap, FREE_IMAGE_TYPE want_type);
 
 // scale bitmap with scale2x
-FIBITMAP *fiScale2x(byte *data, int width, int height, int bpp, int scaler, bool freeData);
+FIBITMAP *fiScale2x(byte *data, int pitch, int width, int height, int bpp, int scaler, bool freeData);
 FIBITMAP *fiScale2x(FIBITMAP *bitmap, int scaler, bool freeSource);
 
 // apply a custom filter matrix to bitmap
@@ -67,7 +78,13 @@ FIBITMAP *fiFilter(FIBITMAP *bitmap, double *m, double scale, double bias, int i
 // apply gaussian blur to bitmap
 FIBITMAP *fiBlur(FIBITMAP *bitmap, int iteractions, bool removeSource);
 
-// apply sharpenm, factor < 1 blurs, > 1 sharpens
+// apply median filter (source image is deleted)
+void fiApplyMedianFilter(FIBITMAP **bitmap, int kernel_x_radius, int kernel_y_radius, int iteractions);
+
+// apply unsharp mask (source image is deleted)
+void fiApplyUnsharpMask(FIBITMAP **bitmap, double radius, double amount, double threshold, int iteractions);
+
+// apply sharpen, factor < 1 blurs, > 1 sharpens
 FIBITMAP *fiSharpen(FIBITMAP *bitmap, float factor, int iteractions, bool removeSource);
 
 // fix transparent pixels for alpha blending

@@ -13,7 +13,6 @@
 TexTool TOOL_RGETC1 =
 {
 	"RgETC1", "Rg-Etc1 Packer", "rgetc1",
-	"ETC1",
 	TEXINPUT_RGBA,
 	&RgEtc1_Init,
 	&RgEtc1_Option,
@@ -100,7 +99,7 @@ const char *RgEtc1_Version(void)
 */
 
 // compress texture
-size_t RgEtc1_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth, int imageheight, byte *imagedata, rg_etc1::etc1_pack_params &options)
+size_t RgEtc1_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth, int imageheight, byte *imagedata, int pitch, rg_etc1::etc1_pack_params &options)
 {
 	unsigned int block[16];
 
@@ -110,7 +109,7 @@ size_t RgEtc1_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth
 		for (int x = 0; x < imagewidth / 4; x++)
 		{
 			// extract block 
-			CodecETC1_ExtractBlockRGBA(imagedata, x * 4, y * 4, imagewidth, imageheight, (unsigned char*)block);
+			CodecETC1_ExtractBlockRGBA(imagedata, x * 4, y * 4, imagewidth, imageheight, pitch, (unsigned char*)block);
 			// pack block
 			rg_etc1::pack_etc1_block(stream, block, options);
 			stream += 8;
@@ -123,6 +122,7 @@ bool RgEtc1_Compress(TexEncodeTask *t)
 {
 	size_t output_size;
 	rg_etc1::etc1_pack_params options;
+	int pitch;
 
 	// RgEtc1 requires 32-bit images to have all alpha  == 255
 	Image_SetAlpha(t->image, 255);
@@ -134,17 +134,12 @@ bool RgEtc1_Compress(TexEncodeTask *t)
 
 	// compress
 	byte *stream = t->stream;
-	output_size = RgEtc1_CompressSingleImage(stream, t, t->image->width, t->image->height, Image_GetData(t->image, NULL), options);
-	if (output_size)
+	byte *data = Image_GetData(t->image, NULL, &pitch);
+	for (ImageMap *map = t->image->maps; map; map = map->next)
 	{
-		// compress mipmaps
-		stream += output_size;
-		for (MipMap *mipmap = t->image->mipMaps; mipmap; mipmap = mipmap->nextmip)
-		{
-			output_size = RgEtc1_CompressSingleImage(stream, t, mipmap->width, mipmap->height, mipmap->data, options);
-			if (output_size)
-				stream += output_size;
-		}
+		output_size = RgEtc1_CompressSingleImage(stream, t, map->width, map->height, map->data, map->width*t->image->bpp, options);
+		if (output_size)
+			stream += output_size;
 	}
 	return true;
 }

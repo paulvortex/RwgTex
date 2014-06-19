@@ -31,14 +31,17 @@ bool          tex_noMipmaps;
 bool          tex_noAvgColor;
 bool          tex_forceScale2x;
 bool          tex_forceScale4x;
+bool          tex_sRGB_allow;
+bool          tex_sRGB_autoconvert;
+bool          tex_sRGB_forceconvert;
 bool          tex_useSign;
-DWORD         tex_signWord1;
-DWORD         tex_signWord2;
+char          tex_sign[1024];
 DWORD         tex_signVersion;
 FCLIST        tex_includeFiles;
 FCLIST        tex_noMipFiles;
 FCLIST        tex_normalMapFiles;
 FCLIST        tex_grayScaleFiles;
+FCLIST        tex_sRGBcolorspace;
 bool          tex_forceBestPSNR;
 bool          tex_detectBinaryAlpha;
 byte          tex_binaryAlphaMin;
@@ -49,6 +52,7 @@ FCLIST        tex_archiveFiles;
 string        tex_addPath;
 int           tex_zipInMemory;
 int           tex_zipCompression;
+FCLIST        tex_zipAddFiles;
 FCLIST        tex_scale2xFiles;
 FCLIST        tex_scale4xFiles;
 ImageScaler   tex_firstScaler;
@@ -104,7 +108,7 @@ void RegisterCodec(TexCodec *codec)
 	codec->cmdParm = (char *)mem_alloc(len + 2);
 	sprintf(codec->cmdParm, "-%s", codec->parmName);
 	codec->cmdParmDisabled = (char *)mem_alloc(len + 10);
-	sprintf(codec->cmdParmDisabled, "-disable#%s", codec->parmName);
+	sprintf(codec->cmdParmDisabled, "-disable-%s", codec->parmName);
 	if (codec->fInit)
 	{
 		codec->fInit();
@@ -199,7 +203,7 @@ void RegisterTool(TexTool *tool, TexCodec *codec)
 	tool->cmdParm = (char *)mem_alloc(len + 2);
 	sprintf(tool->cmdParm, "-%s", tool->parmName);
 	tool->cmdParmDisabled = (char *)mem_alloc(len + 10);
-	sprintf(tool->cmdParmDisabled, "-disable#%s", tool->parmName);
+	sprintf(tool->cmdParmDisabled, "-disable-%s", tool->parmName);
 	tool->forceGroup = (char *)mem_alloc(len + 7);
 	sprintf(tool->forceGroup, "force_%s", tool->parmName);
 	tool->forceFileList.clear();
@@ -229,9 +233,10 @@ TexFormat *findFormat(const char *name, bool quiet)
 	return NULL;
 }
 
-void RegisterFormat(TexFormat *format, TexTool *tool)
+void _RegisterFormat(TexFormat *format, TexTool *tool, TexFormat *baseFormat)
 {
 	TexFormat *f, *last;
+	int i;
 
 	if (!format || !tool)
 		return;
@@ -258,21 +263,37 @@ void RegisterFormat(TexFormat *format, TexTool *tool)
 		}
 	}
 	// initialize
+	format->baseFormat = baseFormat;
 	uint len = strlen(format->parmName);
 	format->cmdParm = (char *)mem_alloc(len + 2);
 	sprintf(format->cmdParm, "-%s", format->parmName);
 	format->cmdParmDisabled = (char *)mem_alloc(len + 10);
-	sprintf(format->cmdParmDisabled, "-disable#%s", format->parmName);
+	sprintf(format->cmdParmDisabled, "-disable-%s", format->parmName);
 	format->forceGroup = (char *)mem_alloc(len + 7);
 	sprintf(format->forceGroup, "force_%s", format->parmName);
 	format->forceFileList.clear();
-	format->suffix = (char *)mem_alloc(len + 2);
-	sprintf(format->suffix, "_%s", format->parmName);
-	if (format->fInit)
-		format->fInit();
+	if (format->baseFormat != NULL)
+	{
+		format->suffix = (char *)mem_alloc(strlen(baseFormat->parmName) + len + 3);
+		sprintf(format->suffix, "_%s%s", baseFormat->parmName, format->parmName);
+	}
+	else
+	{
+		format->suffix = (char *)mem_alloc(len + 2);
+		sprintf(format->suffix, "_%s", format->parmName);
+	}
+	// register swizzled versions
+	if (format->swizzledFormats != NULL)
+		for(i = 0; format->swizzledFormats[i] != NULL; i++)
+			_RegisterFormat(format->swizzledFormats[i], tool, format);
 }
 
-size_t compressedTextureSize(LoadedImage *image, TexFormat *format, TexContainer *container, bool baseTex, bool mipMaps)
+void RegisterFormat(TexFormat *format, TexTool *tool)
+{
+	_RegisterFormat(format, tool, NULL);
+}
+
+size_t compressedTextureSize(LoadedImage *image, TexFormat *format, TexContainer *container, bool baseTex, bool mipLevels)
 {
 	size_t size = 0, s;
 	TexBlock *b;
@@ -291,14 +312,14 @@ size_t compressedTextureSize(LoadedImage *image, TexFormat *format, TexContainer
 		else
 			size += s;
 	}
-	// mipmaps
-	if (mipMaps)
+	// maps
+	if (mipLevels)
 	{
-		for (MipMap *mipmap = image->mipMaps; mipmap; mipmap = mipmap->nextmip)
+		for (ImageMap *map = image->maps->next; map; map = map->next)
 		{
 			size += container->mipHeaderSize;
-			x = (int)ceil((float)mipmap->width / (float)b->width);
-			y = (int)ceil((float)mipmap->height / (float)b->height);
+			x = (int)ceil((float)map->width / (float)b->width);
+			y = (int)ceil((float)map->height / (float)b->height);
 			s = max(b->blocksize, x*y*b->bitlength/8);
 			if (container->mipDataPadding)
 				size += s + ((s/container->mipDataPadding)*container->mipDataPadding - s);
@@ -492,10 +513,14 @@ void CommandLineOptions(void)
 	if (CheckParm("-4x"))         tex_forceScale4x = true; 
 	// COMMANDLINEPARM: -npot: allow non-power-of-two textures
 	if (CheckParm("-npot"))       tex_allowNPOT = true;
-	// COMMANDLINEPARM: -nomip: do not generate mipmaps
+	// COMMANDLINEPARM: -nomip: do not generate maps
 	if (CheckParm("-nomip"))      tex_noMipmaps = true;
 	// COMMANDLINEPARM: -noavgcolor: do not generate average color informatiom
 	if (CheckParm("-noavgcolor")) tex_noAvgColor = true;
+	// COMMANDLINEPARM: -nosrgb: disable sRGB texture support (all sRGB images will be converted to linear space)
+	if (CheckParm("-nosrgb"))     tex_sRGB_allow = false;
+	// COMMANDLINEPARM: -srgb: forces sRGB on all textures which format supports hardware sRGB
+	if (CheckParm("-srgb"))       tex_sRGB_allow = tex_sRGB_forceconvert = true;
 	// COMMANDLINEPARM: -nearest: select nearest filter for scaler (2x and 4x)
 	if (CheckParm("-nearest"))    tex_firstScaler = tex_secondScaler = IMAGE_SCALER_BOX;
 	// COMMANDLINEPARM: -bilinear: select bilinear filter for scaler (2x and 4x)
@@ -531,7 +556,7 @@ void CommandLineOptions(void)
 	// COMMANDLINEPARM: -nosign: do not add comment to generated texture files
 	if (CheckParm("-nosign"))     tex_useSign = false;
 	// COMMANDLINEPARM: -nosign: use GIMP comment for generated texture files
-	if (CheckParm("-gimpsign")) { tex_useSign = true; tex_signWord1 = FOURCC('G','I','M','P'); tex_signWord2 = FOURCC('-','D','D','S'); tex_signVersion = 131585; }
+	if (CheckParm("-gimpsign")) { tex_useSign = true; strcpy(tex_sign, "GIMP-DDS"); tex_signVersion = 131585; }
 	// COMMANDLINEPARM: -stfp/-stf/-stp/-sfp/-st/-sf/-sp: generate compressor/format file suffix (useful for file comparison)
 	if (CheckParm("-stfp"))   { tex_useSuffix = TEXSUFF_TOOL|TEXSUFF_FORMAT|TEXSUFF_PROFILE; }
 	if (CheckParm("-stf"))    { tex_useSuffix = TEXSUFF_TOOL|TEXSUFF_FORMAT; }
@@ -540,8 +565,7 @@ void CommandLineOptions(void)
 	if (CheckParm("-st"))     { tex_useSuffix = TEXSUFF_TOOL; }
 	if (CheckParm("-sf"))     { tex_useSuffix = TEXSUFF_FORMAT; }
 	if (CheckParm("-sp"))     { tex_useSuffix = TEXSUFF_PROFILE; }
-	// experimental:
-	if (CheckParm("-t"))      { tex_testCompresion = true; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL|TEXSUFF_FORMAT; }
+	if (CheckParm("-t"))      { tex_testCompresion = true;  if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL|TEXSUFF_FORMAT; }
 	if (CheckParm("-te"))     { tex_testCompresion = true; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL|TEXSUFF_FORMAT; tex_testCompresionError = true; }
 	if (CheckParm("-ta"))     { tex_testCompresion = true; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL|TEXSUFF_FORMAT; tex_testCompresionAllErrors = true; }
 	// string parameters
@@ -576,6 +600,19 @@ void CommandLineOptions(void)
 				tex_zipCompression = 0;
 			if (tex_zipCompression > 9)
 				tex_zipCompression = 9;
+			continue;
+		}
+		// COMMANDLINEPARM: -zipadd path internal_path: add external file to ZIP archive
+		if (!stricmp(myargv[i], "-zipadd"))
+		{
+			if (i+2 < myargc)
+			{
+				CompareOption O;
+				O.parm = myargv[i+1];
+				O.pattern =  myargv[i+2];
+				tex_zipAddFiles.push_back(O);
+			}
+			i += 2;
 			continue;
 		}
 		// COMMANDLINEPARM: -scaler: set a filter to be used for scaling (2x and 4x)
@@ -617,6 +654,36 @@ void CommandLineOptions(void)
 ==========================================================================================
 */
 
+void Tex_LinkTools(void)
+{
+	vector<TexFormat*>::iterator fmt;
+	size_t maxlen;
+
+	// fill features format and codecs string for tools
+	maxlen = 32768;
+	for (TexTool *t = tex_tools; t; t = t->next)
+	{
+		t->featuredCodecs = (char *)mem_alloc(maxlen + 1);
+		memset(t->featuredCodecs, 0, maxlen + 1);
+		t->featuredFormats = (char *)mem_alloc(maxlen + 1);
+		memset(t->featuredFormats, 0, maxlen + 1);
+		for (fmt = t->formats.begin(); fmt < t->formats.end(); fmt++)
+		{
+			// add to featured codec list
+			if (strstr(t->featuredCodecs, (*fmt)->codec->name) == NULL)
+			{
+				if (t->featuredCodecs[0])
+					strlcat(t->featuredCodecs , ", ", maxlen);
+				strlcat(t->featuredCodecs , (*fmt)->codec->name, maxlen);
+			}
+			// add to featured format list
+			if (t->featuredFormats[0])
+				strlcat(t->featuredFormats, ", ", maxlen);
+			strlcat(t->featuredFormats, (*fmt)->name, maxlen);
+		}
+	}
+}
+
 void Tex_Init(void)
 {
 	RegisterCodec(&CODEC_DXT);
@@ -626,6 +693,7 @@ void Tex_Init(void)
 	RegisterCodec(&CODEC_BGRA);
 	RegisterContainer(&CONTAINER_DDS);
 	RegisterContainer(&CONTAINER_KTX);
+	Tex_LinkTools();
 
 	// determine active codecs
 	for (TexCodec *c = tex_codecs; c; c = c->next)
@@ -651,6 +719,7 @@ void Tex_Init(void)
 	tex_binaryAlphaThreshold = 99.0f;
 	tex_includeFiles.clear();
 	tex_noMipFiles.clear();
+	tex_sRGBcolorspace.clear();
 	tex_normalMapFiles.clear();
 	tex_grayScaleFiles.clear();
 	tex_gameDir = "id1";
@@ -663,14 +732,17 @@ void Tex_Init(void)
 	tex_allowNPOT = false;
 	tex_forceScale2x = false;
 	tex_forceScale4x = false;
+	tex_sRGB_allow = true;
+	tex_sRGB_autoconvert = false;
+	tex_sRGB_forceconvert = false;
 	tex_useSign = true;
-	tex_signWord1 = FOURCC('R','W','G','T');
-	tex_signWord2 = FOURCC('E','X',0,0);
+	strcpy(tex_sign, "RWGTEX");
 	tex_signVersion = 0;
 	tex_forceBestPSNR = false;
 	tex_firstScaler = tex_secondScaler = IMAGE_SCALER_SUPER2X;
 	tex_zipInMemory = 0;
 	tex_zipCompression = 8;
+	tex_zipAddFiles.clear();
 	tex_useSuffix = 0;
 	tex_testCompresion = false;
 	tex_container = findContainer("DDS", false);
@@ -727,19 +799,19 @@ void Tex_Help(void)
 	Print(
 	"Codec general options:\n"
 	"      -npot: allow non-power-of-two textures\n"
-	"     -nomip: dont generate mipmaps\n"
+	"     -nomip: dont generate maps\n"
 	"        -2x: apply 2x scale (Scale2X)\n"
 	"        -4x: apply 4x scale (2 pass scale)\n"
 	"  -scaler X: set a filter to be used for scaling\n"
 	" -scaler2 X: set a filter to be used for second scale pass\n"
 	"        -ap: additional archive path\n"
 	"  -zipmem X: speeds up compression by generating ZIP in memory\n"
+	"         -t: compress and decompress to a new file to inspect compression\n"
 	"       -stf: add Compressor tool/Format suffix to generated files\n"
 	"        -st: add Compressor tool suffix to generated files\n"
 	"        -sf: add Compression format suffix to generated files\n"
-	"      -test: compress and decompress to a new file to inspect compression\n"
-	"      -psnr: show artifacts on the destination pic (use with -test)\n"
-	" -disable#x: disable certain codec\n"
+	"      -psnr: show artifacts on the destination pic (use with -t)\n"
+	" -disable-x: disable 'X' codec (see codec list)\n"
 	"\n"
 	"Codec profiles:\n"
 	"      -fast: sacrifice quality for fast encoding\n"

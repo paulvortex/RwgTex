@@ -1,0 +1,6 @@
+Changes required to make etcpack sourcecode to be used as a library in RwgTex:
+- rename image.cxx and image.h to etcimage.cxx amd etcimage.h
+- fix includes to image.h in etcpack.cxxx, etcimage.cxx
+- add '#include "../etcpack_lib.h"' after system includes in etcpack.cxx, etcdec.cxx, etcimage.cxx
+- in etcpack.cxx:
+  copy function etcpack_compressBlockETC2Fast to etcpack_compressBlockETC2RGBA1 (and make changes so it always encode RGBA1 format)

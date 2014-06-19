@@ -33,11 +33,11 @@ int Help(void)
 	Tex_PrintCodecs();
 	Tex_PrintTools();
 	Tex_PrintContainers();
-	Print("Check out rwgtex [codec] for more help\n");
+	Print("Check out rwgtex -codec for more help\n");
 	return 0;
 }
 
-void PrintModules(void)
+int PrintModules(void)
 {
 	Print("RwgTex modules:\n");
 	FS_PrintModules();
@@ -45,6 +45,7 @@ void PrintModules(void)
 	for (TexTool *tool = tex_tools; tool; tool = tool->next)
 		Print(" %s %s\n", tool->fullName, tool->fGetVersion());
 	Print("\n");
+	return 0;
 }
 
 int main(int argc, char **argv)
@@ -148,11 +149,10 @@ int main(int argc, char **argv)
 		LoadOptions(optionfile);
 		returncode = TexMain(argc-i, argv+i);
 	}
+	else if (CheckParm("-version"))
+		returncode = PrintModules();
 	else
 		returncode = Help();
-	
-	if (CheckParm("-version"))
-		PrintModules();
 	Print("\n");
 
 	Thread_Shutdown();

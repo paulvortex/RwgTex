@@ -7,8 +7,7 @@
 ////////////////////////////////
 
 #define F_FILE_DDS_C
-#include "ddraw.h"
-#include "d3d9types.h"
+
 #include "main.h"
 #include "tex.h"
 
@@ -45,7 +44,7 @@ void DDS_PrintHeader(byte *data)
 	Print("    AlphaBitMask = 0x%08X\n", dds->ddpfPixelFormat.dwRGBAlphaBitMask);
 	Print("  EmptyFaceColor = %c%c%c%c\n", dds->dwEmptyFaceColor & 0xFF, (dds->dwEmptyFaceColor >> 8) & 0xFF, (dds->dwEmptyFaceColor >> 16) & 0xFF, (dds->dwEmptyFaceColor >> 24) & 0xFF);
 	Print("    GBitMask = 0x%08X\n", dds->ddpfPixelFormat.dwGBitMask);
-	Print("  Comment = %c%c%c%c%c%c%c%c\n", dds->dwAlphaBitDepth & 0xFF, (dds->dwAlphaBitDepth >> 8) & 0xFF, (dds->dwAlphaBitDepth >> 16) & 0xFF, (dds->dwAlphaBitDepth >> 24) & 0xFF, dds->dwReserved & 0xFF, (dds->dwReserved >> 8) & 0xFF, (dds->dwReserved >> 16) & 0xFF, (dds->dwReserved >> 24) & 0xFF);
+	Print("  Comment = %c%c%c%c%c%c%c%c\n", dds->cComment[0], dds->cComment[1], dds->cComment[2], dds->cComment[3], dds->cComment[4], dds->cComment[5], dds->cComment[6], dds->cComment[7]);
 }
 
 byte *DDS_CreateHeader(LoadedImage *image, TexFormat *format, size_t *outsize)
@@ -60,14 +59,19 @@ byte *DDS_CreateHeader(LoadedImage *image, TexFormat *format, size_t *outsize)
 	// write header
 	memset(dds, 0, sizeof(DDSHeader_t));
 	dds->dwSize = sizeof(DDSHeader_t);
-	dds->dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT | DDSD_MIPMAPCOUNT;
+	dds->dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT | DDSD_PIXELFORMAT;
 	dds->dwWidth = image->width;
 	dds->dwHeight = image->height;
-	dds->dwMipMapCount = 1;
-	for (MipMap *mipmap = image->mipMaps; mipmap; mipmap = mipmap->nextmip)
+	dds->dwMipMapCount = 0;
+	for (ImageMap *map = image->maps; map; map = map->next)
 		dds->dwMipMapCount++;
 	dds->ddpfPixelFormat.dwSize = DDS_SIZE_PIXELFORMAT;
-	dds->ddsCaps.dwCaps = DDSCAPS_TEXTURE | DDSCAPS_COMPLEX | DDSCAPS_MIPMAP;
+	dds->ddsCaps.dwCaps = DDSCAPS_TEXTURE;
+	if (dds->dwMipMapCount > 1)
+	{
+		dds->ddsCaps.dwCaps = dds->ddsCaps.dwCaps | DDSCAPS_COMPLEX | DDSCAPS_MIPMAP;
+		dds->dwFlags = dds->dwFlags | DDSD_MIPMAPCOUNT;
+	}
 	if (format->fourCC == FOURCC('B','G','R','A'))
 	{
 		dds->lPitch = dds->dwWidth * 4;
@@ -75,8 +79,9 @@ byte *DDS_CreateHeader(LoadedImage *image, TexFormat *format, size_t *outsize)
 		dds->ddpfPixelFormat.dwGBitMask = 0x0000ff00;
 		dds->ddpfPixelFormat.dwBBitMask = 0x000000ff;
 		dds->ddpfPixelFormat.dwRGBBitCount = 32;
-        dds->ddpfPixelFormat.dwFlags = DDPF_ALPHAPIXELS | DDPF_RGB;
+        dds->ddpfPixelFormat.dwFlags = DDPF_ALPHAPIXELS | DDPF_RGB | DDPF_FOURCC;
 		dds->ddpfPixelFormat.dwRGBAlphaBitMask = 0xff000000;
+		dds->ddpfPixelFormat.dwFourCC = format->fourCC;
 	}
 	else if (format->block->fourCC != format->fourCC)
 	{
@@ -96,16 +101,24 @@ byte *DDS_CreateHeader(LoadedImage *image, TexFormat *format, size_t *outsize)
 		dds->ddpfPixelFormat.dwFlags = DDPF_FOURCC;
 	}
 
-	// set DDS magic words (GIMP uses it as special info)
+	// NVidia TextureTools flags (useful!)
+	if (image->maps->sRGB)
+		dds->ddpfPixelFormat.dwFlags = dds->ddpfPixelFormat.dwFlags | DDPF_SRGB;
+	if (image->datatype == IMAGE_NORMALMAP)
+		dds->ddpfPixelFormat.dwFlags = dds->ddpfPixelFormat.dwFlags | DDPF_NORMALMAP;
+	
+	// set DDS comment (GIMP uses it as special info)
 	if (tex_useSign)
-	{
-		dds->dwAlphaBitDepth = tex_signWord1;
-		dds->dwReserved = tex_signWord2;
-	}
+		memcpy(dds->cComment, tex_sign, 8);
 
 	// fill average color information
 	if (image->hasAverageColor)
-		dds->lpSurface = (LPVOID)(((unsigned long)image->averagecolor[0] | ((unsigned long)image->averagecolor[1] << 8) | ((unsigned long)image->averagecolor[2] << 16) | ((unsigned long)image->averagecolor[3] << 24 )));
+	{
+		dds->ddckAvgColor.cFlag = 0x41; 
+		dds->ddckAvgColor.ucRGB[0] = image->averagecolor[0];
+		dds->ddckAvgColor.ucRGB[1] = image->averagecolor[1];
+		dds->ddckAvgColor.ucRGB[2] = image->averagecolor[2];
+	}
 
 	// fill alphapixels information, ensure that our texture have actual alpha channel
 	// also texture may truncate it's alpha by forcing DXT1 compression no it
@@ -160,17 +173,27 @@ bool DDS_Read(TexDecodeTask *task)
 
 	// read comment
 	task->comment = (char *)mem_alloc(9);
-	sprintf(task->comment, "%c%c%c%c%c%c%c%c", dds->dwAlphaBitDepth & 0xFF, (dds->dwAlphaBitDepth >> 8) & 0xFF, (dds->dwAlphaBitDepth >> 16) & 0xFF, (dds->dwAlphaBitDepth >> 24) & 0xFF, dds->dwReserved & 0xFF, (dds->dwReserved >> 8) & 0xFF, (dds->dwReserved >> 16) & 0xFF, (dds->dwReserved >> 24) & 0xFF);
+	memcpy(task->comment, dds->cComment, 8);
 	task->comment[9] = 0;
 
+	// get average color information
+	if (dds->ddckAvgColor.cFlag == 0x41)
+	{
+		task->ImageParms.hasAverageColor = true;
+		task->ImageParms.averagecolor[0] = dds->ddckAvgColor.ucRGB[0];
+		task->ImageParms.averagecolor[1] = dds->ddckAvgColor.ucRGB[1];
+		task->ImageParms.averagecolor[2] = dds->ddckAvgColor.ucRGB[2];
+	}
+
 	// get image dimensions
-	task->hasAlpha = ((dds->ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS) && (task->format->features & FF_ALPHA)) ? true : false;
+	task->ImageParms.hasAlpha = ((dds->ddpfPixelFormat.dwFlags & DDPF_ALPHAPIXELS) && (task->format->features & FF_ALPHA)) ? true : false;
+	task->ImageParms.colorSwap = (dds->ddpfPixelFormat.dwRBitMask == 0x00ff0000 && dds->ddpfPixelFormat.dwBBitMask == 0x000000ff) ? true : false;
+	task->ImageParms.isNormalmap = (dds->ddpfPixelFormat.dwFlags & DDPF_NORMALMAP) ? true : false;
+	task->ImageParms.sRGB = (dds->ddpfPixelFormat.dwFlags & DDPF_SRGB) ? true : false;
 	task->numMipmaps = (dds->dwFlags & DDSD_MIPMAPCOUNT) ? (dds->dwMipMapCount - 1) : 0;
 	task->width = dds->dwWidth;
 	task->height = dds->dwHeight;
 	task->pixeldata = task->data + DDS_HEADER_SIZE;
 	task->pixeldatasize = task->datasize - DDS_HEADER_SIZE;
-	if (dds->ddpfPixelFormat.dwRBitMask == 0x00ff0000 && dds->ddpfPixelFormat.dwBBitMask == 0x000000ff)
-		task->colorSwap = true;
 	return true;
 }

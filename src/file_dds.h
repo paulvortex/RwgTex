@@ -10,7 +10,41 @@ byte  *DDS_CreateHeader(LoadedImage *image, TexFormat *format, size_t *outsize);
 size_t DDS_WriteMipHeader(byte *stream, size_t width, size_t height, size_t pixeldatasize);
 bool   DDS_Read(TexDecodeTask *task);
 
-// DDSURFACEDESC
+// DDS flags (dwFlags)
+#define DDSD_CAPS         0x1 // ddsCaps parameter used
+#define DDSD_HEIGHT       0x2 // dwHeight parameter used
+#define DDSD_WIDTH        0x4 // dwWidth parameter used
+#define DDSD_PITCH        0x8 // lPitch parameter used
+#define DDSD_PIXELFORMAT  0x1000 // ddpfPixelFormat parameter used
+#define DDSD_MIPMAPCOUNT  0x20000 // dwMipMapCount parameter used
+#define DDSD_LINEARSIZE   0x80000 // pitch is provided for a compressed texture
+#define DDSD_DEPTH        0x800000 // depth texture
+
+// DDS caps (dwCaps)
+#define DDSCAPS_COMPLEX   0x8
+#define DDSCAPS_TEXTURE   0x1000
+#define DDSCAPS_MIPMAP    0x400000
+
+// DDS caps2 (dwCaps2)
+#define DDSCAPS2_CUBEMAP            0x200 // texture is cubemap
+#define DDSCAPS2_CUBEMAP_POSITIVEX  0x400 // stored flag
+#define DDSCAPS2_CUBEMAP_NEGATIVEX	0x800 // stored flag
+#define DDSCAPS2_CUBEMAP_POSITIVEY	0x1000 // stored flag
+#define DDSCAPS2_CUBEMAP_NEGATIVEY	0x2000 // stored flag
+#define DDSCAPS2_CUBEMAP_POSITIVEZ	0x4000 // stored flag
+#define DDSCAPS2_CUBEMAP_NEGATIVEZ	0x8000 // stored flag
+#define DDSCAPS2_CUBEMAP_ALL_FACES  0xFC00U // all faces
+#define DDSCAPS2_VOLUME	            0x200000 // volume texture
+
+// DDS pixelformat flags
+#define DDPF_ALPHAPIXELS            0x1 // has alpha channel
+#define DDPF_RGB                    0x4 // has RGB channels
+#define DDPF_FOURCC                 0x40 // fourCC field is valid
+#define DDPF_ALPHAPREMULT           0x8000 // RGB premultiplied by the alpha
+#define DDPF_SRGB                   0x40000000 // NVTT: sRGB colorspace
+#define DDPF_NORMALMAP              0x80000000 // NVTT: normalmap colorspace
+
+// DDSURFACEDESC2
 typedef struct DDSHeader_s
 {
 	// byte 0-3
@@ -39,13 +73,27 @@ typedef struct DDSHeader_s
         DWORD dwSrcVBHandle;                 // The source used in VB::Optimize
     };
 	// byte 28-35
-	// VorteX: This field used to store a small 8-char comment inside DDS file
-	//         GIMP DDS Plugin uses it as special info field
-    DWORD dwAlphaBitDepth;                   // depth of alpha buffer requested
-    DWORD dwReserved;                        // reserved
+	union
+    {
+		struct
+		{
+			DWORD dwAlphaBitDepth;            // depth of alpha buffer requested
+			DWORD dwReserved;                 // reserved
+		} ddckAlphaDepth;
+		// VorteX: store a small 8-char comment inside DDS file, GIMP DDS Plugin uses it as special info field
+		char cComment[8];
+	};
 	// byte 36-39
-	// VorteX: this field is used to store average color of image if first byte equals to 'A'
-    LPVOID lpSurface;                        // pointer to the associated surface memory
+	union
+    {
+		LPVOID lpSurface;                    // pointer to the associated surface memory
+		// VorteX: this field is used to store average color of image if first byte equals to 'A'
+		struct
+		{
+			char cFlag;                      // must be  0x41
+			unsigned char ucRGB[3];          // RGB
+		} ddckAvgColor;
+	};
 	// byte 40-47
     union
     {

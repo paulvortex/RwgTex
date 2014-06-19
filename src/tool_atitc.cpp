@@ -15,7 +15,6 @@
 TexTool TOOL_ATITC =
 {
 	"AtiTC", "AMD The Compressonator", "ati",
-	"DXT, ETC1",
 	TEXINPUT_BGR | TEXINPUT_BGRA,
 	&ATITC_Init,
 	&ATITC_Option,
@@ -52,11 +51,6 @@ void ATITC_Init(void)
 	RegisterFormat(&F_DXT3, &TOOL_ATITC);
 	RegisterFormat(&F_DXT4, &TOOL_ATITC);
 	RegisterFormat(&F_DXT5, &TOOL_ATITC);
-	RegisterFormat(&F_RXGB, &TOOL_ATITC);
-	RegisterFormat(&F_YCG1, &TOOL_ATITC);
-	RegisterFormat(&F_YCG2, &TOOL_ATITC);
-	RegisterFormat(&F_YCG3, &TOOL_ATITC);
-	RegisterFormat(&F_YCG4, &TOOL_ATITC);
 	// ETC
 	RegisterFormat(&F_ETC1, &TOOL_ATITC);
 	// options
@@ -156,7 +150,7 @@ bool ATITC_Compress(TexEncodeTask *t)
 	options.bUseChannelWeighting = false;
 	options.bDisableMultiThreading = (tex_mode == TEXMODE_DROP_FILE) ? false : true;
 	options.dwSize = sizeof(options);
-	if (t->format == &F_RXGB)
+	if (t->format == &F_DXT5_RXGB)
 	{
 		options.bUseChannelWeighting = true;
 		options.bUseAdaptiveWeighting = false;
@@ -214,19 +208,13 @@ bool ATITC_Compress(TexEncodeTask *t)
 	ATI_TC_ERROR res = ATI_TC_OK;
 	byte *stream = t->stream;
 	dst.pData = stream;
-	res = AtiCompressData(&src, &dst, Image_GetData(t->image, NULL), t->image->width, t->image->height, &options, compress, t->image->bpp);
-	if (res == ATI_TC_OK)
+	for (ImageMap *map = t->image->maps; map; map = map->next)
 	{
+		dst.pData = stream;
+		res = AtiCompressData(&src, &dst, map->data, map->width, map->height, &options, compress, t->image->bpp);
+		if (res != ATI_TC_OK)
+			break;
 		stream += dst.dwDataSize;
-		// mipmaps
-		for (MipMap *mipmap = t->image->mipMaps; mipmap; mipmap = mipmap->nextmip)
-		{
-			dst.pData = stream;
-			res = AtiCompressData(&src, &dst, mipmap->data, mipmap->width, mipmap->height, &options, compress, t->image->bpp);
-			if (res != ATI_TC_OK)
-				break;
-			stream += dst.dwDataSize;
-		}
 	}
 
 	// end, advance stats

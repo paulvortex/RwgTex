@@ -12,6 +12,108 @@
 /*
 ==========================================================================================
 
+  Generate texture maps for compressor
+
+==========================================================================================
+*/
+
+typedef struct
+{
+	bool BinaryAlpha;
+	bool ConvertTosRGB;
+	bool ConvertToLinear;
+} MapProcessParms;
+
+void PreprocessMap(ImageMap *map, MapProcessParms *parms, int bpp)
+{
+	if (parms->BinaryAlpha)
+	{
+		byte *in = map->data;
+		byte *end = in + map->width * map->height * bpp;
+		while(in < end)
+		{
+			in[3] = (in[3] < tex_binaryAlphaCenter) ? 0 : 255;
+			in += bpp;
+		}
+	}
+	if (parms->ConvertTosRGB)
+		ImageData_ConvertSRGB(map->data, map->width, map->height, map->width*bpp, bpp, false, true);
+	if (parms->ConvertToLinear)
+		ImageData_ConvertSRGB(map->data, map->width, map->height, map->width*bpp, bpp, true, false);
+}
+
+void GenerateMipMaps(TexEncodeTask *task, bool sRGB)
+{
+	ImageMap *map;
+	LoadedImage *image;
+	int s, w, h, l, pitch, y;
+	bool data_allocated, any_conversions, mipLevels;
+	MapProcessParms conversions = { 0 };
+	FIBITMAP *mipbitmap;
+
+	// cleanup
+	image = task->image;
+	Image_FreeMaps(image);
+
+	// whats needed
+	mipLevels = (!tex_noMipmaps && !FS_FileMatchList(task->file, image, tex_noMipFiles) && !(task->format->features & FF_NOMIP)) ? true : false;
+	conversions.ConvertTosRGB = (image->sRGB != sRGB && sRGB == true);
+	conversions.ConvertToLinear = (image->sRGB != sRGB && sRGB == false);
+	conversions.BinaryAlpha = (task->format->features & FF_BINARYALPHA && image->hasAlpha) ? true : false;
+	any_conversions = (conversions.BinaryAlpha || conversions.ConvertTosRGB || conversions.ConvertToLinear) ? true : false;
+
+	// create base map
+	mem_calloc(&map, sizeof(ImageMap));
+	map->width = image->width;
+	map->height = image->height;
+	map->data = Image_GetUnalignedData(image, &map->datasize, &data_allocated, any_conversions );
+	map->sRGB = sRGB;
+	PreprocessMap(map, &conversions, image->bpp);
+	if (data_allocated == false)
+		map->external = true;
+	image->maps = map;
+
+	// create miplevels
+	if (mipLevels)
+	{
+		s = min(image->width, image->height);
+		w = image->width;
+		h = image->height;
+		l = 0;
+		while(s > 1)
+		{
+			l++;
+			w = w / 2;
+			h = h / 2;
+			s = s / 2;
+			mem_calloc(&map->next, sizeof(ImageMap));
+			map = map->next;
+			map->level = l;
+			map->width = w;
+			map->height = h;
+			map->datasize = map->width*map->height*image->bpp;
+			map->data = (byte *)mem_alloc(map->datasize);
+			map->sRGB = sRGB;
+			// create mip
+			mipbitmap = fiRescale(image->bitmap, w, h, FILTER_LANCZOS3, false);
+			byte *in = fiGetData(mipbitmap, &pitch);
+			byte *out = map->data;
+			for (y = 0; y < h; y++)
+			{
+				memcpy(out, in, map->width*image->bpp);
+				out += map->width*image->bpp;
+				in += pitch;
+			}
+			if (mipbitmap != image->bitmap)
+				fiFree(mipbitmap);
+			PreprocessMap(map, &conversions, image->bpp);
+		}
+	}
+}
+
+/*
+==========================================================================================
+
   Compress
 
 ==========================================================================================
@@ -19,6 +121,8 @@
 
 void Compress(TexEncodeTask *task)
 {
+	bool sRGB;
+
 	// force tool
 	if (task->codec->forceTool)
 		task->tool = task->codec->forceTool;
@@ -49,7 +153,7 @@ void Compress(TexEncodeTask *task)
 		}
 	}
 
-	// run codec
+	// run codec (select tool and format)
 	if (task->codec->fEncode)
 		task->codec->fEncode(task);
 	else
@@ -59,18 +163,78 @@ void Compress(TexEncodeTask *task)
 	if (!task->tool)
 		Error("%s: uninitialized texture tool for image '%s", task->codec->name, task->file->fullpath.c_str());
 
+	// determine if we should to compress as sRGB
+	sRGB = false;
+	if (tex_sRGB_allow && (task->format->features & FF_SRGB))
+	{
+		sRGB = (task->image->sRGB  || tex_sRGB_forceconvert || FS_FileMatchList(task->file, task->image, tex_sRGBcolorspace));
+		if (tex_sRGB_autoconvert && !sRGB && (task->image->sRGB == false))
+		{
+			// smart conversion: if sRGB colorspace will cause a quality increase (i.e. image contains many dark pixels), convert it
+			int pitch, h;
+			float grayscale;
+			size_t lowpixels = 0, highpixels = 0;
+			byte *data, *in, *end;
+			data = Image_GetData(task->image, NULL, &pitch);
+			if (task->image->colorSwap)
+			{
+				for (h = 0; h < task->image->height; h++)
+				{
+					in = data;
+					end = in + task->image->width * task->image->bpp;
+					while(in < end)
+					{
+						grayscale = (float)in[0] * 0.299f + (float)in[1] * 0.587f + (float)in[2] * 0.114f;
+						if (task->image->bpp == 4 && in[3] == 0)
+							grayscale = 0;
+						if (grayscale > 0) // skip black and transparent pixels
+						{
+							if (grayscale > 30)
+								highpixels++;
+							else
+								lowpixels++;
+						}
+						in += task->image->bpp;
+					}
+					data += pitch;
+				}
+			}
+			else
+			{
+				for (h = 0; h < task->image->height; h++)
+				{
+					in = data;
+					end = in + task->image->width * task->image->bpp;
+					while(in < end)
+					{
+						grayscale = (float)in[2] * 0.299f + (float)in[1] * 0.587f + (float)in[0] * 0.114f;
+						if (task->image->bpp == 4 && in[3] == 0)
+							grayscale = 0;
+						if (grayscale > 0) // skip black and transparent pixels
+						{
+							if (grayscale > 30) // pixels < 30 have 2.5-4x more precision 
+								highpixels++;
+							else
+								lowpixels++;
+						}
+						in += task->image->bpp;
+					}
+					data += pitch;
+				}
+			}
+			//printf("lowpixels %i, highpixels %i\n", lowpixels, highpixels); 
+			if (lowpixels > highpixels)
+				sRGB = true;
+		}
+	}
 
-	// postprocess
-	bool srgb = (tex_allowSRGB && (task->format->features & FF_SRGB)) && (task->image->sRGB  || tex_forceSRGB || FS_FileMatchList(task->file, task->image, tex_sRGBcolorspace));
-	if (tex_mode == TEXMODE_DROP_FILE)
-		Print("Compressing %s as %s:%s (%s/%s)\n", task->file->fullpath.c_str(), task->tool->name, task->format->name, task->format->block->name, OptionEnumName(tex_profile, tex_profiles));
-	else
-		Verbose("Compressing %s as %s:%s (%s/%s)\n", task->file->fullpath.c_str(), task->tool->name, task->format->name, task->format->block->name, OptionEnumName(tex_profile, tex_profiles));
-	Image_ConvertSRGB(task->image, srgb);
+	// generate maps to be compressed
+	Verbose("Compressing %s as %s:%s (%s%s/%s)\n", task->file->fullpath.c_str(), task->tool->name, task->format->name, (sRGB == true) ? "sRGB_" : "", task->format->block->name, OptionEnumName(tex_profile, tex_profiles));
 	Image_SwapColors(task->image, (task->tool->inputflags & (TEXINPUT_BGR|TEXINPUT_BGRA)) ? true : false);
-	Image_CalcAverageColor(task->image);
 	if (!(task->tool->inputflags & (TEXINPUT_BGR|TEXINPUT_RGB)))
 		Image_ConvertBPP(task->image, 4);
+	else if (!(task->tool->inputflags & (TEXINPUT_BGRA|TEXINPUT_RGBA)))
+		Image_ConvertBPP(task->image, 3);
 	Image_Swizzle(task->image, task->format->colorSwizzle, false);
 	if (FS_FileMatchList(task->file, task->image, tex_scale4xFiles) || tex_forceScale4x)
 	{
@@ -79,14 +243,9 @@ void Compress(TexEncodeTask *task)
 	}
 	else if (FS_FileMatchList(task->file, task->image, tex_scale2xFiles) || tex_forceScale2x)
 		Image_Scale2x(task->image, tex_firstScaler, (tex_allowNPOT && !(task->format->features & FF_POT)) ? false : true);
-	if (!tex_allowNPOT)
-		Image_MakeDimensions(task->image, true, (task->format->features & FF_SQUARE) ? true : false);
-	if (task->format->features & FF_BINARYALPHA)
-		Image_MakeAlphaBinary(task->image, tex_binaryAlphaCenter);
-	Image_ConvertSRGB(task->image, srgb);
-	Image_GenerateMaps(task->image, false, (!tex_noMipmaps && !FS_FileMatchList(task->file, task->image, tex_noMipFiles) && !(task->format->features & FF_NOMIP)) ? true : false, (task->format->features & FF_BINARYALPHA) ? true : false);
+	Image_MakeDimensions(task->image, (tex_allowNPOT == true) ? false : true, (task->format->features & FF_SQUARE) ? true : false);
+	GenerateMipMaps(task, sRGB);
 
-	
 	// allocate memory for destination file
 	size_t headersize;
 	byte  *header = task->container->fCreateHeader(task->image, task->format, &headersize);
@@ -205,14 +364,14 @@ void TexCompress_WorkerThread(ThreadData *thread)
 				memset(WriteData, 0, sizeof(TexWriteData));
 				ext = task.container->extensionName;
 				sprintf(WriteData->outfile, "%s%s%s%s%s", tex_generateArchive ? "" : tex_destPath, 
-					                                    tex_destPathUseCodecDir ? codec->destDir : "", 
+					                                    (!tex_testCompresion && tex_destPathUseCodecDir) ? codec->destDir : "", 
 														tex_addPath.c_str(),
 														task.file->path.c_str(), 
 														frame->useTexname ? frame->texname : task.file->name.c_str());
 				if (tex_useSuffix & TEXSUFF_FORMAT)
 				{
 					strcat(WriteData->outfile, task.format->suffix);
-					if (task.image->sRGB)
+					if (task.image->maps->sRGB)
 						strcat(WriteData->outfile, "_sRGB");
 				}
 				if (tex_useSuffix & TEXSUFF_TOOL)
@@ -241,8 +400,8 @@ void TexCompress_WorkerThread(ThreadData *thread)
 			}
 			task.image = image;
 
-			// delete image if it was changed or if it is not needed anymore
-			if (Image_Changed(image) || !codec->nextActive)
+			// delete image if it was changed
+			if (Image_Changed(image))
 				Image_Unload(image);
 
 			// global stats
@@ -252,8 +411,29 @@ void TexCompress_WorkerThread(ThreadData *thread)
 				SharedData->num_exported_files += numexported;
 			}
 		}
+
+		// we are finished with this image
+		Image_Unload(image);
 	}
 	Image_Delete(image);
+}
+
+void TexAddZipFile(TexCompressData *SharedData, HZIP outzip, char *outfile, byte *data, int datasize)
+{
+	SharedData->zip_len = ZipGetMemoryWritten(outzip);
+	if (tex_zipInMemory)
+		if ((SharedData->zip_len + datasize) >= SharedData->zip_maxlen)
+			Error("TexAddZipFile: Out of free ZIP memory (reached %i MB), consider increasing -zipmem!\n", (float)SharedData->zip_maxlen / 1048576.0f);
+	ZRESULT zr = ZipAdd(outzip, outfile, data, datasize, tex_zipCompression);
+	if (zr != ZR_OK)
+	{
+		if (zr == ZR_MEMSIZE)
+			Error("TexAddZipFile(%s): failed to pack file into ZIP - out of memory (consider increasing -zipmem). Process stopped. ", outfile);
+		else if (zr == ZR_FAILED)
+			Error("TexAddZipFile(%s): failed to pack file into ZIP - previous file failed. Process stopped. ", outfile);
+		else
+			Warning("TexAddZipFile(%s): failed to pack file into ZIP - error code 0x%08X", outfile, zr);
+	}
 }
 
 void TexCompress_MainThread(ThreadData *thread)
@@ -283,7 +463,6 @@ void TexCompress_MainThread(ThreadData *thread)
 			SharedData->zip_maxlen = 1048576 * tex_zipInMemory;
 			SharedData->zip_data = mem_alloc(SharedData->zip_maxlen);
 			outzip = CreateZip(SharedData->zip_data, SharedData->zip_maxlen, "");
-
 		}
 		if (!outzip)
 		{
@@ -295,6 +474,22 @@ void TexCompress_MainThread(ThreadData *thread)
 		tex_destPathUseCodecDir = true;
 		if (tex_zipInMemory > 0)
 			Print("Keeping ZIP in memory (max size %i MBytes)\n", tex_zipInMemory);
+		// add external files
+		if (tex_zipAddFiles.size())
+		{
+			byte *data;
+			int datasize;
+			char *filename, *outfile;
+			for (FCLIST::iterator file = tex_zipAddFiles.begin(); file < tex_zipAddFiles.end(); file++)
+			{
+				filename = (char *)file->parm.c_str();
+				outfile = (char *)file->pattern.c_str();
+				Print("Adding external file %s as %s\n", filename, outfile);
+				datasize = LoadFile(filename, &data);
+				TexAddZipFile(SharedData, outzip, outfile, data, datasize);
+				mem_free(data);
+			}
+		}
 	}
 	if (tex_addPath.c_str()[0])
 		Print("Additional path \"%s\"\n", tex_addPath.c_str());
@@ -339,22 +534,7 @@ void TexCompress_MainThread(ThreadData *thread)
 
 			// write
 			if (outzip)
-			{
-				SharedData->zip_len = ZipGetMemoryWritten(outzip);
-				if (tex_zipInMemory)
-					if ((SharedData->zip_len + WriteData->datasize) >= SharedData->zip_maxlen)
-						Error("TexCompress: Out of free ZIP memory (reached %i MB), consider increasing -zipmem!\n", (float)SharedData->zip_maxlen / 1048576.0f);
-				ZRESULT zr = ZipAdd(outzip, WriteData->outfile, WriteData->data, WriteData->datasize, tex_zipCompression);
-				if (zr != ZR_OK)
-				{
-					if (zr == ZR_MEMSIZE)
-						Error("TexCompress(%s): failed to pack file into ZIP - out of memory (consider increasing -zipmem). Process stopped. ", WriteData->outfile);
-					else if (zr == ZR_FAILED)
-						Error("TexCompress(%s): failed to pack file into ZIP - previous file failed. Process stopped. ", WriteData->outfile);
-					else
-						Warning("TexCompress(%s): failed to pack file into ZIP - error code 0x%08X", WriteData->outfile, zr);
-				}
-			}
+				TexAddZipFile(SharedData, outzip, WriteData->outfile, WriteData->data, WriteData->datasize);
 			else
 			{
 				// write file
@@ -422,8 +602,12 @@ void TexCompress_Option(const char *section, const char *group, const char *key,
 			tex_addPath = val;
 		else if (!stricmp(key, "nonpoweroftwotextures"))
 			tex_allowNPOT = OptionBoolean(val);
-		else if (!stricmp(key, "srgbtextures"))
-			tex_allowSRGB = OptionBoolean(val);
+		else if (!stricmp(key, "sRGB"))
+			tex_sRGB_allow = OptionBoolean(val);
+		else if (!stricmp(key, "sRGB_autoconvert"))
+			tex_sRGB_autoconvert = OptionBoolean(val);
+		else if (!stricmp(key, "sRGB_forceconvert"))
+			tex_sRGB_forceconvert = OptionBoolean(val);
 		else if (!stricmp(key, "generatemipmaps"))
 			tex_noMipmaps = OptionBoolean(val) ? false : true;
 		else if (!stricmp(key, "averagecolorinfo"))
@@ -637,8 +821,15 @@ void TexCompress_Load(void)
 		Print("Not generating texture average color info\n");
 	if (tex_useSuffix)
 		Print("Adding file suffix for tool/format\n");
-	if (tex_forceSRGB)
-		Print("Forcing sRGB colorspace on all textures");
+	if (tex_sRGB_allow)
+	{
+		if (tex_sRGB_forceconvert)
+			Print("Forcing sRGB colorspace conversion\n");
+		else if (tex_sRGB_autoconvert)
+			Print("Allowed sRGB colorspace textures with smart conversion\n");
+		else
+			Print("Allowed sRGB colorspace (ICC profile-based) textures\n");
+	}
 	if (tex_testCompresionError)
 	{
 		if (tex_testCompresionAllErrors)

@@ -17,11 +17,12 @@
 
 // structures
 // compressed format features
-#define FF_ALPHA         1 // alpha
-#define FF_BINARYALPHA   2 // 'punch-though' alpha
-#define FF_NOMIP         4 // does not support mipmaps
-#define FF_POT           8 // should have power-of-two dimensions
-#define FF_SQUARE       16 // should have width = height
+#define FF_ALPHA                1  // alpha
+#define FF_BINARYALPHA          2  // 'punch-though' alpha
+#define FF_NOMIP                4  // does not support maps
+#define FF_POT                  8  // should have power-of-two dimensions
+#define FF_SQUARE               16 // should have width = height
+#define FF_SRGB                 32 // support hardware sRGB decoding
 
 // encoding profiles
 enum texprofile
@@ -64,25 +65,27 @@ typedef struct TexFormat_s
 	TexBlock            *block;
 	struct TexCodec_s   *codec;
 	uint                 glInternalFormat;
+	uint                 glInternalFormat_SRGB;
 	uint                 glFormat;
 	uint                 glType;
 	ulong                features;
 	void               (*colorSwizzle)(LoadedImage *image, bool decode);
-	void               (*fInit)(void);
+	TexFormat_s        **swizzledFormats;
 	// system part
 	char                *cmdParm;
 	char                *cmdParmDisabled;
 	char                *forceGroup;
 	FCLIST               forceFileList;
 	char                *suffix;
+	TexFormat_s         *baseFormat; // points to base format for swizzled formats (RXGB, YCoGg etc)
 	TexFormat_s         *next;
 } TexFormat;
 
 // texture tool input flags
-#define TEXINPUT_BGR    1
-#define TEXINPUT_BGRA   2
-#define TEXINPUT_RGB    4
-#define TEXINPUT_RGBA   8
+#define TEXINPUT_BGR         1
+#define TEXINPUT_BGRA        2
+#define TEXINPUT_RGB         4
+#define TEXINPUT_RGBA        8
 
 // texture compression/decompression tool
 typedef struct TexTool_s
@@ -90,7 +93,6 @@ typedef struct TexTool_s
 	char              *name;
 	char              *fullName;
 	char              *parmName;
-	char              *featuredCodecs;
 	ulong              inputflags;
 	void             (*fInit)(void);
 	void             (*fOption)(const char *group, const char *key, const char *val, const char *filename, int linenum);
@@ -104,6 +106,8 @@ typedef struct TexTool_s
 	char              *forceGroup;
 	FCLIST             forceFileList;
 	char              *suffix;
+	char              *featuredCodecs; // filled by Tex_LinkTools()
+	char              *featuredFormats; // filled by Tex_LinkTools()
 	TexTool_s         *next;
 } TexTool;
 
@@ -186,7 +190,7 @@ typedef struct TexContainer_s
 #include "tool_nvdxtlib.h"
 #include "tool_nvtt.h"
 #include "tool_atitc.h"
-#include "tool_bgra.h"
+#include "tool_rwgtt.h"
 #include "tool_gimp.h"
 #include "tool_etcpack.h"
 #include "tool_crunch.h"
@@ -226,7 +230,7 @@ void          RegisterContainer(TexContainer *container);
 TexContainer *findContainerForFile(char *filename, byte *data, size_t datasize);
 
 // main
-size_t        compressedTextureSize(LoadedImage *image, TexFormat *format, TexContainer *container, bool baseTex, bool mipMaps);
+size_t        compressedTextureSize(LoadedImage *image, TexFormat *format, TexContainer *container, bool baseTex, bool mipLevels);
 size_t        compressedTextureBPP(LoadedImage *image, TexFormat *format, TexContainer *container);
 void          Tex_PrintCodecs(void);
 void          Tex_PrintTools(void);
@@ -262,14 +266,17 @@ extern bool          tex_noMipmaps;
 extern bool          tex_noAvgColor;
 extern bool          tex_forceScale2x;
 extern bool          tex_forceScale4x;
+extern bool          tex_sRGB_allow;
+extern bool          tex_sRGB_autoconvert;
+extern bool          tex_sRGB_forceconvert;
 extern bool          tex_useSign;
-extern DWORD         tex_signWord1;
-extern DWORD         tex_signWord2;
+extern char          tex_sign[1024];
 extern DWORD         tex_signVersion;
 extern FCLIST        tex_includeFiles;
 extern FCLIST        tex_noMipFiles;
 extern FCLIST        tex_normalMapFiles;
 extern FCLIST        tex_grayScaleFiles;
+extern FCLIST        tex_sRGBcolorspace;
 extern bool          tex_forceBestPSNR;
 extern bool          tex_detectBinaryAlpha;
 extern byte          tex_binaryAlphaMin;
@@ -280,6 +287,7 @@ extern FCLIST        tex_archiveFiles;
 extern string        tex_addPath;
 extern int           tex_zipInMemory;
 extern int           tex_zipCompression;
+extern FCLIST        tex_zipAddFiles;
 extern FCLIST        tex_scale2xFiles;
 extern FCLIST        tex_scale4xFiles;
 extern ImageScaler   tex_firstScaler;
