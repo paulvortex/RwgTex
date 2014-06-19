@@ -1,16 +1,8 @@
-/******************************************************************************
+/*!****************************************************************************
 
- @File         PVRTGlobal.h
-
- @Title        PVRTGlobal
-
- @Version      
-
- @Copyright    Copyright (c) Imagination Technologies Limited.
-
- @Platform     ANSI compatible
-
- @Description  Global defines and typedefs for PVRTools
+ @file         PVRTGlobal.h
+ @copyright    Copyright (c) Imagination Technologies Limited.
+ @brief        Global defines and typedefs for PVRTools
 
 ******************************************************************************/
 #ifndef _PVRTGLOBAL_H_
@@ -26,7 +18,7 @@
 // avoid warning about unused parameter
 #define PVRT_UNREFERENCED_PARAMETER(x) ((void) x)
 
-#if defined(_WIN32) && !defined(__QT__)	/* Windows desktop */
+#if defined(_WIN32) && !defined(__QT__) && !defined(UNDER_CE)	/* Windows desktop */
 #if !defined(_CRTDBG_MAP_ALLOC)
 	#define _CRTDBG_MAP_ALLOC
 #endif
@@ -35,18 +27,48 @@
 	#include <tchar.h>
 #endif
 
+#if defined(UNDER_CE)
+	#include <windows.h>
+
+#ifndef _ASSERT
+	#ifdef _DEBUG
+		#define _ASSERT(X) { (X) ? 0 : DebugBreak(); }
+	#else
+		#define _ASSERT(X)
+	#endif
+#endif
+
+#ifndef _ASSERTE
+	#ifdef _DEBUG
+		#define _ASSERTE _ASSERT
+	#else
+		#define _ASSERTE(X)
+	#endif
+#endif
+	#define _RPT0(a,b)
+	#define _RPT1(a,b,c)
+	#define _RPT2(a,b,c,d)
+	#define _RPT3(a,b,c,d,e)
+	#define _RPT4(a,b,c,d,e,f)
+#else
+
 #if defined(_WIN32) && !defined(__QT__)
 
 #else
 #if defined(__linux__) || defined(__APPLE__)
-	#define _ASSERT(a)((void)0)
-	#define _ASSERTE(a)((void)0)
+	#include <assert.h>
 	#ifdef _DEBUG
 		#ifndef _RPT0
 		#define _RPT0(a,b) printf(b)
 		#endif
 		#ifndef _RPT1
 		#define _RPT1(a,b,c) printf(b,c)
+		#endif
+		#ifndef _ASSERT
+		#define _ASSERT(a) assert(a)
+		#endif
+		#ifndef _ASSERTE
+		#define _ASSERTE(a) assert(a)
 		#endif
 	#else
 		#ifndef _RPT0
@@ -55,22 +77,42 @@
 		#ifndef _RPT1
 	    #define _RPT1(a,b,c)((void)0)
 		#endif
+		#ifndef _ASSERT
+		#define _ASSERT(a)((void)0)
+		#endif
+		#ifndef _ASSERTE
+		#define _ASSERTE(a)((void)0)
+		#endif
 	#endif
+	#ifndef _RPT2
 	#define _RPT2(a,b,c,d)((void)0)
+	#endif
+	#ifndef _RPT3
 	#define _RPT3(a,b,c,d,e)((void)0)
+	#endif
+	#ifndef _RPT4
 	#define _RPT4(a,b,c,d,e,f)((void)0)
+	#endif
 	#include <stdlib.h>
 	#include <string.h>
-	#define BYTE unsigned char
-	#define WORD unsigned short
-	#define DWORD unsigned int
+	#ifndef BYTE
+		#define BYTE unsigned char
+	#endif
+	#ifndef WORD
+		#define WORD unsigned short
+	#endif
+	#ifndef DWORD
+		#define DWORD unsigned int
+	#endif
+	#if !defined(BOOL) && !defined(OBJC_BOOL_DEFINED)
+		#define BOOL	int
+	#endif
 	typedef struct tagRGBQUAD {
 	BYTE    rgbBlue;
 	BYTE    rgbGreen;
 	BYTE    rgbRed;
 	BYTE    rgbReserved;
 	} RGBQUAD;
-	#define BOOL int
 #if !defined(TRUE)
 	#define TRUE 1
 #endif
@@ -86,6 +128,7 @@
 	#define _RPT4(a,b,c,d,e,f)
 	#define _ASSERT(X)
 	#define _ASSERTE(X)
+#endif
 #endif
 #endif
 
@@ -117,9 +160,9 @@ typedef float				PVRTfloat32;
 #if (defined(__int64) || defined(_WIN32))
 typedef signed __int64     PVRTint64;
 typedef unsigned __int64   PVRTuint64;
-#elif defined(TInt64)
-typedef TInt64             PVRTint64;
-typedef TUInt64            PVRTuint64;
+#elif defined(__GNUC__)
+__extension__ typedef signed long long PVRTint64;
+__extension__ typedef unsigned long long PVRTuint64;
 #else
 typedef signed long long   PVRTint64;
 typedef unsigned long long PVRTuint64;
@@ -143,8 +186,8 @@ PVRTSIZEASSERT(PVRTuint64, 8);
 PVRTSIZEASSERT(PVRTfloat32, 4);
 
 /*!**************************************************************************
-@Enum   ETextureFilter
-@Brief  Enum values for defining texture filtering
+ @enum   ETextureFilter
+ @brief  Enum values for defining texture filtering
 ****************************************************************************/
 enum ETextureFilter
 {
@@ -158,8 +201,8 @@ enum ETextureFilter
 };
 
 /*!**************************************************************************
-@Enum   ETextureWrap
-@Brief  Enum values for defining texture wrapping
+ @enum   ETextureWrap
+ @brief  Enum values for defining texture wrapping
 ****************************************************************************/
 enum ETextureWrap
 {
@@ -174,10 +217,9 @@ enum ETextureWrap
 ** swap template function
 ****************************************************************************/
 /*!***************************************************************************
- @Function		PVRTswap
- @Input			a Type a
- @Input			b Type b
- @Description	A swap template function that swaps a and b
+ @brief      	A swap template function that swaps a and b
+ @param[in]		a   Type a
+ @param[in]		b   Type b
 *****************************************************************************/
 
 template <typename T>
@@ -189,11 +231,10 @@ inline void PVRTswap(T& a, T& b)
 }
 
 /*!***************************************************************************
- @Function		PVRTClamp
- @Input			val		Value to clamp
- @Input			min		Minimum legal value
- @Input			max		Maximum legal value
- @Description	A clamp template function that clamps val between min and max.
+ @brief      	A clamp template function that clamps val between min and max.
+ @param[in]		val		Value to clamp
+ @param[in]		min		Minimum legal value
+ @param[in]		max		Maximum legal value
 *****************************************************************************/
 template <typename T>
 inline T PVRTClamp(const T& val, const T& min, const T& max)
@@ -206,10 +247,9 @@ inline T PVRTClamp(const T& val, const T& min, const T& max)
 }
 
 /*!***************************************************************************
- @Function		PVRTByteSwap
- @Input			pBytes A number
- @Input			i32ByteNo Number of bytes in pBytes
- @Description	Swaps the endianness of pBytes in place
+ @brief      	Swaps the endianness of pBytes in place
+ @param[in]		pBytes      A number
+ @param[in]		i32ByteNo   Number of bytes in pBytes
 *****************************************************************************/
 inline void PVRTByteSwap(unsigned char* pBytes, int i32ByteNo)
 {
@@ -220,10 +260,9 @@ inline void PVRTByteSwap(unsigned char* pBytes, int i32ByteNo)
 }
 
 /*!***************************************************************************
- @Function		PVRTByteSwap32
- @Input			ui32Long A number
- @Returns		ui32Long with its endianness changed
- @Description	Converts the endianness of an unsigned int
+ @brief      	Converts the endianness of an unsigned int
+ @param[in]		ui32Long    A number
+ @return		ui32Long with its endianness changed
 *****************************************************************************/
 inline unsigned int PVRTByteSwap32(unsigned int ui32Long)
 {
@@ -231,10 +270,9 @@ inline unsigned int PVRTByteSwap32(unsigned int ui32Long)
 }
 
 /*!***************************************************************************
- @Function		PVRTByteSwap16
- @Input			ui16Short A number
- @Returns		ui16Short with its endianness changed
- @Description	Converts the endianness of a unsigned short
+ @brief      	Converts the endianness of a unsigned short
+ @param[in]		ui16Short   A number
+ @return		ui16Short with its endianness changed
 *****************************************************************************/
 inline unsigned short PVRTByteSwap16(unsigned short ui16Short)
 {
@@ -242,9 +280,8 @@ inline unsigned short PVRTByteSwap16(unsigned short ui16Short)
 }
 
 /*!***************************************************************************
- @Function		PVRTIsLittleEndian
- @Returns		True if the platform the code is ran on is little endian
- @Description	Returns true if the platform the code is ran on is little endian
+ @brief      	Returns true if the platform the code is ran on is little endian
+ @return		True if the platform the code is ran on is little endian
 *****************************************************************************/
 inline bool PVRTIsLittleEndian()
 {

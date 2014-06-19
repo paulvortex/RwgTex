@@ -1,16 +1,8 @@
-/******************************************************************************
+/*!****************************************************************************
 
- @File         PVRTTexture.h
-
- @Title        PVRTTexture
-
- @Version      
-
- @Copyright    Copyright (c) Imagination Technologies Limited.
-
- @Platform     ANSI compatible
-
- @Description  Texture loading.
+ @file         PVRTTexture.h
+ @copyright    Copyright (c) Imagination Technologies Limited.
+ @brief        Texture loading.
 
 ******************************************************************************/
 #ifndef _PVRTTEXTURE_H_
@@ -146,23 +138,27 @@ static const PVRTuint64 PVRTEX_PFHIGHMASK=0xffffffff00000000ull;
 * Texture header structures.
 *****************************************************************************/
 
+/*!***********************************************************************
+ @struct       	MetaDataBlock
+ @brief      	A struct containing a block of extraneous meta data for a texture.
+*************************************************************************/
 struct MetaDataBlock
 {
-	PVRTuint32	DevFOURCC;		//A 4cc descriptor of the data type's creator. Values equating to values between 'P' 'V' 'R' 0 and 'P' 'V' 'R' 255 will be used by our headers.
-	PVRTuint32	u32Key;			//A DWORD (enum value) identifying the data type, and thus how to read it.
-	PVRTuint32	u32DataSize;	//Size of the Data member.
-	PVRTuint8*	Data;			//Data array, can be absolutely anything, the loader needs to know how to handle it based on DevFOURCC and Key. Use new operator to assign to it.
+	PVRTuint32	DevFOURCC;		///< A 4cc descriptor of the data type's creator. Values equating to values between 'P' 'V' 'R' 0 and 'P' 'V' 'R' 255 will be used by our headers.
+	PVRTuint32	u32Key;			///< A DWORD (enum value) identifying the data type, and thus how to read it.
+	PVRTuint32	u32DataSize;	///< Size of the Data member.
+	PVRTuint8*	Data;			///< Data array, can be absolutely anything, the loader needs to know how to handle it based on DevFOURCC and Key. Use new operator to assign to it.
 		
 	/*!***********************************************************************
-		@Function		MetaDataBlock
-		@Description	Meta Data Block Constructor
+		@fn       		MetaDataBlock
+		@brief      	Meta Data Block Constructor
 	*************************************************************************/
 	MetaDataBlock() : DevFOURCC(0), u32Key(0), u32DataSize(0), Data(NULL)
 	{}
 		
 	/*!***********************************************************************
-		@Function		MetaDataBlock
-		@Description	Meta Data Block Copy Constructor
+		@fn       		MetaDataBlock
+		@brief      	Meta Data Block Copy Constructor
 	*************************************************************************/
 	MetaDataBlock(const MetaDataBlock& rhs)  : DevFOURCC(rhs.DevFOURCC), u32Key(rhs.u32Key), u32DataSize(rhs.u32DataSize)
 	{
@@ -175,8 +171,8 @@ struct MetaDataBlock
 	}
 
 	/*!***********************************************************************
-		@Function		~MetaDataBlock
-		@Description	Meta Data Block Destructor
+		@fn       		~MetaDataBlock
+		@brief      	Meta Data Block Destructor
 	*************************************************************************/
 	~MetaDataBlock()
 	{
@@ -186,9 +182,9 @@ struct MetaDataBlock
 	}
 
 	/*!***********************************************************************
-		@Function		SizeOfBlock
-		@Return			size_t Size (in a file) of the block.
-		@Description	Returns the number of extra bytes this will add to any output files.
+		@fn       		SizeOfBlock
+		@return			size_t Size (in a file) of the block.
+		@brief      	Returns the number of extra bytes this will add to any output files.
 	*************************************************************************/
 	size_t SizeOfBlock() const
 	{
@@ -196,9 +192,8 @@ struct MetaDataBlock
 	}
 
 	/*!***********************************************************************
-		@Function		operator=
-		@Return			MetaDataBlock This MetaDataBlock after the operation.
-		@Description	Assigns one MetaDataBlock to the other.
+		@brief      	Assigns one MetaDataBlock to the other.
+		@return			MetaDataBlock This MetaDataBlock after the operation.
 	*************************************************************************/
 	MetaDataBlock& operator=(const MetaDataBlock& rhs)
 	{
@@ -229,47 +224,59 @@ struct MetaDataBlock
 	}
 
 	/*!***************************************************************************
-	@Function		ReadFromPtr
-	@Input			pDataCursor		The data to read
-	@Description	Reads from a pointer of memory in to the meta data block.
+	@fn       		ReadFromPtr
+	@param[in]		pDataCursor		The data to read
+	@brief      	Reads from a pointer of memory in to the meta data block.
 	*****************************************************************************/
 	bool ReadFromPtr(const unsigned char** pDataCursor);
 };
 
-//The idea behind this is that it stores EVERYTHING that you would ever need to read a texture accurately, and nothing more. 
-//Extraneous data is stored in meta data. Correct use of the texture may rely on meta data, but accurate data loading can be done through the
-//Standard header alone.
-
 #pragma pack(push,4)
-struct PVRTextureHeaderV3{
-	PVRTuint32	u32Version;			//Version of the file header, used to identify it.
-	PVRTuint32	u32Flags;			//Various format flags.
-	PVRTuint64	u64PixelFormat;		//The pixel format, 8cc value storing the 4 channel identifiers and their respective sizes.
-	PVRTuint32	u32ColourSpace;		//The Colour Space of the texture, currently either linear RGB or sRGB.
-	PVRTuint32	u32ChannelType;		//Variable type that the channel is stored in. Supports signed/unsigned int/short/byte or float for now.
-	PVRTuint32	u32Height;			//Height of the texture.
-	PVRTuint32	u32Width;			//Width of the texture.
-	PVRTuint32	u32Depth;			//Depth of the texture. (Z-slices)
-	PVRTuint32	u32NumSurfaces;		//Number of members in a Texture Array.
-	PVRTuint32	u32NumFaces;		//Number of faces in a Cube Map. Maybe be a value other than 6.
-	PVRTuint32	u32MIPMapCount;		//Number of MIP Maps in the texture - NB: Includes top level.
-	PVRTuint32	u32MetaDataSize;	//Size of the accompanying meta data.
 
-	//Constructor for the header - used to make sure that the header is initialised usefully. The initial pixel format is an invalid one and must be set.
+/*!***************************************************************************
+ @struct        PVRTextureHeaderV3
+ @brief      	A header for a PVR texture.
+ @details       Contains everything required to read a texture accurately, and nothing more. Extraneous data is stored in a MetaDataBlock. 
+                Correct use of the texture may rely on MetaDataBlock, but accurate data loading can be done through the standard header alone.
+*****************************************************************************/
+struct PVRTextureHeaderV3{
+	PVRTuint32	u32Version;			///< Version of the file header, used to identify it.
+	PVRTuint32	u32Flags;			///< Various format flags.
+	PVRTuint64	u64PixelFormat;		///< The pixel format, 8cc value storing the 4 channel identifiers and their respective sizes.
+	PVRTuint32	u32ColourSpace;		///< The Colour Space of the texture, currently either linear RGB or sRGB.
+	PVRTuint32	u32ChannelType;		///< Variable type that the channel is stored in. Supports signed/unsigned int/short/byte or float for now.
+	PVRTuint32	u32Height;			///< Height of the texture.
+	PVRTuint32	u32Width;			///< Width of the texture.
+	PVRTuint32	u32Depth;			///< Depth of the texture. (Z-slices)
+	PVRTuint32	u32NumSurfaces;		///< Number of members in a Texture Array.
+	PVRTuint32	u32NumFaces;		///< Number of faces in a Cube Map. Maybe be a value other than 6.
+	PVRTuint32	u32MIPMapCount;		///< Number of MIP Maps in the texture - NB: Includes top level.
+	PVRTuint32	u32MetaDataSize;	///< Size of the accompanying meta data.
+
+	/*!***************************************************************************
+	@brief      	Constructor for the header - used to make sure that the header is initialised usefully. 
+                    The initial pixel format is an invalid one and must be set.
+	*****************************************************************************/
 	PVRTextureHeaderV3() : 
-		u32Version(PVRTEX3_IDENT),u32Flags(0),
-		u64PixelFormat(ePVRTPF_NumCompressedPFs),
-		u32ColourSpace(0),u32ChannelType(0),
-		u32Height(1),u32Width(1),u32Depth(1),
-		u32NumSurfaces(1),u32NumFaces(1),
-		u32MIPMapCount(1),u32MetaDataSize(0)
+		u32Version(PVRTEX3_IDENT),			        ///< Version of the file header.
+        u32Flags(0),			                    ///< Format flags.
+		u64PixelFormat(ePVRTPF_NumCompressedPFs),   ///< The pixel format.
+		u32ColourSpace(0),		                    ///< The Colour Space of the texture.
+        u32ChannelType(0),              		    ///< Variable type that the channel is stored in.
+		u32Height(1),                           	///< Height of the texture.
+        u32Width(1),    			                ///< Width of the texture.
+        u32Depth(1),                		    	///< Depth of the texture. (Z-slices)
+		u32NumSurfaces(1),                  		///< Number of members in a Texture Array.
+        u32NumFaces(1),                        		///< Number of faces in a Cube Map. Maybe be a value other than 6.
+		u32MIPMapCount(1),          		        ///< Number of MIP Maps in the texture - NB: Includes top level.
+        u32MetaDataSize(0)                         	///< Size of the accompanying meta data.
 	{}
 };
 #pragma pack(pop)
 #define PVRTEX3_HEADERSIZE 52
 
 /*!***************************************************************************
-Describes the Version 2 header of a PVR texture header.
+ @brief     Describes the Version 2 header of a PVR texture header.
 *****************************************************************************/
 struct PVR_Texture_Header
 {
@@ -292,6 +299,9 @@ struct PVR_Texture_Header
 * Legacy (V2 and V1) ENUMS
 *****************************************************************************/
 
+    /*!***************************************************************************
+     @brief     Legacy pixel type. DEPRECATED.
+    *****************************************************************************/
 	enum PVRTPixelType
 	{
 		MGLPT_ARGB_4444 = 0x00,
@@ -322,8 +332,8 @@ struct PVR_Texture_Header
 		OGL_PVRTC4,
 		OGL_BGRA_8888,
 		OGL_A_8,
-		OGL_PVRTCII4,	//Not in use
-		OGL_PVRTCII2,	//Not in use
+		OGL_PVRTCII4,	///< Not in use
+		OGL_PVRTCII2,	///< Not in use
 
 		// S3TC Encoding
 		D3D_DXT1 = 0x20,
@@ -361,8 +371,8 @@ struct PVR_Texture_Header
 		
 		// Ericsson
 		ETC_RGB_4BPP,
-		ETC_RGBA_EXPLICIT,				// unimplemented
-		ETC_RGBA_INTERPOLATED,			// unimplemented
+		ETC_RGBA_EXPLICIT,				///< Unimplemented
+		ETC_RGBA_INTERPOLATED,			///< Unimplemented
 		
 		D3D_A8 = 0x40,
 		D3D_V8U8,
@@ -397,7 +407,7 @@ struct PVR_Texture_Header
 		DX10_R10G10B10A2_UNORM ,
 		DX10_R10G10B10A2_UINT ,
 
-		DX10_R11G11B10_FLOAT ,				// unimplemented
+		DX10_R11G11B10_FLOAT ,				///< Unimplemented
 
 		DX10_R8G8B8A8_UNORM , 
 		DX10_R8G8B8A8_UNORM_SRGB ,
@@ -433,9 +443,9 @@ struct PVR_Texture_Header
 
 		DX10_A8_UNORM, 
 		DX10_R1_UNORM, 
-		DX10_R9G9B9E5_SHAREDEXP,	// unimplemented
-		DX10_R8G8_B8G8_UNORM,		// unimplemented
-		DX10_G8R8_G8B8_UNORM,		// unimplemented
+		DX10_R9G9B9E5_SHAREDEXP,	///< Unimplemented
+		DX10_R8G8_B8G8_UNORM,		///< Unimplemented
+		DX10_G8R8_G8B8_UNORM,		///< Unimplemented
 
 		DX10_BC1_UNORM,	
 		DX10_BC1_UNORM_SRGB,
@@ -446,11 +456,11 @@ struct PVR_Texture_Header
 		DX10_BC3_UNORM,	
 		DX10_BC3_UNORM_SRGB,
 
-		DX10_BC4_UNORM,				// unimplemented
-		DX10_BC4_SNORM,				// unimplemented
+		DX10_BC4_UNORM,				///< Unimplemented
+		DX10_BC4_SNORM,				///< Unimplemented
 
-		DX10_BC5_UNORM,				// unimplemented
-		DX10_BC5_SNORM,				// unimplemented
+		DX10_BC5_UNORM,				///< Unimplemented
+		DX10_BC5_SNORM,				///< Unimplemented
 
 		// OpenVG
 
@@ -511,45 +521,45 @@ struct PVR_Texture_Header
 * Legacy constants (V1/V2)
 *****************************************************************************/
 
-const PVRTuint32 PVRTEX_MIPMAP			= (1<<8);		// has mip map levels
-const PVRTuint32 PVRTEX_TWIDDLE			= (1<<9);		// is twiddled
-const PVRTuint32 PVRTEX_BUMPMAP			= (1<<10);		// has normals encoded for a bump map
-const PVRTuint32 PVRTEX_TILING			= (1<<11);		// is bordered for tiled pvr
-const PVRTuint32 PVRTEX_CUBEMAP			= (1<<12);		// is a cubemap/skybox
-const PVRTuint32 PVRTEX_FALSEMIPCOL		= (1<<13);		// are there false coloured MIP levels
-const PVRTuint32 PVRTEX_VOLUME			= (1<<14);		// is this a volume texture
-const PVRTuint32 PVRTEX_ALPHA			= (1<<15);		// v2.1 is there transparency info in the texture
-const PVRTuint32 PVRTEX_VERTICAL_FLIP	= (1<<16);		// v2.1 is the texture vertically flipped
+const PVRTuint32 PVRTEX_MIPMAP			= (1<<8);		///< Has mip map levels. DEPRECATED.
+const PVRTuint32 PVRTEX_TWIDDLE			= (1<<9);		///< Is twiddled. DEPRECATED.
+const PVRTuint32 PVRTEX_BUMPMAP			= (1<<10);		///< Has normals encoded for a bump map. DEPRECATED.
+const PVRTuint32 PVRTEX_TILING			= (1<<11);		///< Is bordered for tiled pvr. DEPRECATED.
+const PVRTuint32 PVRTEX_CUBEMAP			= (1<<12);		///< Is a cubemap/skybox. DEPRECATED.
+const PVRTuint32 PVRTEX_FALSEMIPCOL		= (1<<13);		///< Are there false coloured MIP levels. DEPRECATED.
+const PVRTuint32 PVRTEX_VOLUME			= (1<<14);		///< Is this a volume texture. DEPRECATED.
+const PVRTuint32 PVRTEX_ALPHA			= (1<<15);		///< v2.1. Is there transparency info in the texture. DEPRECATED.
+const PVRTuint32 PVRTEX_VERTICAL_FLIP	= (1<<16);		///< v2.1. Is the texture vertically flipped. DEPRECATED.
 
-const PVRTuint32 PVRTEX_PIXELTYPE		= 0xff;			// pixel type is always in the last 16bits of the flags
-const PVRTuint32 PVRTEX_IDENTIFIER		= 0x21525650;	// the pvr identifier is the characters 'P','V','R'
+const PVRTuint32 PVRTEX_PIXELTYPE		= 0xff;			///< Pixel type is always in the last 16bits of the flags. DEPRECATED.
+const PVRTuint32 PVRTEX_IDENTIFIER		= 0x21525650;	///< The pvr identifier is the characters 'P','V','R'. DEPRECATED.
 
-const PVRTuint32 PVRTEX_V1_HEADER_SIZE	= 44;			// old header size was 44 for identification purposes
+const PVRTuint32 PVRTEX_V1_HEADER_SIZE	= 44;			///< Old header size was 44 for identification purposes. DEPRECATED.
 
-const PVRTuint32 PVRTC2_MIN_TEXWIDTH	= 16;
-const PVRTuint32 PVRTC2_MIN_TEXHEIGHT	= 8;
-const PVRTuint32 PVRTC4_MIN_TEXWIDTH	= 8;
-const PVRTuint32 PVRTC4_MIN_TEXHEIGHT	= 8;
-const PVRTuint32 ETC_MIN_TEXWIDTH		= 4;
-const PVRTuint32 ETC_MIN_TEXHEIGHT		= 4;
-const PVRTuint32 DXT_MIN_TEXWIDTH		= 4;
-const PVRTuint32 DXT_MIN_TEXHEIGHT		= 4;
+const PVRTuint32 PVRTC2_MIN_TEXWIDTH	= 16;			///< DEPRECATED.
+const PVRTuint32 PVRTC2_MIN_TEXHEIGHT	= 8; 			///< DEPRECATED.
+const PVRTuint32 PVRTC4_MIN_TEXWIDTH	= 8; 			///< DEPRECATED.
+const PVRTuint32 PVRTC4_MIN_TEXHEIGHT	= 8; 			///< DEPRECATED.
+const PVRTuint32 ETC_MIN_TEXWIDTH		= 4; 			///< DEPRECATED.
+const PVRTuint32 ETC_MIN_TEXHEIGHT		= 4; 			///< DEPRECATED.
+const PVRTuint32 DXT_MIN_TEXWIDTH		= 4; 			///< DEPRECATED.
+const PVRTuint32 DXT_MIN_TEXHEIGHT		= 4; 			///< DEPRECATED.
 
 /****************************************************************************
 ** Functions
 ****************************************************************************/
 
 /*!***************************************************************************
-@Function		PVRTTextureCreate
-@Input			w			Size of the texture
-@Input			h			Size of the texture
-@Input			wMin		Minimum size of a texture level
-@Input			hMin		Minimum size of a texture level
-@Input			nBPP		Bits per pixel of the format
-@Input			bMIPMap		Create memory for MIP-map levels also?
-@Return			Allocated texture memory (must be free()d)
-@Description	Creates a PVRTextureHeaderV3 structure, including room for
-the specified texture, in memory.
+ @fn       		PVRTTextureCreate
+ @param[in]		w			Size of the texture
+ @param[in]		h			Size of the texture
+ @param[in]		wMin		Minimum size of a texture level
+ @param[in]		hMin		Minimum size of a texture level
+ @param[in]		nBPP		Bits per pixel of the format
+ @param[in]		bMIPMap		Create memory for MIP-map levels also?
+ @return		Allocated texture memory (must be free()d)
+ @brief      	Creates a PVRTextureHeaderV3 structure, including room for
+                the specified texture, in memory.
 *****************************************************************************/
 PVRTextureHeaderV3 *PVRTTextureCreate(
 									  unsigned int		w,
@@ -560,12 +570,12 @@ PVRTextureHeaderV3 *PVRTTextureCreate(
 									  const bool			bMIPMap);
 
 /*!***************************************************************************
-@Function		PVRTTextureTile
-@Modified		pOut		The tiled texture in system memory
-@Input			pIn			The source texture
-@Input			nRepeatCnt	Number of times to repeat the source texture
-@Description	Allocates and fills, in system memory, a texture large enough
-to repeat the source texture specified number of times.
+ @fn       		PVRTTextureTile
+ @param[in,out]	pOut		The tiled texture in system memory
+ @param[in]		pIn			The source texture
+ @param[in]		nRepeatCnt	Number of times to repeat the source texture
+ @brief      	Allocates and fills, in system memory, a texture large enough
+                to repeat the source texture specified number of times.
 *****************************************************************************/
 void PVRTTextureTile(
 					 PVRTextureHeaderV3			**pOut,
@@ -595,56 +605,56 @@ class CPVRTMap;
 
 
 /*!***********************************************************************
- @Function		PVRTGetBitsPerPixel
- @Input			u64PixelFormat		A PVR Pixel Format ID.
- @Return		const PVRTuint32	Number of bits per pixel.
- @Description	Returns the number of bits per pixel in a PVR Pixel Format 
+ @fn       		PVRTGetBitsPerPixel
+ @param[in]		u64PixelFormat		A PVR Pixel Format ID.
+ @return		const PVRTuint32	Number of bits per pixel.
+ @brief      	Returns the number of bits per pixel in a PVR Pixel Format 
 				identifier.
 *************************************************************************/
 PVRTuint32 PVRTGetBitsPerPixel(PVRTuint64 u64PixelFormat);
 
 /*!***********************************************************************
- @Function		PVRTGetFormatMinDims
- @Input			u64PixelFormat	A PVR Pixel Format ID.
- @Modified		minX			Returns the minimum width.
- @Modified		minY			Returns the minimum height.
- @Modified		minZ			Returns the minimum depth.
- @Description	Gets the minimum dimensions (x,y,z) for a given pixel format.
+ @fn       		PVRTGetFormatMinDims
+ @param[in]		u64PixelFormat	A PVR Pixel Format ID.
+ @param[in,out]	minX			Returns the minimum width.
+ @param[in,out]	minY			Returns the minimum height.
+ @param[in,out]	minZ			Returns the minimum depth.
+ @brief      	Gets the minimum dimensions (x,y,z) for a given pixel format.
 *************************************************************************/
 void PVRTGetFormatMinDims(PVRTuint64 u64PixelFormat, PVRTuint32 &minX, PVRTuint32 &minY, PVRTuint32 &minZ);
 
 /*!***********************************************************************
- @Function		PVRTConvertOldTextureHeaderToV3
- @Input			LegacyHeader	Legacy header for conversion.
- @Modified		NewHeader		New header to output into.
- @Modified		pMetaData		MetaData Map to output into.
- @Description	Converts a legacy texture header (V1 or V2) to a current 
+ @fn       		PVRTConvertOldTextureHeaderToV3
+ @param[in]		LegacyHeader	Legacy header for conversion.
+ @param[in,out]	NewHeader		New header to output into.
+ @param[in,out]	pMetaData		MetaData Map to output into.
+ @brief      	Converts a legacy texture header (V1 or V2) to a current 
 				generation header (V3)
 *************************************************************************/
 void PVRTConvertOldTextureHeaderToV3(const PVR_Texture_Header* LegacyHeader, PVRTextureHeaderV3& NewHeader, CPVRTMap<PVRTuint32, CPVRTMap<PVRTuint32,MetaDataBlock> >* pMetaData);
 
 /*!***********************************************************************
- @Function		PVRTMapLegacyTextureEnumToNewFormat
- @Input			OldFormat		Legacy Enumeration Value
- @Modified		newType			New PixelType identifier.
- @Modified		newCSpace		New ColourSpace
- @Modified		newChanType		New Channel Type
- @Modified		isPreMult		Whether format is pre-multiplied
- @Description	Maps a legacy enumeration value to the new PVR3 style format.
+ @fn       		PVRTMapLegacyTextureEnumToNewFormat
+ @param[in]		OldFormat		Legacy Enumeration Value
+ @param[in,out]	newType			New PixelType identifier.
+ @param[in,out]	newCSpace		New ColourSpace
+ @param[in,out]	newChanType		New Channel Type
+ @param[in,out]	isPreMult		Whether format is pre-multiplied
+ @brief      	Maps a legacy enumeration value to the new PVR3 style format.
 *************************************************************************/
 void PVRTMapLegacyTextureEnumToNewFormat(PVRTPixelType OldFormat, PVRTuint64& newType, EPVRTColourSpace& newCSpace, EPVRTVariableType& newChanType, bool& isPreMult);
 
 /*!***************************************************************************
-@Function		PVRTTextureLoadTiled
-@Modified		pDst			Texture to place the tiled data
-@Input			nWidthDst		Width of destination texture
-@Input			nHeightDst		Height of destination texture
-@Input			pSrc			Texture to tile
-@Input			nWidthSrc		Width of source texture
-@Input			nHeightSrc		Height of source texture
-@Input 			nElementSize	Bytes per pixel
-@Input			bTwiddled		True if the data is twiddled
-@Description	Needed by PVRTTextureTile() in the various PVRTTextureAPIs
+ @fn       		PVRTTextureLoadTiled
+ @param[in,out]	pDst			Texture to place the tiled data
+ @param[in]		nWidthDst		Width of destination texture
+ @param[in]		nHeightDst		Height of destination texture
+ @param[in]		pSrc			Texture to tile
+ @param[in]		nWidthSrc		Width of source texture
+ @param[in]		nHeightSrc		Height of source texture
+ @param[in] 	nElementSize	Bytes per pixel
+ @param[in]		bTwiddled		True if the data is twiddled
+ @brief      	Needed by PVRTTextureTile() in the various PVRTTextureAPIs
 *****************************************************************************/
 void PVRTTextureLoadTiled(
 						  PVRTuint8		* const pDst,
@@ -658,34 +668,34 @@ void PVRTTextureLoadTiled(
 
 
 /*!***************************************************************************
-@Function		PVRTTextureTwiddle
-@Output			a	Twiddled value
-@Input			u	Coordinate axis 0
-@Input			v	Coordinate axis 1
-@Description	Combine a 2D coordinate into a twiddled value
+ @fn       		PVRTTextureTwiddle
+ @param[out]	a	Twiddled value
+ @param[in]		u	Coordinate axis 0
+ @param[in]		v	Coordinate axis 1
+ @brief      	Combine a 2D coordinate into a twiddled value
 *****************************************************************************/
 void PVRTTextureTwiddle(unsigned int &a, const unsigned int u, const unsigned int v);
 
 /*!***************************************************************************
-@Function		PVRTTextureDeTwiddle
-@Output			u	Coordinate axis 0
-@Output			v	Coordinate axis 1
-@Input			a	Twiddled value
-@Description	Extract 2D coordinates from a twiddled value.
+ @fn       		PVRTTextureDeTwiddle
+ @param[out]	u	Coordinate axis 0
+ @param[out]	v	Coordinate axis 1
+ @param[in]		a	Twiddled value
+ @brief      	Extract 2D coordinates from a twiddled value.
 *****************************************************************************/
 void PVRTTextureDeTwiddle(unsigned int &u, unsigned int &v, const unsigned int a);
 
 /*!***********************************************************************
-@Function		PVRTGetTextureDataSize
-@Input			sTextureHeader	Specifies the texture header. 
-@Input			iMipLevel	Specifies a mip level to check, 'PVRTEX_ALLMIPLEVELS'
-							can be passed to get the size of all MIP levels. 
-@Input			bAllSurfaces	Size of all surfaces is calculated if true, 
+ @fn       		PVRTGetTextureDataSize
+ @param[in]		sTextureHeader	Specifies the texture header. 
+ @param[in]		iMipLevel	Specifies a mip level to check, 'PVRTEX_ALLMIPLEVELS'
+                            can be passed to get the size of all MIP levels.  
+ @param[in]		bAllSurfaces	Size of all surfaces is calculated if true, 
 							only a single surface if false.
-@Input			bAllFaces	Size of all faces is calculated if true, 
+ @param[in]		bAllFaces	Size of all faces is calculated if true, 
 							only a single face if false.
-@Return			PVRTuint32		Size in BYTES of the specified texture area.
-@Description	Gets the size in BYTES of the texture, given various input 
+ @return		PVRTuint32		Size in BYTES of the specified texture area.
+ @brief      	Gets the size in BYTES of the texture, given various input 
 				parameters.	User can retrieve the size of either all 
 				surfaces or a single surface, all faces or a single face and
 				all MIP-Maps or a single specified MIP level.

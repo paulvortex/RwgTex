@@ -1,3 +1,46 @@
+/*!***********************************************************************
+
+ @file         PVRTexture.h
+ @copyright    Copyright (c) Imagination Technologies Limited.
+ @brief        Contains methods concerning basic CPVRTexture creation, saving
+               and data duplication. This is the main class for PVRTexLib. 
+
+*************************************************************************/
+
+/*****************************************************************************/
+/*! @mainpage PVRTexLib
+******************************************************************************
+
+ @section overview Overview
+*****************************
+
+PVRTexLib is a library for the management of textures. It occupies the @ref pvrtexture 
+namespace and allows users to access the PVRTexTool functionality in a library, 
+for easy integration with existing tool chains. 
+
+PVRTexLib contains the facility to:
+ \li Load and save PVR files.
+ \li Transcode to and from many different texture formats.
+ \li Perform a variety of pre-process techniques on decompressed pixel data.
+ \li Provide information about a texture file loaded by the library.
+
+ @section pvrtools PVRTools
+*****************************
+A number of header files from the PowerVR SDK Tools libraries are present in PVRTexLib:
+ \li PVRTGlobal.h
+ \li PVRTError.h
+ \li PVRTArray.h
+ \li PVRTMap.h
+ \li PVRTString.h
+ \li PVRTTexture.h
+ 
+These header files are included in the PVRTexLib package so that separate installation 
+of the tools libraries is not required.  If PowerVR Graphics SDK Tools are installed, 
+documentation for the these files can be found in the ‘Tools’ folder 
+in the PowerVR Insider SDK directory.
+
+*/
+
 #ifndef _PVRTEXTURE_H
 #define _PVRTEXTURE_H
 
@@ -7,198 +50,188 @@
 
 namespace pvrtexture
 {
+    /*!***********************************************************************
+     @class         CPVRTexture
+     @brief         A full public texture container format, with support for custom 
+                    meta-data, and complete, optimised, resource loading code into PVRTools.                    
+    *************************************************************************/
 	class PVR_DLL CPVRTexture : public CPVRTextureHeader
 	{		
 	public:
-	/*******************************************************************************
-	* Construction methods for a texture.
-	*******************************************************************************/
+	// Construction methods for a texture.
+    
 		/*!***********************************************************************
-		 @Function		CPVRTexture
-		 @Return		CPVRTexture A new texture.
-		 @Description	Creates a new empty texture
+		 @brief      	Creates a new empty texture
+		 @return		A new CPVRTexture.
 		*************************************************************************/
 		CPVRTexture();
+        
 		/*!***********************************************************************
-		 @Function		CPVRTexture
-		 @Input			sHeader
-		 @Input			pData
-		 @Return		CPVRTexture A new texture.
-		 @Description	Creates a new texture based on a texture header, 
+		 @brief      	Creates a new texture based on a texture header, 
 						pre-allocating the correct amount of memory. If data is
 						supplied, it will be copied into memory.
+		 @param[in]		sHeader     Texture header
+		 @param[in]		pData       Texture data
+		 @return		A new CPVRTexture.
 		*************************************************************************/
 		CPVRTexture(const CPVRTextureHeader& sHeader, const void* pData=NULL);
 
 		/*!***********************************************************************
-		 @Function		CPVRTexture
-		 @Input			szFilePath
-		 @Return		CPVRTexture A new texture.
-		 @Description	Creates a new texture from a filepath.
+		 @brief      	Creates a new texture from a filepath.
+		 @param[in]		szFilePath  File path to existing texture
+		 @return		A new CPVRTexture.
 		*************************************************************************/
 		CPVRTexture(const char* szFilePath);
 
 		/*!***********************************************************************
-		 @Function		CPVRTexture
-		 @Input			pTexture
-		 @Return		CPVRTexture A new texture.
-		 @Description	Creates a new texture from a pointer that includes a header
+		 @brief      	Creates a new texture from a pointer that includes a header
 						structure, meta data and texture data as laid out in a file.
-						This functionality is primarily for user defined file loading.
+						This functionality is primarily for user-defined file loading.
 						Header may be any version of pvr.
+		 @param[in]		pTexture    Pointer to texture data
+		 @return		A new CPVRTexture.
 		*************************************************************************/
 		CPVRTexture( const void* pTexture );
 
 		/*!***********************************************************************
-		 @Function		CPVRTexture
-		 @Input			texture
-		 @Return		CPVRTexture A new texture
-		 @Description	Creates a new texture as a copy of another.
+		 @brief      	Creates a new texture as a copy of another.
+		 @param[in]		texture     Texture to copy
+		 @return		A new CPVRTexture
 		*************************************************************************/
 		CPVRTexture(const CPVRTexture& texture);
 
 		/*!***********************************************************************
-		 @Function		~CPVRTexture
-		 @Description	Deconstructor for CPVRTextures.
+		 @brief      	Deconstructor for CPVRTextures.
 		*************************************************************************/
 		~CPVRTexture();
 
 		/*!***********************************************************************
-		 @Function		operator=
-		 @Input			rhs
-		 @Return		CPVRTexture& This texture.
-		 @Description	Will copy the contents and information of another texture into this one.
+		 @brief      	Will copy the contents and information of another texture into this one.
+		 @param[in]		rhs         Texture to copy
+		 @return		This texture.
 		*************************************************************************/
 		CPVRTexture& operator=(const CPVRTexture& rhs);
 		
-	/*******************************************************************************
-	* Texture accessor functions - others are inherited from CPVRTextureHeader.
-	*******************************************************************************/
+	// Texture accessor functions - others are inherited from CPVRTextureHeader.
+    
 		/*!***********************************************************************
-		 @Function		getDataPtr
-		 @Input			uiMIPLevel
-		 @Input			uiArrayMember
-		 @Input			uiFaceNumber
-		 @Return		void* Pointer to a location in the texture.
-		 @Description	Returns a pointer into the texture's data. 
-						It is possible to specify an offset to specific array members, 
+		 @brief      	Returns a pointer into the texture's data. 
+		 @details		It is possible to specify an offset to specific array members, 
 						faces and MIP Map levels.
+		 @param[in]		uiMIPLevel      Offset to MIP Map levels
+		 @param[in]		uiArrayMember   Offset to array members
+		 @param[in]		uiFaceNumber    Offset to face numbers
+		 @return		Pointer to a location in the texture.
 		*************************************************************************/
 		void* getDataPtr(uint32 uiMIPLevel = 0, uint32 uiArrayMember = 0, uint32 uiFaceNumber = 0) const;
 
 		/*!***********************************************************************
-		 @Function		getHeader
-		 @Return		const CPVRTextureHeader& Returns the header only for this texture.
-		 @Description	Gets the header for this texture, allowing you to create a new
+		 @brief      	Gets the header for this texture, allowing you to create a new
 						texture based on this one with some changes. Useful for passing
 						information about a texture without passing all of its data.
+		 @return		Returns the header only for this texture.
 		*************************************************************************/
 		const CPVRTextureHeader& getHeader() const;
 
-	/*******************************************************************************
-	* File io.
-	*******************************************************************************/
+	// File io.
 
 		/*!***********************************************************************
-		 @Function		setPaddedMetaData
-		 @Input			uiPadding
-		 @Description	When writing the texture out to a PVR file, it is often
+		 @brief      	When writing the texture out to a PVR file, it is often
 						desirable to pad the meta data so that the start of the
 						texture data aligns to a given boundary.
-						This function pads to a boundary value equal to "uiPadding".
+		 @details		This function pads to a boundary value equal to "uiPadding".
 						For example setting uiPadding=8 will align the start of the
 						texture data to an 8 byte boundary.
 						Note - this should be called immediately before saving as
 						the value is worked out based on the current meta data size.
+		 @param[in]		uiPadding       Padding boundary value
 		*************************************************************************/
 		void addPaddingMetaData( uint32 uiPadding );
 
 		/*!***********************************************************************
-		 @Function		saveFile
-		 @Input			filepath
-		 @Return		bool Whether the method succeeds or not.
-		 @Description	Writes out to a file, given a filename and path. 
-						File type will be determined by the extension present in the string. 
+		 @brief      	Writes out to a file, given a filename and path. 
+		 @details		File type will be determined by the extension present in the string. 
 						If no extension is present, PVR format will be selected. 
 						Unsupported formats will result in failure.
+		 @param[in]		filepath        File path to write to
+		 @return		True if the method succeeds.
 		*************************************************************************/
 		bool saveFile(const CPVRTString& filepath) const;
 	
 		/*!***********************************************************************
-		 @Function		saveFileLegacyPVR
-		 @Input			filepath
-		 @Input			eApi
-		 @Return		bool Whether the method succeeds or not.
-		 @Description	Writes out to a file, stripping any extensions specified
+		 @brief      	Writes out to a file, stripping any extensions specified
 						and appending .pvr. This function is for legacy support only
 						and saves out to PVR Version 2 file. The target api must be
 						specified in order to save to this format.
+		 @param[in]	    filepath        File path to write to
+		 @param[in]		eApi            Target API
+		 @return		True if the method succeeds.
 		*************************************************************************/
 		bool saveFileLegacyPVR(const CPVRTString& filepath, ELegacyApi eApi) const;
 
 	private:
-		size_t	m_stDataSize;		// Size of the texture data.
-		uint8*	m_pTextureData;		// Pointer to texture data.
+		size_t	m_stDataSize;		//!< Size of the texture data.
+		uint8*	m_pTextureData;		//!< Pointer to texture data.
 
-	/*******************************************************************************
-	* Private IO functions
-	*******************************************************************************/
+	// Private IO functions
+    
 		/*!***********************************************************************
-		 @Function		loadPVRFile
-		 @Input			pTextureFile
-		 @Description	Loads a PVR file.
+		 @brief      	Loads a PVR file.
+		 @param[in]		pTextureFile    PVR texture file
+		 @return		True if the method succeeds.
 		*************************************************************************/
 		bool privateLoadPVRFile(FILE* pTextureFile);
 
 		/*!***********************************************************************
-		 @Function		privateSavePVRFile
-		 @Input			pTextureFile
-		 @Description	Saves a PVR File.
+		 @brief      	Saves a PVR File.
+		 @param[in]		pTextureFile    PVR texture file
+		 @return		True if the method succeeds.
 		*************************************************************************/
 		bool privateSavePVRFile(FILE* pTextureFile) const;
 
 		/*!***********************************************************************
-		 @Function		loadKTXFile
-		 @Input			pTextureFile
-		 @Description	Loads a KTX file.
+		 @brief      	Loads a KTX file.
+		 @param[in]		pTextureFile    PVR texture file
+		 @return		True if the method succeeds.
 		*************************************************************************/
 		bool privateLoadKTXFile(FILE* pTextureFile);
 
 		/*!***********************************************************************
-		 @Function		privateSaveKTXFile
-		 @Input			pTextureFile
-		 @Description	Saves a KTX File.
+		 @brief      	Saves a KTX File.
+		 @param[in]		pTextureFile    PVR texture file
+		 @return		True if the method succeeds.
 		*************************************************************************/
 		bool privateSaveKTXFile(FILE* pTextureFile) const;
 
 		/*!***********************************************************************
-		 @Function		loadDDSFile
-		 @Input			pTextureFile
-		 @Description	Loads a DDS file.
+		 @brief      	Loads a DDS file.
+		 @param[in]		pTextureFile    PVR texture file
+		 @return		True if the method succeeds.
 		 *************************************************************************/
 		bool privateLoadDDSFile(FILE* pTextureFile);
 
 		/*!***********************************************************************
-		 @Function		privateSaveDDSFile
-		 @Input			pTextureFile
-		 @Description	Saves a DDS File.
+		 @brief      	Saves a DDS File.
+		 @param[in]		pTextureFile    PVR texture file
+		 @return		True if the method succeeds.
 		*************************************************************************/
 		bool privateSaveDDSFile(FILE* pTextureFile) const;
 
-		//Legacy IO
+	//Legacy IO
+    
 		/*!***********************************************************************
-		 @Function		privateSavePVRFile
-		 @Input			pTextureFile
-		 @Input			filename
-		 @Description	Saves a .h File.
+		 @brief      	Saves a .h File. Legacy operator
+		 @param[in]		pTextureFile    PVR texture file
+		 @param[in]		filename        File path to write to
+		 @return		True if the method succeeds.
 		*************************************************************************/
 		bool privateSaveCHeaderFile(FILE* pTextureFile, CPVRTString filename) const;
 
 		/*!***********************************************************************
-		 @Function		privateSaveLegacyPVRFile
-		 @Input			pTextureFile
-		 @Input			eApi
-		 @Description	Saves a legacy PVR File - Uses version 2 file format.
+		 @brief      	Saves a legacy PVR File - Uses version 2 file format.
+		 @param[in]		pTextureFile    PVR texture file
+		 @param[in]		eApi            Target API
+		 @return		True if the method succeeds.
 		*************************************************************************/
 		bool privateSaveLegacyPVRFile(FILE* pTextureFile, ELegacyApi eApi) const;
 	};

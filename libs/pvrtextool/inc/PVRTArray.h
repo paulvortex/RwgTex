@@ -1,16 +1,8 @@
-/******************************************************************************
+/*!****************************************************************************
 
- @File         PVRTArray.h
-
- @Title        PVRTArray
-
- @Version      
-
- @Copyright    Copyright (c) Imagination Technologies Limited.
-
- @Platform     ANSI compatible
-
- @Description  Expanding array template class. Allows appending and direct
+ @file         PVRTArray.h
+ @copyright    Copyright (c) Imagination Technologies Limited.
+ @brief        Expanding array template class. Allows appending and direct
                access. Mixing access methods should be approached with caution.
 
 ******************************************************************************/
@@ -20,22 +12,20 @@
 #include "PVRTGlobal.h"
 #include "PVRTError.h"
 
-/*!****************************************************************************
-Class
+/******************************************************************************
+**  Classes
 ******************************************************************************/
 
 /*!***************************************************************************
-* @Class CPVRTArray
-* @Brief Expanding array template class.
-* @Description Expanding array template class.
+ @class       CPVRTArray
+ @brief       Expanding array template class.
 *****************************************************************************/
 template<typename T>
 class CPVRTArray
 {
 public:
 	/*!***************************************************************************
-	@Function			CPVRTArray
-	@Description		Blank constructor. Makes a default sized array.
+	@brief     Blank constructor. Makes a default sized array.
 	*****************************************************************************/
 	CPVRTArray() : m_uiSize(0), m_uiCapacity(GetDefaultSize())
 	{
@@ -43,9 +33,8 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			CPVRTArray
-	@Input				uiSize	intial size of array
-	@Description		Constructor taking initial size of array in elements.
+	@brief  	Constructor taking initial size of array in elements.
+	@param[in]	uiSize	intial size of array
 	*****************************************************************************/
 	CPVRTArray(const unsigned int uiSize) : m_uiSize(0), m_uiCapacity(uiSize)
 	{
@@ -54,9 +43,8 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			CPVRTArray
-	@Input				original	the other dynamic array
-	@Description		Copy constructor.
+	@brief      Copy constructor.
+	@param[in]	original	the other dynamic array
 	*****************************************************************************/
 	CPVRTArray(const CPVRTArray& original) : m_uiSize(original.m_uiSize),
 											  m_uiCapacity(original.m_uiCapacity)
@@ -69,10 +57,9 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			CPVRTArray
-	@Input				pArray		an ordinary array
-	@Input				uiSize		number of elements passed
-	@Description		constructor from ordinary array.
+	@brief      constructor from ordinary array.
+	@param[in]	pArray		an ordinary array
+	@param[in]	uiSize		number of elements passed
 	*****************************************************************************/
 	CPVRTArray(const T* const pArray, const unsigned int uiSize) : m_uiSize(uiSize),
 														  m_uiCapacity(uiSize)
@@ -86,10 +73,9 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			CPVRTArray
-	@Input				uiSize		initial capacity
-	@Input				val			value to populate with
-	@Description		constructor from a capacity and initial value.
+	@brief      constructor from a capacity and initial value.
+	@param[in]	uiSize		initial capacity
+	@param[in]	val			value to populate with
 	*****************************************************************************/
 	CPVRTArray(const unsigned int uiSize, const T& val)	: m_uiSize(uiSize),
 														m_uiCapacity(uiSize)
@@ -103,8 +89,7 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			~CPVRTArray
-	@Description		Destructor.
+	@brief      Destructor.
 	*****************************************************************************/
 	virtual ~CPVRTArray()
 	{
@@ -113,12 +98,11 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			Insert
-	@Input				pos		The position to insert the new element at
-	@Input				addT	The element to insert
-	@Return				The index of the new item or -1 on failure.
-	@Description		Inserts an element into the array, expanding it
-						if necessary.
+	@brief      Inserts an element into the array, expanding it
+				if necessary.
+	@param[in]	pos		The position to insert the new element at
+	@param[in]	addT	The element to insert
+	@return 	The index of the new item or -1 on failure.
 	*****************************************************************************/
 	int Insert(const unsigned int pos, const T& addT)
 	{
@@ -131,7 +115,7 @@ public:
 			unsigned int uiNewCapacity = 0;
 			T* pArray = m_pArray;
 
-			if(m_uiSize > m_uiCapacity)
+			if(m_uiSize >= m_uiCapacity)
 			{
 				uiNewCapacity = m_uiCapacity + 10;	// Expand the array by 10.
 
@@ -173,11 +157,10 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			Append
-	@Input				addT	The element to append
-	@Return				The index of the new item.
-	@Description		Appends an element to the end of the array, expanding it
-						if necessary.
+	@brief      Appends an element to the end of the array, expanding it
+				if necessary.
+	@param[in]	addT	The element to append
+	@return 	The index of the new item.
 	*****************************************************************************/
 	unsigned int Append(const T& addT)
 	{
@@ -187,10 +170,9 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			Append
-	@Return				The index of the new item.
-	@Description		Creates space for a new item, but doesn't add. Instead
-						returns the index of the new item.
+	@brief      Creates space for a new item, but doesn't add. Instead
+				returns the index of the new item.
+	@return 	The index of the new item.
 	*****************************************************************************/
 	unsigned int Append()
 	{
@@ -202,8 +184,7 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function		Clear
-	@Description	Clears the array.
+	@brief      Clears the array.
 	*****************************************************************************/
 	void Clear()
 	{
@@ -211,9 +192,8 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			Resize
-	@Input				uiSize		New size of array
-	@Description		Changes the array to the new size
+	@brief      Changes the array to the new size
+	@param[in]	uiSize		New size of array
 	*****************************************************************************/
 	EPVRTError Resize(const unsigned int uiSize)
 	{
@@ -227,9 +207,8 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			SetCapacity
-	@Input				uiSize		New capacity of array
-	@Description		Expands array to new capacity
+	@brief      Expands array to new capacity
+	@param[in]	uiSize		New capacity of array
 	*****************************************************************************/
 	EPVRTError SetCapacity(const unsigned int uiSize)
 	{
@@ -265,10 +244,10 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			Copy
-	@Input				other	The CPVRTArray needing copied
-	@Description		A copy function. Will attempt to copy from other CPVRTArrays
-						if this is possible.
+	@fn     	Copy
+	@brief      A copy function. Will attempt to copy from other CPVRTArrays
+				if this is possible.
+	@param[in]	other	The CPVRTArray needing copied
 	*****************************************************************************/
 	template<typename T2>
 	void Copy(const CPVRTArray<T2>& other)
@@ -295,9 +274,8 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			=
-	@Input				other	The CPVRTArray needing copied
-	@Description		assignment operator.
+	@brief      assignment operator.
+	@param[in]	other	The CPVRTArray needing copied
 	*****************************************************************************/
 	CPVRTArray& operator=(const CPVRTArray<T>& other)
 	{
@@ -308,9 +286,8 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function		operator+=
-	@Input			other		the array to append.
-	@Description	appends an existing CPVRTArray on to this one.
+	@brief      appends an existing CPVRTArray on to this one.
+	@param[in]	other		the array to append.
 	*****************************************************************************/
 	CPVRTArray& operator+=(const CPVRTArray<T>& other)
 	{
@@ -326,11 +303,10 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			[]
-	@Input				uiIndex	index of element in array
-	@Return				the element indexed
-	@Description		indexed access into array. Note that this has no error
-						checking whatsoever
+	@brief      Indexed access into array. Note that this has no error
+				checking whatsoever
+	@param[in]	uiIndex	index of element in array
+	@return 	the element indexed
 	*****************************************************************************/
 	T& operator[](const unsigned int uiIndex)
 	{
@@ -339,11 +315,9 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			[]
-	@Input				uiIndex	index of element in array
-	@Return				The element indexed
-	@Description		Indexed access into array. Note that this has no error
-						checking whatsoever
+	@brief      Indexed access into array. Note that this has no error checking whatsoever
+	@param[in]	uiIndex	    index of element in array
+	@return 	The element indexed
 	*****************************************************************************/
 	const T& operator[](const unsigned int uiIndex) const
 	{
@@ -352,9 +326,8 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			GetSize
-	@Return				Size of array
-	@Description		Gives current size of array/number of elements
+	@return 	Size of array
+	@brief      Gives current size of array/number of elements
 	*****************************************************************************/
 	unsigned int GetSize() const
 	{
@@ -362,9 +335,8 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			GetDefaultSize
-	@Return				Default size of array
-	@Description		Gives the default size of array/number of elements
+	@brief      Gives the default size of array/number of elements
+	@return 	Default size of array
 	*****************************************************************************/
 	static unsigned int GetDefaultSize()
 	{
@@ -372,9 +344,8 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			GetCapacity
-	@Return				Capacity of array
-	@Description		Gives current allocated size of array/number of elements
+	@brief      Gives current allocated size of array/number of elements
+	@return 	Capacity of array
 	*****************************************************************************/
 	unsigned int GetCapacity() const
 	{
@@ -382,11 +353,9 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			Contains
-	@Input				object		The object to check in the array
-	@Return				true if object is contained in this array.
-	@Description		Indicates whether the given object resides inside the 
-						array.
+	@brief      Indicates whether the given object resides inside the array. 
+	@param[in]	object		The object to check in the array
+	@return 	true if object is contained in this array.
 	*****************************************************************************/
 	bool Contains(const T& object) const
 	{
@@ -399,12 +368,11 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			Find
-	@Input				object		The object to check in the array
-	@Return				pointer to the found object or NULL.
-	@Description		Attempts to find the object in the array and returns a
-						pointer if it is found, or NULL if not found. The time
-						taken is O(N).
+	@brief     	Attempts to find the object in the array and returns a
+				pointer if it is found, or NULL if not found. The time
+				taken is O(N).
+	@param[in]	object		The object to check in the array
+	@return 	Pointer to the found object or NULL.
 	*****************************************************************************/
 	T* Find(const T& object) const
 	{
@@ -417,37 +385,20 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			Sort
-	@Input				predicate		The object which defines "bool operator()"
-	@Description		Simple bubble-sort of the array. Pred should be an object that
-						defines a bool operator().
+	@brief      Performs a merge-sort on the array. Pred should be an object that
+				defines a bool operator().
+	@param[in]	predicate		The object which defines "bool operator()"
 	*****************************************************************************/
 	template<class Pred>
 	void Sort(Pred predicate)
 	{
-		bool bSwap;
-		for(unsigned int i=0; i < m_uiSize; ++i)
-		{
-			bSwap = false;
-			for(unsigned int j=0; j < m_uiSize-1; ++j)
-			{
-				if(predicate(m_pArray[j], m_pArray[j+1]))
-				{
-					PVRTswap(m_pArray[j], m_pArray[j+1]);
-					bSwap = true;
-				}
-			}
-
-			if(!bSwap)
-				return;
-		}
+		_Sort(0, m_uiSize, predicate);
 	}
 
 	/*!***************************************************************************
-	@Function		Remove
-	@Input			uiIndex		The index to remove
-	@Return			success or failure
-	@Description	Removes an element from the array.
+	@brief      Removes an element from the array.
+	@param[in]	uiIndex		The index to remove
+	@return 	success or failure
 	*****************************************************************************/
 	virtual EPVRTError Remove(unsigned int uiIndex)
 	{
@@ -471,9 +422,8 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			RemoveLast
-	@Return				success or failure
-	@Description		Removes the last element. Simply decrements the size value
+	@brief    	Removes the last element. Simply decrements the size value
+	@return 	success or failure
 	*****************************************************************************/
 	virtual EPVRTError RemoveLast()
 	{
@@ -489,18 +439,165 @@ public:
 	}
 
 protected:
-	unsigned int 	m_uiSize;				/*! current size of contents of array */
-	unsigned int	m_uiCapacity;			/*! currently allocated size of array */
-	T				*m_pArray;				/*! the actual array itself */
+	enum eBounds
+	{
+		eLowerBounds,
+		eUpperBounds,
+	};
+
+	/*!***************************************************************************
+	 @brief     Internal sort algorithm
+	 @param[in]	first		The beginning index of the array
+	 @param[in]	last		The last index of the array
+	 @param[in]	predicate	A functor object to perform the comparison
+	 *****************************************************************************/
+	template<class Pred>
+	void _Sort(unsigned int first, unsigned int last, Pred predicate)
+	{
+		unsigned int size = last - first;
+		if(size < 2)
+			return;
+
+		unsigned int middle = first + size / 2;
+		_Sort(first, middle, predicate);
+		_Sort(middle, last, predicate);
+		_SortMerge(first, middle, last, middle-first, last-middle, predicate);
+	}
+
+	/*!***************************************************************************
+	 @brief     Internal sort algorithm - in-place merge method
+	 @param[in]	first		The beginning index of the array
+	 @param[in]	middle		The middle index of the array
+	 @param[in]	last		The last index of the array
+	 @param[in]	len1		Length of first half of the array
+	 @param[in]	len2		Length of the second half of the array
+	 @param[in]	predicate	A functor object to perform the comparison
+	 *****************************************************************************/
+	template<class Pred>
+	void _SortMerge(unsigned int first, unsigned int middle, unsigned int last, int len1, int len2, Pred predicate)
+	{
+		if(len1 == 0 || len2 == 0)
+			return;
+
+		if(len1 + len2 == 2)
+		{
+			if(predicate(m_pArray[middle], m_pArray[first]))
+				PVRTswap(m_pArray[first], m_pArray[middle]);
+
+			return;
+		}
+
+		unsigned int firstCut  = first;
+		unsigned int secondCut = middle;
+		int dist1 = 0;
+		int dist2 = 0;
+		if(len1 > len2)
+		{
+			dist1     = len1 / 2;
+			firstCut += dist1;
+			secondCut = _SortBounds(middle, last, m_pArray[firstCut], eLowerBounds, predicate);
+			dist2    += secondCut - middle;
+		}
+		else
+		{
+			dist2      = len2 / 2;
+			secondCut += dist2;
+			firstCut   = _SortBounds(first, middle, m_pArray[secondCut], eUpperBounds, predicate);
+			dist1     += firstCut - first;
+		}
+
+		unsigned int newMiddle = _SortRotate(firstCut, middle, secondCut);
+		_SortMerge(first, firstCut, newMiddle, dist1, dist2, predicate);
+		_SortMerge(newMiddle, secondCut, last, len1-dist1, len2-dist2, predicate);
+	}
+
+	/*!***************************************************************************
+	 @brief     Internal sort algorithm - returns the bounded index of the range
+	 @param[in]	first		The beginning index of the array
+	 @param[in]	last		The last index of the array
+	 @param[in]	v           Comparison object
+	 @param[in]	bounds		Which bound to check (upper or lower)
+	 @param[in]	predicate	A functor object to perform the comparison
+	 *****************************************************************************/
+	template<class Pred>
+	unsigned int _SortBounds(unsigned int first, unsigned int last, const T& v, eBounds bounds, Pred predicate)
+	{
+		int count = last - first, step;
+		unsigned int idx;
+		while(count > 0)
+		{
+			step = count / 2;
+			idx = first + step;
+			if((bounds == eLowerBounds && predicate(m_pArray[idx], v)) || (bounds == eUpperBounds && !predicate(v, m_pArray[idx])))
+			{
+				first  = ++idx;
+				count -= step + 1;
+			}
+			else
+			{
+				count = step;
+			}
+		}
+		return first;
+	}
+
+	/*!***************************************************************************
+	 @brief     Internal sort algorithm - rotates the contents of the array such
+	            that the middle becomes the first element
+	 @param[in]	first		The beginning index of the array
+	 @param[in]	middle		The middle index of the array
+	 @param[in]	last        The last index of the array
+	 *****************************************************************************/
+	int _SortRotate(unsigned int first, unsigned int middle, unsigned int last)
+	{
+		if(first == middle)
+			return last;
+		if(last == middle)
+			return first;
+
+		unsigned int newFirst = middle;
+		do
+		{
+			PVRTswap(m_pArray[first++], m_pArray[newFirst++]);
+			if(first == middle)
+				middle = newFirst;
+		} while (newFirst != last);
+
+		unsigned int newMiddle = first;
+		newFirst               = middle;
+		while(newFirst != last)
+		{
+			PVRTswap(m_pArray[first++], m_pArray[newFirst++]);
+			if(first == middle)
+				middle = newFirst;
+			else if(newFirst == last)
+				newFirst = middle;
+		}
+
+		return newMiddle;
+	}
+
+protected:
+	unsigned int 	m_uiSize;		/*!< Current size of contents of array */
+	unsigned int	m_uiCapacity;	/*!< Currently allocated size of array */
+	T				*m_pArray;		/*!< The actual array itself */
 };
 
-// note "this" is required for ISO standard C++ and gcc complains otherwise
+// note "this" is required for ISO standard, C++ and gcc complains otherwise
 // http://lists.apple.com/archives/Xcode-users//2005/Dec/msg00644.html
+
+/*!***************************************************************************
+ @class       CPVRTArrayManagedPointers
+ @brief       Maintains an array of managed pointers.
+*****************************************************************************/
 template<typename T>
 class CPVRTArrayManagedPointers : public CPVRTArray<T*>
 {
 public:
-	virtual ~CPVRTArrayManagedPointers()
+	/*!***************************************************************************
+	@brief     Destructor.
+	*****************************************************************************/
+    virtual ~CPVRTArrayManagedPointers()
 	{
 		if(this->m_pArray)
 		{
@@ -512,10 +609,9 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function		Remove
-	@Input			uiIndex		The index to remove
-	@Return			success or failure
-	@Description	Removes an element from the array.
+	@brief      Removes an element from the array.
+	@param[in]	uiIndex		The index to remove.
+	@return 	success or failure
 	*****************************************************************************/
 	virtual EPVRTError Remove(unsigned int uiIndex)
 	{
@@ -538,9 +634,8 @@ public:
 	}
 
 	/*!***************************************************************************
-	@Function			RemoveLast
-	@Return				success or failure
-	@Description		Removes the last element. Simply decrements the size value
+	@brief      Removes the last element. Simply decrements the size value
+	@return 	success or failure
 	*****************************************************************************/
 	virtual EPVRTError RemoveLast()
 	{

@@ -1,3 +1,14 @@
+/*!***********************************************************************
+
+ @file         PVRTextureHeader.h
+ @copyright    Copyright (c) Imagination Technologies Limited.
+ @brief        Texture header methods.
+ @details      Includes pixel and channel type methods, size retrieval and 
+               dimension manipulation. As well as set and get methods for 
+               BumpMaps, Meta Data and cube map order.
+
+*************************************************************************/
+
 #ifndef _PVRTEXTURE_HEADER_H
 #define _PVRTEXTURE_HEADER_H
 
@@ -8,52 +19,51 @@
 
 namespace pvrtexture
 {
-	//Wrapper class for PVRTextureHeaderV3, adds 'smart' accessor functions.
+	/*!***********************************************************************
+     @class         CPVRTextureHeader
+     @brief         Wrapper class for PVRTextureHeaderV3, adds 'smart' accessor functions.
+    *************************************************************************/
 	class PVR_DLL CPVRTextureHeader
 	{	
 	protected:
-		PVRTextureHeaderV3											m_sHeader;		//Texture header as laid out in a file.
-		CPVRTMap<uint32, CPVRTMap<uint32,MetaDataBlock> >			m_MetaData;		//Map of all the meta data stored for a texture.
+		PVRTextureHeaderV3											m_sHeader;		//!< Texture header as laid out in a file.
+		CPVRTMap<uint32, CPVRTMap<uint32,MetaDataBlock> >			m_MetaData;		//!< Map of all the meta data stored for a texture.
 
 	public:
-	/*******************************************************************************
-	* Construction methods for a texture header.
-	*******************************************************************************/
+	// Construction methods for a texture header.
 		/*!***********************************************************************
-		 @Function		CPVRTextureHeader
-		 @Return		CPVRTextureHeader A new texture header.
-		 @Description	Default constructor for a CPVRTextureHeader. Returns an empty header.
+		 @brief      	Default constructor for a CPVRTextureHeader. Returns an empty header.
+		 @return		A new texture header.
 		*************************************************************************/
 		CPVRTextureHeader();
 
 		/*!***********************************************************************
-		 @Function		CPVRTextureHeader
-		 @Input			fileHeader
-		 @Input			metaDataCount
-		 @Input			metaData
-		 @Return		CPVRTextureHeader A new texture header.
-		 @Description	Creates a new texture header from a PVRTextureHeaderV3, 
+		 @brief      	Creates a new texture header from a PVRTextureHeaderV3, 
 						and appends Meta data if any is supplied.
+		 @param[in]		fileHeader          PVRTextureHeaderV3
+		 @param[in]		metaDataCount       Number of Meta data blocks to add
+		 @param[in]		metaData            Pointer to meta data block
+		 @return		A new texture header.
 		*************************************************************************/
 		CPVRTextureHeader(	PVRTextureHeaderV3	fileHeader,
 							uint32				metaDataCount=0,
 							MetaDataBlock*		metaData=NULL);
 
 		/*!***********************************************************************
-		 @Function		CPVRTextureHeader
-		 @Input			u64PixelFormat
-		 @Input			u32Height
-		 @Input			u32Width
-		 @Input			u32Depth
-		 @Input			u32NumMipMaps
-		 @Input			u32NumArrayMembers
-		 @Input			u32NumFaces
-		 @Input			eColourSpace
-		 @Input			eChannelType
-		 @Input			bPreMultiplied
-		 @Return		CPVRTextureHeader A new texture header.
-		 @Description	Creates a new texture header based on individual header
+		 @brief      	Creates a new texture header based on individual header
 						variables.
+		 @param[in]		u64PixelFormat      PixelFormat
+		 @param[in]		u32Height           Texture height
+		 @param[in]		u32Width            Texture width
+		 @param[in]		u32Depth            Texture depth
+		 @param[in]		u32NumMipMaps       Number of MIP Maps
+		 @param[in]		u32NumArrayMembers  Number of array members
+		 @param[in]		u32NumFaces         Number of faces
+		 @param[in]		eColourSpace        Colour space
+		 @param[in]		eChannelType        Channel type
+		 @param[in]		bPreMultiplied      Whether or not the texture's colour has been
+                                            pre-multiplied by the alpha values
+		 @return		A new texture header.
 		*************************************************************************/
 		CPVRTextureHeader(	uint64				u64PixelFormat,
 							uint32				u32Height=1,
@@ -67,366 +77,318 @@ namespace pvrtexture
 							bool				bPreMultiplied=false);
 
 		/*!***********************************************************************
-		 @Function		operator=
-		 @Input			rhs
-		 @Return		CPVRTextureHeader& This header.
-		 @Description	Will copy the contents and information of another header into this one.
+		 @brief      	Will copy the contents and information of another header into this one.
+		 @param[in]		rhs     Header to copy.
+		 @return		This header.
 		*************************************************************************/
 		CPVRTextureHeader& operator=(const CPVRTextureHeader& rhs);
 		
-	/*******************************************************************************
-	* Accessor Methods for a texture's properties - getters.
-	*******************************************************************************/
+	// Accessor Methods for a texture's properties - getters.
 
 		/*!***********************************************************************
-		 @Function		getFileHeader
-		 @Return		PVRTextureHeaderV3		The file header.
-		 @Description	Gets the file header structure.
+		 @brief      	Gets the file header structure.
+		 @return		The file header.
 		*************************************************************************/
-		const PVRTextureHeaderV3 getFileHeader() const;
+		PVRTextureHeaderV3 getFileHeader() const;
 
 		/*!***********************************************************************
-		 @Function		getPixelType
-		 @Return		PixelType		64-bit pixel type ID.
-		 @Description	Gets the 64-bit pixel type ID of the texture.
+		 @brief      	Gets the 64-bit pixel type ID of the texture.
+		 @return		64-bit pixel type ID.
 		*************************************************************************/
-		const PixelType getPixelType() const;
+		PixelType getPixelType() const;
 
 		/*!***********************************************************************
-		 @Function		getBitsPerPixel
-		 @Return		uint32		Number of bits per pixel
-		 @Description	Gets the bits per pixel of the texture format.
+		 @brief      	Gets the bits per pixel of the texture format.
+		 @return		Number of bits per pixel.
 		*************************************************************************/
-		const uint32 getBitsPerPixel() const;
+		uint32 getBitsPerPixel() const;
 
 		/*!***********************************************************************
-		 @Function		getColourSpace
-		 @Return		EPVRTColourSpace	enum representing colour space.
-		 @Description	Returns the colour space of the texture.
+		 @brief      	Returns the colour space of the texture.
+		 @return		enum representing colour space.
 		*************************************************************************/
-		const EPVRTColourSpace getColourSpace() const;
+		EPVRTColourSpace getColourSpace() const;
 
 		/*!***********************************************************************
-		 @Function		getChannelType
-		 @Return		EPVRTVariableType	enum representing the type of the texture.
-		 @Description	Returns the variable type that the texture's data is stored in.
+		 @brief      	Returns the variable type that the texture's data is stored in.
+		 @return		enum representing the type of the texture.
 		*************************************************************************/
-		const EPVRTVariableType getChannelType() const;
+		EPVRTVariableType getChannelType() const;
 
 		/*!***********************************************************************
-		 @Function		getWidth
-		 @Input				uiMipLevel	MIP level that user is interested in.
-		 @Return		uint32		Width of the specified MIP-Map level.
-		 @Description	Gets the width of the user specified MIP-Map 
+		 @brief      	Gets the width of the user specified MIP-Map 
 						level for the texture
+		 @param[in]		uiMipLevel	    MIP level that user is interested in.
+		 @return		Width of the specified MIP-Map level.
 		*************************************************************************/
-		const uint32 getWidth(uint32 uiMipLevel=PVRTEX_TOPMIPLEVEL) const;
+		uint32 getWidth(uint32 uiMipLevel=PVRTEX_TOPMIPLEVEL) const;
 
 		/*!***********************************************************************
-		 @Function		getHeight
-		 @Input				uiMipLevel	MIP level that user is interested in.
-		 @Return		uint32		Height of the specified MIP-Map level.
-		 @Description	Gets the height of the user specified MIP-Map 
+		 @brief      	Gets the height of the user specified MIP-Map 
 						level for the texture
+		 @param[in]		uiMipLevel	    MIP level that user is interested in.
+		 @return		Height of the specified MIP-Map level.
 		*************************************************************************/
-		const uint32 getHeight(uint32 uiMipLevel=PVRTEX_TOPMIPLEVEL) const;
+		uint32 getHeight(uint32 uiMipLevel=PVRTEX_TOPMIPLEVEL) const;
 
 		/*!***********************************************************************
-		 @Function		getDepth
-		 @Input				uiMipLevel	MIP level that user is interested in.
-		 @Return		Depth of the specified MIP-Map level.
-		 @Description	Gets the depth of the user specified MIP-Map 
+		 @brief      	Gets the depth of the user specified MIP-Map 
 						level for the texture
+		 @param[in]		uiMipLevel	    MIP level that user is interested in.
+		 @return		Depth of the specified MIP-Map level.
 		*************************************************************************/
-		const uint32 getDepth(uint32 uiMipLevel=PVRTEX_TOPMIPLEVEL) const;
+		uint32 getDepth(uint32 uiMipLevel=PVRTEX_TOPMIPLEVEL) const;
 
 		/*!***********************************************************************
-		 @Function		getTextureSize
-		 @Input				iMipLevel		Specifies a MIP level to check, 
-										'PVRTEX_ALLMIPLEVELS' can be passed to get 
-										the size of all MIP levels. 
-		 @Input				bAllSurfaces	Size of all surfaces is calculated if true, 
-										only a single surface if false.
-		 @Input				bAllFaces		Size of all faces is calculated if true, 
-										only a single face if false.
-		 @Return		uint32			Size in PIXELS of the specified texture area.
-		 @Description	Gets the size in PIXELS of the texture, given various input 
+		 @brief      	Gets the size in PIXELS of the texture, given various input 
 						parameters.	User can retrieve the total size of either all 
 						surfaces or a single surface, all faces or a single face and
 						all MIP-Maps or a single specified MIP level. All of these
-		*************************************************************************/
-		const uint32 getTextureSize(int32 iMipLevel=PVRTEX_ALLMIPLEVELS, bool bAllSurfaces = true, bool bAllFaces = true) const;
-
-		/*!***********************************************************************
-		 @Function		getDataSize
-		 @Input				iMipLevel		Specifies a mip level to check, 
+		 @param[in]		iMipLevel		Specifies a MIP level to check, 
 										'PVRTEX_ALLMIPLEVELS' can be passed to get 
 										the size of all MIP levels. 
-		 @Input				bAllSurfaces	Size of all surfaces is calculated if true, 
+		 @param[in]		bAllSurfaces	Size of all surfaces is calculated if true, 
 										only a single surface if false.
-		 @Input				bAllFaces		Size of all faces is calculated if true, 
+		 @param[in]		bAllFaces		Size of all faces is calculated if true, 
 										only a single face if false.
-		 @Return		uint32			Size in BYTES of the specified texture area.
-		 @Description	Gets the size in BYTES of the texture, given various input 
+		 @return		Size in PIXELS of the specified texture area.
+		*************************************************************************/
+		uint32 getTextureSize(int32 iMipLevel=PVRTEX_ALLMIPLEVELS, bool bAllSurfaces = true, bool bAllFaces = true) const;
+
+		/*!***********************************************************************
+		 @brief      	Gets the size in BYTES of the texture, given various input 
 						parameters.	User can retrieve the size of either all 
 						surfaces or a single surface, all faces or a single face 
 						and all MIP-Maps or a single specified MIP level.
+		 @param[in]		iMipLevel		Specifies a mip level to check, 
+										'PVRTEX_ALLMIPLEVELS' can be passed to get 
+										the size of all MIP levels. 
+		 @param[in]		bAllSurfaces	Size of all surfaces is calculated if true, 
+										only a single surface if false.
+		 @param[in]		bAllFaces		Size of all faces is calculated if true, 
+										only a single face if false.
+		 @return		Size in BYTES of the specified texture area.
 		*************************************************************************/
-		const uint32 getDataSize(int32 iMipLevel=PVRTEX_ALLMIPLEVELS, bool bAllSurfaces = true, bool bAllFaces = true) const;
+		uint32 getDataSize(int32 iMipLevel=PVRTEX_ALLMIPLEVELS, bool bAllSurfaces = true, bool bAllFaces = true) const;
 
 		/*!***********************************************************************
-		 @Function		getNumArrayMembers
-		 @Return		uint32		Number of array members in this texture.
-		 @Description	Gets the number of array members stored in this texture.
+		 @brief      	Gets the number of array members stored in this texture.
+		 @return		Number of array members in this texture.
 		*************************************************************************/
-		const uint32 getNumArrayMembers() const;
+		uint32 getNumArrayMembers() const;
 
 		/*!***********************************************************************
-		 @Function		getNumMIPLevels
-		 @Return		uint32		Number of MIP-Map levels in this texture.
-		 @Description	Gets the number of MIP-Map levels stored in this texture.
+		 @brief      	Gets the number of MIP-Map levels stored in this texture.
+		 @return		Number of MIP-Map levels in this texture.
 		*************************************************************************/
-		const uint32 getNumMIPLevels() const;
+		uint32 getNumMIPLevels() const;
 
 		/*!***********************************************************************
-		 @Function		getNumFaces
-		 @Return		uint32		Number of faces in this texture.
-		 @Description	Gets the number of faces stored in this texture.
+		 @brief      	Gets the number of faces stored in this texture.
+		 @return		Number of faces in this texture.
 		*************************************************************************/
-		const uint32 getNumFaces() const;
+		uint32 getNumFaces() const;
 
 		/*!***********************************************************************
-		 @Function		getOrientation
-		 @Input				axis			EPVRTAxis type specifying the axis to examine.
-		 @Return		EPVRTOrientation	Enum orientation of the axis.
-		 @Description	Gets the data orientation for this texture.
+		 @brief      	Gets the data orientation for this texture.
+		 @param[in]		axis			EPVRTAxis type specifying the axis to examine.
+		 @return		Enum orientation of the axis.
 		*************************************************************************/
-		const EPVRTOrientation getOrientation(EPVRTAxis axis) const;
+		EPVRTOrientation getOrientation(EPVRTAxis axis) const;
 
 		/*!***********************************************************************
-		 @Function		isFileCompressed
-		 @Return		bool	True if it is file compressed.
-		 @Description	Returns whether or not the texture is compressed using
+		 @brief      	Returns whether or not the texture is compressed using
 						PVRTexLib's FILE compression - this is independent of 
 						any texture compression.
+		 @return		True if it is file compressed.
 		*************************************************************************/
-		const bool isFileCompressed() const;
+		bool isFileCompressed() const;
 				
 		/*!***********************************************************************
-		 @Function		isPreMultiplied
-		 @Return		bool	True if texture is premultiplied.
-		 @Description	Returns whether or not the texture's colour has been
+		 @brief      	Returns whether or not the texture's colour has been
 						pre-multiplied by the alpha values.
+		 @return		True if texture is premultiplied.
 		*************************************************************************/
-		const bool isPreMultiplied() const;
+		bool isPreMultiplied() const;
 
 		/*!***********************************************************************
-		 @Function		getMetaDataSize
-		 @Return		const uint32 Size, in bytes, of the meta data stored in the header.
-		 @Description	Returns the total size of the meta data stored in the header. 
+		 @brief      	Returns the total size of the meta data stored in the header. 
 						This includes the size of all information stored in all MetaDataBlocks.
+		 @return		Size, in bytes, of the meta data stored in the header.
 		*************************************************************************/
-		const uint32 getMetaDataSize() const;
+		uint32 getMetaDataSize() const;
 
 		/*!***********************************************************************
-		@Function		getOGLFormat
-		@Modified		internalformat
-		@Modified		format
-		@Modified		type
-		@Description	Gets the OpenGL equivalent values of internal format, format
+		@brief      	Gets the OpenGL equivalent values of internal format, format
 						and type for this texture. This will return any supported
 						OpenGL texture values, it is up to the user to decide if 
 						these are valid for their current platform.
+		@param[in,out]	internalformat      Internal format
+		@param[in,out]	format              Format
+		@param[in,out]	type                Type
 		*************************************************************************/
-		const void getOGLFormat(uint32& internalformat, uint32& format, uint32& type) const;
+		void getOGLFormat(uint32& internalformat, uint32& format, uint32& type) const;
 
 		/*!***********************************************************************
-		 @Function		getOGLESFormat
-		 @Modified		internalformat
-		 @Modified		format
-		 @Modified		type
-		 @Description	Gets the OpenGLES equivalent values of internal format, 
+		 @brief      	Gets the OpenGLES equivalent values of internal format, 
 						format and type for this texture. This will return any 
 						supported OpenGLES texture values, it is up to the user 
 						to decide if these are valid for their current platform.
+		@param[in,out]	internalformat      Internal format
+		@param[in,out]	format              Format
+		@param[in,out]	type                Type
 		*************************************************************************/
-		const void getOGLESFormat(uint32& internalformat, uint32& format, uint32& type) const;
+		void getOGLESFormat(uint32& internalformat, uint32& format, uint32& type) const;
 
 		/*!***********************************************************************
-		 @Function		getD3DFormat
-		 @Return		const uint32 
-		 @Description	Gets the D3DFormat (up to DirectX 9 and Direct 3D Mobile)
+		 @brief      	Gets the D3DFormat (up to DirectX 9 and Direct 3D Mobile)
 						equivalent values for this texture. This will return any 
 						supported D3D texture formats, it is up to the user to
 						decide if this is valid for their current platform.
+		 @return		D3D format, represented by an uint32.
 		*************************************************************************/
-		const uint32 getD3DFormat() const;
+		uint32 getD3DFormat() const;
 		
 		/*!***********************************************************************
-		 @Function		getDXGIFormat
-		 @Return		const uint32 
-		 @Description	Gets the DXGIFormat (DirectX 10 onward) equivalent values 
+		 @brief      	Gets the DXGIFormat (DirectX 10 onward) equivalent values 
 						for this texture. This will return any supported DX texture
 						formats, it is up to the user to decide if this is valid 
 						for their current platform.
+		 @return		GXGIFormat, represented by a uint32. 
 		*************************************************************************/
-		const uint32 getDXGIFormat() const;
+		uint32 getDXGIFormat() const;
 
-	/*!***********************************************************************
-	* Accessor Methods for a texture's properties - setters.
-	*************************************************************************/
+	// Accessor Methods for a texture's properties - setters.
 
 		/*!***********************************************************************
-		 @Function		setPixelFormat
-		 @Input				uPixelFormat	The format of the pixel.
-		 @Description	Sets the pixel format for this texture.
+		 @brief      	Sets the pixel format for this texture.
+		 @param[in]		uPixelFormat	The format of the pixel.
 		*************************************************************************/
 		void setPixelFormat(PixelType uPixelFormat);
 
 		/*!***********************************************************************
-		 @Function		setColourSpace
-		 @Input				eColourSpace	A colour space enum.
-		 @Description	Sets the colour space for this texture. Default is lRGB.
+		 @brief      	Sets the colour space for this texture. Default is lRGB.
+		 @param[in]		eColourSpace	A colour space enum.
 		*************************************************************************/
 		void setColourSpace(EPVRTColourSpace eColourSpace);
 
 		/*!***********************************************************************
-		 @Function		setChannelType
-		 @Input				eVarType	A variable type enum.
-		 @Description	Sets the variable type for the channels in this texture.
+		 @brief      	Sets the variable type for the channels in this texture.
+		 @param[in]		eVarType	    A variable type enum.
 		*************************************************************************/
 		void setChannelType(EPVRTVariableType eVarType);
 
 		/*!***********************************************************************
-		 @Function		setOGLFormat
-		 @Input			internalformat
-		 @Input			format
-		 @Input			type
-		 @Return		bool Whether the format is valid or not.
-		 @Description	Sets the format of the texture to PVRTexLib's internal
+		 @brief      	Sets the format of the texture to PVRTexLib's internal
 						representation of the OGL format.
+		@param[in,out]	internalformat      Internal format
+		@param[in,out]	format              Format
+		@param[in,out]	type                Type
+		 @return		True if successful.
 		*************************************************************************/
 		bool setOGLFormat(const uint32& internalformat, const uint32& format, const uint32& type);
 
 		/*!***********************************************************************
-		 @Function		setOGLESFormat
-		 @Input			internalformat
-		 @Input			format
-		 @Input			type
-		 @Return		bool Whether the format is valid or not.
-		 @Description	Sets the format of the texture to PVRTexLib's internal
+		 @brief      	Sets the format of the texture to PVRTexLib's internal
 						representation of the OGLES format.
+		@param[in,out]	internalformat      Internal format
+		@param[in,out]	format              Format
+		@param[in,out]	type                Type
+		 @return		True if successful.
 		*************************************************************************/
 		bool setOGLESFormat(const uint32& internalformat, const uint32& format, const uint32& type);
 
 		/*!***********************************************************************
-		 @Function		setD3DFormat
-		 @Return		bool Whether the format is valid or not.
-		 @Description	Sets the format of the texture to PVRTexLib's internal
+		 @brief      	Sets the format of the texture to PVRTexLib's internal
 						representation of the D3D format.
+		 @return		True if successful.
 		*************************************************************************/
 		bool setD3DFormat(const uint32& DWORD_D3D_FORMAT);
 		
 		/*!***********************************************************************
-		 @Function		setDXGIFormat
-		 @Return		bool Whether the format is valid or not.
-		 @Description	Sets the format of the texture to PVRTexLib's internal
+		 @brief      	Sets the format of the texture to PVRTexLib's internal
 						representation of the DXGI format.
+		 @return		True if successful.
 		*************************************************************************/
 		bool setDXGIFormat(const uint32& DWORD_DXGI_FORMAT);
 
 		/*!***********************************************************************
-		 @Function		setWidth
-		 @Input				newWidth	The new width.
-		 @Description	Sets the width.
+		 @brief      	Sets the width.
+		 @param[in]		newWidth	The new width.
 		*************************************************************************/
 		void setWidth(uint32 newWidth);
 
 		/*!***********************************************************************
-		 @Function		setHeight
-		 @Input				newHeight	The new height.
-		 @Description	Sets the height.
+		 @brief      	Sets the height.
+		 @param[in]		newHeight	The new height.
 		*************************************************************************/
 		void setHeight(uint32 newHeight);
 
 		/*!***********************************************************************
-		 @Function		setDepth
-		 @Input				newDepth	The new depth.
-		 @Description	Sets the depth.
+		 @brief      	Sets the depth.
+		 @param[in]		newDepth	The new depth.
 		*************************************************************************/
 		void setDepth(uint32 newDepth);
 
 		/*!***********************************************************************
-		 @Function		setNumArrayMembers
-		 @Input				newNumMembers	The new number of members in this array.
-		 @Description	Sets the depth.
+		 @brief      	Sets the depth.
+		 @param[in]		newNumMembers	The new number of members in this array.
 		*************************************************************************/
 		void setNumArrayMembers(uint32 newNumMembers);
 
 		/*!***********************************************************************
-		 @Function		setNumMIPLevels
-		 @Input				newNumMIPLevels		New number of MIP-Map levels.
-		 @Description	Sets the number of MIP-Map levels in this texture.
+		 @brief      	Sets the number of MIP-Map levels in this texture.
+		 @param[in]		newNumMIPLevels		New number of MIP-Map levels.
 		*************************************************************************/
 		void setNumMIPLevels(uint32 newNumMIPLevels);
 
 		/*!***********************************************************************
-		 @Function		setNumFaces
-		 @Input				newNumFaces New number of faces for this texture.
-		 @Description	Sets the number of faces stored in this texture.
+		 @brief      	Sets the number of faces stored in this texture.
+		 @param[in]		newNumFaces     New number of faces for this texture.
 		*************************************************************************/
 		void setNumFaces(uint32 newNumFaces);
 
 		/*!***********************************************************************
-		 @Function		setOrientation
-		 @Input				eAxisOrientation Enum specifying axis and orientation.
-		 @Description	Sets the data orientation for a given axis in this texture.
+		 @brief      	Sets the data orientation for a given axis in this texture.
+		 @param[in]		eAxisOrientation    Enum specifying axis and orientation.
 		*************************************************************************/
 		void setOrientation(EPVRTOrientation eAxisOrientation);
 
 		/*!***********************************************************************
-		 @Function		setIsFileCompressed
-		 @Input				isFileCompressed	Sets file compression to true/false.
-		 @Description	Sets whether or not the texture is compressed using
+		 @brief      	Sets whether or not the texture is compressed using
 						PVRTexLib's FILE compression - this is independent of 
 						any texture compression. Currently unsupported.
+		 @param[in]		isFileCompressed	Sets file compression to true/false.
 		*************************************************************************/
 		void setIsFileCompressed(bool isFileCompressed);
 		
 		/*!***********************************************************************
-		 @Function		isPreMultiplied
-		 @Return		isPreMultiplied	Sets if texture is premultiplied.
-		 @Description	Sets whether or not the texture's colour has been
+		 @brief      	Sets whether or not the texture's colour has been
 						pre-multiplied by the alpha values.
+		 @return		isPreMultiplied	    Sets if texture is premultiplied.
 		*************************************************************************/
 		void setIsPreMultiplied(bool isPreMultiplied);
 
-	/*!***********************************************************************
-	 Meta Data functions - Getters.
-	*************************************************************************/	
+	// Meta Data functions - Getters.	
 
 		/*!***********************************************************************
-		 @Function		isBumpMap
-		 @Return		bool	True if it is a bump map.
-		 @Description	Returns whether the texture is a bump map or not.
+		 @brief      	Returns whether the texture is a bump map or not.
+		 @return		True if the texture is a bump map.
 		*************************************************************************/
-		const bool isBumpMap() const;
+		bool isBumpMap() const;
 
 		/*!***********************************************************************
-		 @Function		getBumpMapScale
-		 @Return		float	Returns the bump map scale.
-		 @Description	Gets the bump map scaling value for this texture. If the
-						texture is not a bump map, 0.0f is returned. If the
+		 @brief      	Gets the bump map scaling value for this texture. 
+         @details       If the texture is not a bump map, 0.0f is returned. If the
 						texture is a bump map but no meta data is stored to
 						specify its scale, then 1.0f is returned.
+		 @return		Returns the bump map scale value as a float.
 		*************************************************************************/
-		const float getBumpMapScale() const;
+		float getBumpMapScale() const;
 
 		/*!***********************************************************************
-		 @Function		getBumpMapOrder
-		 @Return		CPVRTString		Returns bump map order relative to rgba.
-		 @Description	Gets the bump map channel order relative to rgba. For
-						example, an RGB texture with bumps mapped to XYZ returns 
+		 @brief      	Gets the bump map channel order relative to rgba. 
+         @details       For	example, an RGB texture with bumps mapped to XYZ returns 
 						'xyz'. A BGR texture with bumps in the order ZYX will also 
 						return 'xyz' as the mapping is the same: R=X, G=Y, B=Z.
 						If the letter 'h' is present in the string, it means that
@@ -434,77 +396,74 @@ namespace pvrtexture
 						Other characters are possible if the bump map was created
 						manually, but PVRTexLib will ignore these characters. They
 						are returned simply for completeness.
+		 @return		Bump map order relative to rgba.
 		*************************************************************************/
-		const CPVRTString getBumpMapOrder() const;
+		CPVRTString getBumpMapOrder() const;
 
 		/*!***********************************************************************
-		 @Function		getNumTextureAtlasMembers
-		 @Return		int		Returns number of sub textures defined by meta data.
-		 @Description	Works out the number of possible texture atlas members in
+		 @brief      	Works out the number of possible texture atlas members in
 						the texture based on the w/h/d and the data size.
+		 @return		The number of sub textures defined by meta data.
 		*************************************************************************/
-		const int getNumTextureAtlasMembers() const;
+		int getNumTextureAtlasMembers() const;
 
 		/*!***********************************************************************
-		 @Function		getTextureAtlasData
-		 @Return		float*		Returns a pointer directly to the texture atlas data.
-		 @Description	Returns a pointer to the texture atlas data.
+		 @brief      	Returns a pointer to the texture atlas data.
+		 @return		A pointer directly to the texture atlas data.
 		*************************************************************************/
 		const float* getTextureAtlasData() const;
 
 		/*!***********************************************************************
-		 @Function		getCubeMapOrder
-		 @Return		CPVRTString		Returns cube map order.
-		 @Description	Gets the cube map face order. Returned string will be in 
-						the form "ZzXxYy" with capitals representing positive and
-						small letters representing negative. I.e. Z=Z-Positive,
-						z=Z-Negative.
+		 @brief      	Gets the cube map face order. 
+         @details       Returned string will be in the form "ZzXxYy" with capitals 
+                        representing positive and small letters representing 
+                        negative. I.e. Z=Z-Positive, z=Z-Negative.
+		 @return		Cube map order string.
 		*************************************************************************/
-		const CPVRTString getCubeMapOrder() const;
+		CPVRTString getCubeMapOrder() const;
 
 		/*!***********************************************************************
-		 @Function		getBorder
-		 @Input			uiBorderWidth
-		 @Input			uiBorderHeight
-		 @Input			uiBorderDepth
-		 @Description	Obtains the border size in each dimension for this texture.
+		 @brief      	Obtains the border size in each dimension for this texture.
+		 @param[in]		uiBorderWidth   Border width
+		 @param[in]		uiBorderHeight  Border height
+		 @param[in]		uiBorderDepth   Border depth
 		*************************************************************************/
 		void getBorder(uint32& uiBorderWidth, uint32& uiBorderHeight, uint32& uiBorderDepth) const;
 
 		/*!***********************************************************************
-		 @Function		getMetaData
-		 @Input			DevFOURCC
-		 @Input			u32Key
-		 @Return		pvrtexture::MetaDataBlock A copy of the meta data from the texture.
-		 @Description	Returns a block of meta data from the texture. If the meta data doesn't exist, a block with data size 0 will be returned.
+		 @brief      	Returns a block of meta data from the texture. If the meta 
+                        data doesn't exist, a block with data size 0 will be returned.
+		 @param[in]		DevFOURCC       Four character descriptor representing the 
+                                        creator of the meta data
+		 @param[in]		u32Key          Key value representing the type of meta 
+                                        data stored
+		 @return		A copy of the meta data from the texture.
 		*************************************************************************/
-		const MetaDataBlock getMetaData(uint32 DevFOURCC, uint32 u32Key) const;
+		MetaDataBlock getMetaData(uint32 DevFOURCC, uint32 u32Key) const;
 
 		/*!***********************************************************************
-		 @Function		hasMetaData
-		 @Input			DevFOURCC
-		 @Input			u32Key
-		 @Return		bool Whether or not the meta data bock specified exists
-		 @Description	Returns whether or not the specified meta data exists as 
+		 @brief      	Returns whether or not the specified meta data exists as 
 						part of this texture header.
+		 @param[in]		DevFOURCC       Four character descriptor representing the 
+                                        creator of the meta data
+		 @param[in]		u32Key          Key value representing the type of meta 
+                                        data stored
+		 @return		True if the specified meta data bock exists
 		*************************************************************************/
 		bool hasMetaData(uint32 DevFOURCC, uint32 u32Key) const;
 
 		/*!***********************************************************************
-		 @Function		getMetaDataMap
-		 @Return		MetaDataMap* A direct pointer to the MetaData map.
-		 @Description	A pointer directly to the Meta Data Map, to allow users to read out data.
+		 @brief      	A pointer directly to the Meta Data Map, to allow users to read out data.
+		 @return		A direct pointer to the MetaData map.
 		*************************************************************************/
-		const MetaDataMap* const getMetaDataMap() const;
+		const MetaDataMap* getMetaDataMap() const;
 
-	/*!***********************************************************************
-	 Meta Data functions - Setters.
-	*************************************************************************/	
+	// Meta Data functions - Setters.
 		
 		/*!***********************************************************************
-		 @Function		setBumpMap
-		 @Input				bumpScale	Floating point "height" value to scale the bump map.
-		 @Input				bumpOrder	Up to 4 character string, with values x,y,z,h in 
+		 @brief      	Sets a texture's bump map data.
+		 @param[in]		bumpScale	Floating point "height" value to scale the bump map.
+		 @param[in]		bumpOrder	Up to 4 character string, with values x,y,z,h in 
 									some combination. Not all values need to be present.
 									Denotes channel order; x,y,z refer to the 
 									corresponding axes, h indicates presence of the
@@ -520,26 +479,24 @@ namespace pvrtexture
 									if you wish to define a custom data channel for instance.
 									In these instances PVRTexLib will assume it is simply
 									colour data.
-		 @Description	Sets a texture's bump map data.
 		*************************************************************************/
 		void setBumpMap(float bumpScale, CPVRTString bumpOrder="xyz");
 
 		/*!***********************************************************************
-		 @Function		setTextureAtlas
-		 @Input				pAtlasData	Pointer to an array of atlas data.
-		 @Input				dataSize	Number of floats that the data pointer contains.
-		 @Description	Sets the texture atlas coordinate meta data for later display.
+		 @brief      	Sets the texture atlas coordinate meta data for later display.
 						It is up to the user to make sure that this texture atlas
 						data actually makes sense in the context of the header. It is
 						suggested that the "generateTextureAtlas" method in the tools
 						is used to create a texture atlas, manually setting one up is 
 						possible but should be done with care.
+		 @param[in]		pAtlasData	    Pointer to an array of atlas data.
+		 @param[in]		dataSize	    Number of floats that the data pointer contains.
 		*************************************************************************/
 		void setTextureAtlas(float* pAtlasData, uint32 dataSize);
 
 		/*!***********************************************************************
-		 @Function		setCubeMapOrder
-		 @Input				cubeMapOrder	Up to 6 character string, with values 
+		 @brief      	Sets a texture's bump map data.
+		 @param[in]		cubeMapOrder	Up to 6 character string, with values 
 										x,X,y,Y,z,Z in some combination. Not all 
 										values need to be present. Denotes face 
 										order; Capitals refer to positive axis 
@@ -549,37 +506,33 @@ namespace pvrtexture
 										some of these values rather than all, as 
 										long as they are NULL terminated.
 										NB: Values past the 6th character are not read.
-		 @Description	Sets a texture's bump map data.
 		*************************************************************************/
 		void setCubeMapOrder(CPVRTString cubeMapOrder="XxYyZz");
 
 		/*!***********************************************************************
-		 @Function		setBorder
-		 @Input			uiBorderWidth
-		 @Input			uiBorderHeight
-		 @Input			uiBorderDepth
-		 @Return		void 
-		 @Description	Sets a texture's border size data. This value is subtracted 
+		 @brief      	Sets a texture's border size data. This value is subtracted 
 						from the current texture height/width/depth to get the valid 
 						texture data.
+		 @param[in]		uiBorderWidth   Border width
+		 @param[in]		uiBorderHeight  Border height
+		 @param[in]		uiBorderDepth   Border depth
 		*************************************************************************/
 		void setBorder(uint32 uiBorderWidth, uint32 uiBorderHeight, uint32 uiBorderDepth);
 
 		/*!***********************************************************************
-		 @Function		addMetaData
-		 @Input				MetaBlock	Meta data block to be added.
-		 @Description	Adds an arbitrary piece of meta data.
+		 @brief      	Adds an arbitrary piece of meta data.
+		 @param[in]		MetaBlock	    Meta data block to be added.
 		*************************************************************************/
 		void addMetaData(const MetaDataBlock& MetaBlock);
 				
 		/*!***********************************************************************
-		 @Function		removeMetaData
-		 @Input			DevFourCC
-		 @Input			u32Key
-		 @Return		void 
-		 @Description	Removes a specified piece of meta data, if it exists.
+		 @brief      	Removes a specified piece of meta data, if it exists.
+		 @param[in]		DevFOURCC       Four character descriptor representing the 
+                                        creator of the meta data
+		 @param[in]		u32Key          Key value representing the type of meta 
+                                        data stored
 		*************************************************************************/
-		void removeMetaData(const uint32& DevFourCC, const uint32& u32Key);
+		void removeMetaData(const uint32& DevFOURCC, const uint32& u32Key);
 	};
 };
 

@@ -1,16 +1,8 @@
-/******************************************************************************
+/*!****************************************************************************
 
- @File         PVRTDecompress.h
-
- @Title        PVRTDecompress
-
- @Version      
-
- @Copyright    Copyright (c) Imagination Technologies Limited.
-
- @Platform     ANSI compatible
-
- @Description  PVRTC and ETC Texture Decompression.
+ @file         PVRTDecompress.h
+ @copyright    Copyright (c) Imagination Technologies Limited.
+ @brief        PVRTC and ETC Texture Decompression.
 
 ******************************************************************************/
 
@@ -18,14 +10,13 @@
 #define _PVRTDECOMPRESS_H_
 
 /*!***********************************************************************
- @Function		PVRTDecompressPVRTC
- @Input			pCompressedData The PVRTC texture data to decompress
- @Input			Do2bitMode Signifies whether the data is PVRTC2 or PVRTC4
- @Input			XDim X dimension of the texture
- @Input			YDim Y dimension of the texture
- @Return		Returns the amount of data that was decompressed.
- @Modified		pResultImage The decompressed texture data
- @Description	Decompresses PVRTC to RGBA 8888
+ @brief      	Decompresses PVRTC to RGBA 8888
+ @param[in]		pCompressedData The PVRTC texture data to decompress
+ @param[in]		Do2bitMode      Signifies whether the data is PVRTC2 or PVRTC4
+ @param[in]		XDim            X dimension of the texture
+ @param[in]		YDim            Y dimension of the texture
+ @param[in,out]	pResultImage    The decompressed texture data
+ @return		Returns the amount of data that was decompressed.
 *************************************************************************/
 int PVRTDecompressPVRTC(const void *pCompressedData,
 				const int Do2bitMode,
@@ -34,14 +25,13 @@ int PVRTDecompressPVRTC(const void *pCompressedData,
 				unsigned char* pResultImage);
 
 /*!***********************************************************************
-@Function		PVRTDecompressETC
-@Input			pSrcData The ETC texture data to decompress
-@Input			x X dimension of the texture
-@Input			y Y dimension of the texture
-@Modified		pDestData The decompressed texture data
-@Input			nMode The format of the data
-@Returns		The number of bytes of ETC data decompressed
-@Description	Decompresses ETC to RGBA 8888
+ @brief      	Decompresses ETC to RGBA 8888
+ @param[in]		pSrcData        The ETC texture data to decompress
+ @param[in]		x               X dimension of the texture
+ @param[in]		y               Y dimension of the texture
+ @param[in,out]	pDestData       The decompressed texture data
+ @param[in]		nMode           The format of the data
+ @return		The number of bytes of ETC data decompressed
 *************************************************************************/
 int PVRTDecompressETC(const void * const pSrcData,
 						 const unsigned int &x,

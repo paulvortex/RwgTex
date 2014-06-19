@@ -1,16 +1,8 @@
-/******************************************************************************
+/*!****************************************************************************
 
- @File         PVRTError.h
-
- @Title        PVRTError
-
- @Version      
-
- @Copyright    Copyright (c) Imagination Technologies Limited.
-
- @Platform     ANSI compatible
-
- @Description  
+ @file         PVRTError.h
+ @copyright    Copyright (c) Imagination Technologies Limited.
+ @brief        PVRT error codes.  
 
 ******************************************************************************/
 #ifndef _PVRTERROR_H_
@@ -34,10 +26,10 @@
 	#if defined(_DEBUG) || defined(DEBUG)
 		#if defined(ANDROID)
 			#define PVRTERROR_OUTPUT_DEBUG(A) __android_log_print(ANDROID_LOG_INFO, "PVRTools", A);
-		#elif defined(_WIN32)
+		#elif defined(_WIN32) && !defined(UNDER_CE)
 			#define PVRTERROR_OUTPUT_DEBUG(A) OutputDebugStringA(A);
 		#else
-			#define PVRTERROR_OUTPUT_DEBUG(A) fprintf(stderr,A);
+			#define PVRTERROR_OUTPUT_DEBUG(A) fprintf(stderr,"%s",A);
 		#endif
 	#else
 		#define PVRTERROR_OUTPUT_DEBUG(A)
@@ -48,18 +40,20 @@
 /*!***************************************************************************
  Enums
 *****************************************************************************/
-/*! Enum error codes */
+/*!***************************************************************************
+ @enum  			EPVRTError
+ @brief         	EPVRT error conditions.
+*****************************************************************************/
 enum EPVRTError
 {
-	PVR_SUCCESS = 0,
-	PVR_FAIL = 1,
-	PVR_OVERFLOW = 2
+	PVR_SUCCESS = 0,    /*!< Success! :D */
+	PVR_FAIL = 1,       /*!< Failed :( */
+	PVR_OVERFLOW = 2    /*!< Overflow error :| */
 };
 
 /*!***************************************************************************
- @Function			PVRTErrorOutputDebug
- @Input				format		printf style format followed by arguments it requires
- @Description		Outputs a string to the standard error.
+ @brief     		Outputs a string to the standard error.
+ @param[in]			format		printf style format followed by arguments it requires.
 *****************************************************************************/
 void PVRTErrorOutputDebug(char const * const format, ...);
 
