@@ -168,6 +168,8 @@ submitted to the exclusive jurisdiction of the Swedish Courts.
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "../etcpack_lib.h"
+
 // Typedefs
 typedef unsigned char uint8;
 typedef unsigned short uint16;

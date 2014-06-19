@@ -51,6 +51,10 @@
 #include <math.h> 
 #include <time.h>
 #include <sys/timeb.h>
+#include "etcimage.h"
+
+#define ETCPACK_C
+#include "../etcpack_lib.h"
 
 // Typedefs
 typedef unsigned char uint8;
@@ -4427,6 +4431,9 @@ void compressBlockPlanar57(uint8 *img, int width,int height,int startx,int start
 	PUTBITS(     compressed57_2, colorV8[0], 6, 25);
 	PUTBITS(     compressed57_2, colorV8[1], 7, 19);
 	PUTBITS(     compressed57_2, colorV8[2], 6, 12);
+
+	// vortex: cleanup
+	free( b_vector.data );
 }
 
 // During search it is not convenient to store the bits the way they are stored in the 
@@ -8149,100 +8156,27 @@ void compressBlockETC2Fast(uint8 *img, uint8* alphaimg, uint8 *imgdec,int width,
 	double error_best;
 	signed char best_char;
 	int best_mode;
-	
-	if(format==ETC2PACKAGE_RGBA1_NO_MIPMAPS||format==ETC2PACKAGE_sRGBA1_NO_MIPMAPS)
-	{
-		/*                if we have one-bit alpha, we never use the individual mode,
-		                  instead that bit flags that one of our four offsets will instead
-						          mean transparent (with 0 offset for color channels) */
 
-		/*                the regular ETC individual mode is disabled, but the old T, H and planar modes
-						          are kept unchanged and may be used for blocks without transparency.
-						          Introduced are old ETC with only differential coding,
-						          ETC differential but with 3 offsets and transparent,
-						          and T-mode with 3 colors plus transparent.*/
+	//this includes individual mode, and therefore doesn't apply in case of punch-through alpha.
+	compressBlockDiffFlipFast(img, imgdec, width, height, startx, starty, etc1_word1, etc1_word2);
+	decompressBlockDiffFlip(etc1_word1, etc1_word2, imgdec, width, height, startx, starty);
+	error_etc1 = calcBlockErrorRGB(img, imgdec, width, height, startx, starty);
 
-		/*                in a fairly hackish manner, error_etc1, etc1_word1 and etc1_word2 will
-		                  represent the best out of the three introduced modes, to be compared
-						          with the three kept modes in the old code*/
-
-		unsigned int tempword1, tempword2;
-		double temperror;
-		//try regular differential transparent mode
-
-		int testerr= compressBlockDifferentialWithAlpha(true,img,alphaimg, imgdec,width,height,startx,starty,etc1_word1,etc1_word2);
-
-		uint8* alphadec = new uint8[width*height];
-		decompressBlockDifferentialWithAlpha(etc1_word1, etc1_word2, imgdec, alphadec,width, height, startx, starty);
-		error_etc1 = calcBlockErrorRGBA(img, imgdec, alphaimg,width, height, startx, starty);
-		if(error_etc1!=testerr) 
-		{
-			printf("testerr: %d, etcerr: %lf\n",testerr,error_etc1);
-		}
-		//try T-mode with transparencies
-		//for now, skip this...
-		compressBlockTHUMB59TAlpha(img,alphaimg,width,height,startx,starty,tempword1,tempword2);
-		decompressBlockTHUMB59TAlpha(tempword1,tempword2,imgdec, alphadec, width,height,startx,starty);
-		temperror=calcBlockErrorRGBA(img, imgdec, alphaimg, width, height, startx, starty);
-		if(temperror<error_etc1) 
-		{
-			error_etc1=temperror;
-			stuff59bitsDiffFalse(tempword1,tempword2,etc1_word1,etc1_word2);
-		}
-		compressBlockTHUMB58HAlpha(img,alphaimg,width,height,startx,starty,tempword1,tempword2);
-		decompressBlockTHUMB58HAlpha(tempword1,tempword2,imgdec, alphadec, width,height,startx,starty);
-		temperror=calcBlockErrorRGBA(img, imgdec, alphaimg, width, height, startx, starty);
-		if(temperror<error_etc1) 
-		{
-			error_etc1=temperror;
-			stuff58bitsDiffFalse(tempword1,tempword2,etc1_word1,etc1_word2);
-		}
-		//if we have transparency in this pixel, we know that one of these two modes was best..
-		if(hasAlpha(alphaimg,startx,starty,width)) 
-		{
-			compressed1=etc1_word1;
-			compressed2=etc1_word2;
-			delete alphadec;
-			return;
-		}
-		//error_etc1=255*255*1000;
-		//otherwise, they MIGHT have been the best, although that's unlikely.. anyway, try old differential mode now
-		
-		compressBlockDifferentialWithAlpha(false,img,alphaimg,imgdec,width,height,startx,starty,tempword1,tempword2);
-		decompressBlockDiffFlip(tempword1, tempword2, imgdec, width, height, startx, starty);
-		temperror = calcBlockErrorRGB(img, imgdec, width, height, startx, starty);
-		decompressBlockDifferentialWithAlpha(tempword1,tempword2,imgdec,alphadec,width,height,startx,starty);
-		if(temperror<error_etc1) 
-		{
-			error_etc1=temperror;
-			etc1_word1=tempword1;
-			etc1_word2=tempword2;
-		}
-		delete alphadec;
-		//drop out of this if, and test old T, H and planar modes (we have already returned if there are transparent pixels in this block)
-	}
-	else 
-	{
-		//this includes individual mode, and therefore doesn't apply in case of punch-through alpha.
-		compressBlockDiffFlipFast(img, imgdec, width, height, startx, starty, etc1_word1, etc1_word2);
-		decompressBlockDiffFlip(etc1_word1, etc1_word2, imgdec, width, height, startx, starty);
-		error_etc1 = calcBlockErrorRGB(img, imgdec, width, height, startx, starty);
-	}
 	//these modes apply regardless of whether we want punch-through alpha or not.
 	//error etc_1 and etc1_word1/etc1_word2 contain previous best candidate.
 	compressBlockPlanar57(img, width, height, startx, starty, planar57_word1, planar57_word2);
 	decompressBlockPlanar57(planar57_word1, planar57_word2, imgdec, width, height, startx, starty);
-	error_planar = calcBlockErrorRGB(img, imgdec, width, height, startx, starty);
+	error_planar = calcBlockErrorRGB(img, imgdec, width, height, startx, starty) * 3.0;
 	stuff57bits(planar57_word1, planar57_word2, planar_word1, planar_word2);
 
 	compressBlockTHUMB59TFastest(img,width, height, startx, starty, thumbT59_word1, thumbT59_word2);
 	decompressBlockTHUMB59T(thumbT59_word1, thumbT59_word2, imgdec, width, height, startx, starty);			
-	error_thumbT = calcBlockErrorRGB(img, imgdec, width, height, startx, starty);
+	error_thumbT = calcBlockErrorRGB(img, imgdec, width, height, startx, starty) * 3.0;
 	stuff59bits(thumbT59_word1, thumbT59_word2, thumbT_word1, thumbT_word2);
 
 	compressBlockTHUMB58HFastest(img,width,height,startx, starty, thumbH58_word1, thumbH58_word2);
 	decompressBlockTHUMB58H(thumbH58_word1, thumbH58_word2, imgdec, width, height, startx, starty);			
-	error_thumbH = calcBlockErrorRGB(img, imgdec, width, height, startx, starty);
+	error_thumbH = calcBlockErrorRGB(img, imgdec, width, height, startx, starty) * 3.0;
 	stuff58bits(thumbH58_word1, thumbH58_word2, thumbH_word1, thumbH_word2);
 
 	error_best = error_etc1;
@@ -8306,6 +8240,188 @@ void compressBlockETC2Fast(uint8 *img, uint8* alphaimg, uint8 *imgdec,int width,
 	}
 }
 
+
+// Compress a block with ETC2 RGB with punchthrough alpha
+// NO WARRANTY --- SEE STATEMENT IN TOP OF FILE (C) Ericsson AB 2013. All Rights Reserved.
+void compressBlockETC2RGBA1(uint8 *img, uint8* alphaimg, uint8 *imgdec,int width,int height,int startx,int starty, unsigned int &compressed1, unsigned int &compressed2)
+{
+	unsigned int etc1_word1;
+	unsigned int etc1_word2;
+	double error_etc1;
+
+	unsigned int planar57_word1;
+	unsigned int planar57_word2;
+	unsigned int planar_word1;
+	unsigned int planar_word2;
+	double error_planar;
+
+	unsigned int thumbT59_word1;
+	unsigned int thumbT59_word2;
+	unsigned int thumbT_word1;
+	unsigned int thumbT_word2;
+	double error_thumbT;
+	
+	unsigned int thumbH58_word1;
+	unsigned int thumbH58_word2;
+	unsigned int thumbH_word1;
+	unsigned int thumbH_word2;
+	double error_thumbH;
+
+	double error_best;
+	signed char best_char;
+	int best_mode;
+	
+	if(1)
+	{
+		/*                if we have one-bit alpha, we never use the individual mode,
+		                  instead that bit flags that one of our four offsets will instead
+						          mean transparent (with 0 offset for color channels) */
+
+		/*                the regular ETC individual mode is disabled, but the old T, H and planar modes
+						          are kept unchanged and may be used for blocks without transparency.
+						          Introduced are old ETC with only differential coding,
+						          ETC differential but with 3 offsets and transparent,
+						          and T-mode with 3 colors plus transparent.*/
+
+		/*                in a fairly hackish manner, error_etc1, etc1_word1 and etc1_word2 will
+		                  represent the best out of the three introduced modes, to be compared
+						          with the three kept modes in the old code*/
+
+		unsigned int tempword1, tempword2;
+		double temperror;
+		//try regular differential transparent mode
+
+		int testerr= compressBlockDifferentialWithAlpha(true,img,alphaimg, imgdec,width,height,startx,starty,etc1_word1,etc1_word2);
+
+		uint8* alphadec = new uint8[width*height];
+		decompressBlockDifferentialWithAlpha(etc1_word1, etc1_word2, imgdec, alphadec,width, height, startx, starty);
+		error_etc1 = calcBlockErrorRGBA(img, imgdec, alphaimg,width, height, startx, starty);
+		if(error_etc1!=testerr) 
+		{
+			printf("testerr: %d, etcerr: %lf\n",testerr,error_etc1);
+		}
+		//try T-mode with transparencies
+		//for now, skip this...
+		compressBlockTHUMB59TAlpha(img,alphaimg,width,height,startx,starty,tempword1,tempword2);
+		decompressBlockTHUMB59TAlpha(tempword1,tempword2,imgdec, alphadec, width,height,startx,starty);
+		temperror=calcBlockErrorRGBA(img, imgdec, alphaimg, width, height, startx, starty) * 3.0;
+		if(temperror<error_etc1) 
+		{
+			error_etc1=temperror;
+			stuff59bitsDiffFalse(tempword1,tempword2,etc1_word1,etc1_word2);
+		}
+		compressBlockTHUMB58HAlpha(img,alphaimg,width,height,startx,starty,tempword1,tempword2);
+		decompressBlockTHUMB58HAlpha(tempword1,tempword2,imgdec, alphadec, width,height,startx,starty);
+		temperror=calcBlockErrorRGBA(img, imgdec, alphaimg, width, height, startx, starty) * 3.0;
+		if(temperror<error_etc1) 
+		{
+			error_etc1=temperror;
+			stuff58bitsDiffFalse(tempword1,tempword2,etc1_word1,etc1_word2);
+		}
+		//if we have transparency in this pixel, we know that one of these two modes was best..
+		if(hasAlpha(alphaimg,startx,starty,width)) 
+		{
+			compressed1=etc1_word1;
+			compressed2=etc1_word2;
+			delete alphadec;
+			return;
+		}
+		//error_etc1=255*255*1000;
+		//otherwise, they MIGHT have been the best, although that's unlikely.. anyway, try old differential mode now
+		
+		compressBlockDifferentialWithAlpha(false,img,alphaimg,imgdec,width,height,startx,starty,tempword1,tempword2);
+		decompressBlockDiffFlip(tempword1, tempword2, imgdec, width, height, startx, starty);
+		temperror = calcBlockErrorRGB(img, imgdec, width, height, startx, starty);
+		decompressBlockDifferentialWithAlpha(tempword1,tempword2,imgdec,alphadec,width,height,startx,starty);
+		if(temperror<error_etc1) 
+		{
+			error_etc1=temperror;
+			etc1_word1=tempword1;
+			etc1_word2=tempword2;
+		}
+		delete alphadec;
+		//drop out of this if, and test old T, H and planar modes (we have already returned if there are transparent pixels in this block)
+	}
+
+	//these modes apply regardless of whether we want punch-through alpha or not.
+	//error etc_1 and etc1_word1/etc1_word2 contain previous best candidate.
+	compressBlockPlanar57(img, width, height, startx, starty, planar57_word1, planar57_word2);
+	decompressBlockPlanar57(planar57_word1, planar57_word2, imgdec, width, height, startx, starty);
+	error_planar = calcBlockErrorRGB(img, imgdec, width, height, startx, starty) * 3.0;
+	stuff57bits(planar57_word1, planar57_word2, planar_word1, planar_word2);
+
+	compressBlockTHUMB59TFastest(img,width, height, startx, starty, thumbT59_word1, thumbT59_word2);
+	decompressBlockTHUMB59T(thumbT59_word1, thumbT59_word2, imgdec, width, height, startx, starty);			
+	error_thumbT = calcBlockErrorRGB(img, imgdec, width, height, startx, starty) * 3.0;
+	stuff59bits(thumbT59_word1, thumbT59_word2, thumbT_word1, thumbT_word2);
+
+	compressBlockTHUMB58HFastest(img,width,height,startx, starty, thumbH58_word1, thumbH58_word2);
+	decompressBlockTHUMB58H(thumbH58_word1, thumbH58_word2, imgdec, width, height, startx, starty);			
+	error_thumbH = calcBlockErrorRGB(img, imgdec, width, height, startx, starty) * 3.0;
+	stuff58bits(thumbH58_word1, thumbH58_word2, thumbH_word1, thumbH_word2);
+
+	error_best = error_etc1;
+	compressed1 = etc1_word1;
+	compressed2 = etc1_word2;
+	best_char = '.';
+	best_mode = MODE_ETC1;
+
+	if(error_planar < error_best)
+	{
+		compressed1 = planar_word1;
+        compressed2 = planar_word2;
+		best_char = 'p';
+		error_best = error_planar;	
+		best_mode = MODE_PLANAR;
+	}
+	if(error_thumbT < error_best)
+	{
+		compressed1 = thumbT_word1;
+        compressed2 = thumbT_word2;
+		best_char = 'T';
+		error_best = error_thumbT;
+		best_mode = MODE_THUMB_T;
+	}
+	if(error_thumbH < error_best)
+	{
+		compressed1 = thumbH_word1;
+        compressed2 = thumbH_word2;
+		best_char = 'H';
+		error_best = error_thumbH;
+		best_mode = MODE_THUMB_H;
+	}
+	
+	switch(best_mode)
+	{
+		// Now see which mode won and compress that a little bit harder
+	case MODE_THUMB_T:
+		compressBlockTHUMB59TFast(img,width, height, startx, starty, thumbT59_word1, thumbT59_word2);
+		decompressBlockTHUMB59T(thumbT59_word1, thumbT59_word2, imgdec, width, height, startx, starty);			
+		error_thumbT = calcBlockErrorRGB(img, imgdec, width, height, startx, starty);
+		stuff59bits(thumbT59_word1, thumbT59_word2, thumbT_word1, thumbT_word2);
+		if(error_thumbT < error_best)
+		{
+			compressed1 = thumbT_word1;
+			compressed2 = thumbT_word2;
+		}
+		break;
+	case MODE_THUMB_H:
+		compressBlockTHUMB58HFast(img,width,height,startx, starty, thumbH58_word1, thumbH58_word2);
+		decompressBlockTHUMB58H(thumbH58_word1, thumbH58_word2, imgdec, width, height, startx, starty);			
+		error_thumbH = calcBlockErrorRGB(img, imgdec, width, height, startx, starty);
+		stuff58bits(thumbH58_word1, thumbH58_word2, thumbH_word1, thumbH_word2);
+		if(error_thumbH < error_best)
+		{
+			compressed1 = thumbH_word1;
+			compressed2 = thumbH_word2;
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+
 // Compress an ETC2 RGB block using perceptual error metric
 // NO WARRANTY --- SEE STATEMENT IN TOP OF FILE (C) Ericsson AB 2013. All Rights Reserved.
 void compressBlockETC2FastPerceptual(uint8 *img, uint8 *imgdec,int width,int height,int startx,int starty, unsigned int &compressed1, unsigned int &compressed2)
@@ -8342,17 +8458,17 @@ void compressBlockETC2FastPerceptual(uint8 *img, uint8 *imgdec,int width,int hei
 
 	compressBlockPlanar57(img, width, height, startx, starty, planar57_word1, planar57_word2);
 	decompressBlockPlanar57(planar57_word1, planar57_word2, imgdec, width, height, startx, starty);
-	error_planar = 1000*calcBlockPerceptualErrorRGB(img, imgdec, width, height, startx, starty);
+	error_planar = 1000*calcBlockPerceptualErrorRGB(img, imgdec, width, height, startx, starty) * 3.0;
 	stuff57bits(planar57_word1, planar57_word2, planar_word1, planar_word2);
 
 	compressBlockTHUMB59TFastestPerceptual1000(img,width, height, startx, starty, thumbT59_word1, thumbT59_word2);
 	decompressBlockTHUMB59T(thumbT59_word1, thumbT59_word2, imgdec, width, height, startx, starty);			
-	error_thumbT = 1000*calcBlockPerceptualErrorRGB(img, imgdec, width, height, startx, starty);
+	error_thumbT = 1000*calcBlockPerceptualErrorRGB(img, imgdec, width, height, startx, starty) * 3.0;
 	stuff59bits(thumbT59_word1, thumbT59_word2, thumbT_word1, thumbT_word2);
 
 	compressBlockTHUMB58HFastestPerceptual1000(img,width,height,startx, starty, thumbH58_word1, thumbH58_word2);
 	decompressBlockTHUMB58H(thumbH58_word1, thumbH58_word2, imgdec, width, height, startx, starty);			
-	error_thumbH = 1000*calcBlockPerceptualErrorRGB(img, imgdec, width, height, startx, starty);
+	error_thumbH = 1000*calcBlockPerceptualErrorRGB(img, imgdec, width, height, startx, starty) * 3.0;
 	stuff58bits(thumbH58_word1, thumbH58_word2, thumbH_word1, thumbH_word2);
 
 	error_best = error_etc1;
