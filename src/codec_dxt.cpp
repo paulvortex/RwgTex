@@ -15,28 +15,18 @@ TexBlock  B_DXT3  = { FOURCC('D','X','T','3'), "DXT3", 4, 4, 128 };
 TexBlock  B_DXT4  = { FOURCC('D','X','T','4'), "DXT4", 4, 4, 128 };
 TexBlock  B_DXT5  = { FOURCC('D','X','T','5'), "DXT5", 4, 4, 128 };
 
-TexFormat F_DXT1  = { FOURCC('D','X','T','1'), "DXT1", "DirectX Texture Compression 1",  "dxt1", &B_DXT1, &CODEC_DXT, GL_COMPRESSED_RGB_S3TC_DXT1_EXT,  GL_COMPRESSED_SRGB_S3TC_DXT1_EXT,       GL_RGB,  0, FF_SRGB };
-TexFormat F_DXT1A = { FOURCC('D','X','T','1'), "DXT1A","DirectX Texture Compression 1A", "dxt1a",&B_DXT1, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT, GL_RGBA, 0, FF_ALPHA | FF_BINARYALPHA | FF_SRGB };
-TexFormat F_DXT2  = { FOURCC('D','X','T','2'), "DXT2", "DirectX Texture Compression 2",  "dxt2", &B_DXT2, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT, GL_RGBA, 0, FF_ALPHA | FF_SRGB, Swizzle_Premult };
-TexFormat F_DXT3  = { FOURCC('D','X','T','3'), "DXT3", "DirectX Texture Compression 3",  "dxt3", &B_DXT3, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT, GL_RGBA, 0, FF_ALPHA | FF_SRGB };
-TexFormat F_DXT4  = { FOURCC('D','X','T','4'), "DXT4", "DirectX Texture Compression 4",  "dxt4", &B_DXT4, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_ALPHA | FF_SRGB, Swizzle_Premult };
-TexFormat F_DXT5  = { FOURCC('D','X','T','5'), "DXT5", "DirectX Texture Compression 5",  "dxt5", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_ALPHA | FF_SRGB, NULL, F_SWIZZLED_DXT5};
+TexFormat F_DXT1  = { FOURCC('D','X','T','1'), "DXT1", "DirectX Texture Compression 1",  "dxt1", &B_DXT1, &CODEC_DXT, GL_COMPRESSED_RGB_S3TC_DXT1_EXT,  GL_COMPRESSED_SRGB_S3TC_DXT1_EXT,       GL_RGB,  0, FF_SRGB                                                                       };
+TexFormat F_DXT1A = { FOURCC('D','X','T','1'), "DXT1A","DirectX Texture Compression 1A", "dxt1a",&B_DXT1, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT, GL_RGBA, 0, FF_ALPHA | FF_BINARYALPHA | FF_SRGB                                           };
+TexFormat F_DXT2  = { FOURCC('D','X','T','2'), "DXT2", "DirectX Texture Compression 2",  "dxt2", &B_DXT2, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT, GL_RGBA, 0, FF_ALPHA | FF_SRGB,                   Swizzle_Premult                         };
+TexFormat F_DXT3  = { FOURCC('D','X','T','3'), "DXT3", "DirectX Texture Compression 3",  "dxt3", &B_DXT3, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT, GL_RGBA, 0, FF_ALPHA | FF_SRGB                                                            };
+TexFormat F_DXT4  = { FOURCC('D','X','T','4'), "DXT4", "DirectX Texture Compression 4",  "dxt4", &B_DXT4, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_ALPHA | FF_SRGB,                   Swizzle_Premult                         };
+TexFormat F_DXT5  = { FOURCC('D','X','T','5'), "DXT5", "DirectX Texture Compression 5",  "dxt5", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_ALPHA | FF_SRGB,                   NULL,                   F_SWIZZLED_DXT5 };
 
 // swizzled formats
-TexFormat F_DXT5_RXGB  = { FOURCC('R','X','G','B'), "RXGB", "Doom 3 RXGB (swizzled DXT5)",            "rxgb", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_SRGB, Swizzle_AGBR };
-TexFormat F_DXT5_YCG1  = { FOURCC('Y','C','G','1'), "YCG1", "YCoCg (swizzled DXT5)",                  "ycg1", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_ALPHA | FF_SRGB, Swizzle_YCoCg };
-TexFormat F_DXT5_YCG2  = { FOURCC('Y','C','G','2'), "YCG2", "YCoCg Scaled (swizzled DXT5)",           "ycg2", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_SRGB, Swizzle_YCoCgScaled };
-TexFormat F_DXT5_YCG3  = { FOURCC('Y','C','G','3'), "YCG3", "YCoCg Gamma 2.0 (swizzled DXT5)",        "ycg3", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_ALPHA, Swizzle_YCoCg_Gamma2 };
-TexFormat F_DXT5_YCG4  = { FOURCC('Y','C','G','4'), "YCG4", "YCoCg Scaled Gamma 2.0 (swizzled DXT5)", "ycg4", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, 0, 0, Swizzle_YCoCgScaled_Gamma2 };
-TexFormat *F_SWIZZLED_DXT5[] =
-{
-	&F_DXT5_RXGB,
-	&F_DXT5_YCG1,
-	&F_DXT5_YCG2,
-	&F_DXT5_YCG3,
-	&F_DXT5_YCG4,
-	NULL
-};
+TexFormat F_DXT5_RXGB  = { FOURCC('R','X','G','B'), "RXGB", "Doom 3 RXGB (swizzled DXT5)",  "rxgb", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_SWIZZLE_RESERVED_ALPHA | FF_SWIZZLE_INTERNAL_SRGB,            Swizzle_AGBR };
+TexFormat F_DXT5_YCG1  = { FOURCC('Y','C','G','1'), "YCG1", "YCoCg (swizzled DXT5)",        "ycg1", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_ALPHA | FF_SWIZZLE_RESERVED_ALPHA | FF_SWIZZLE_INTERNAL_SRGB, Swizzle_YCoCg };
+TexFormat F_DXT5_YCG2  = { FOURCC('Y','C','G','2'), "YCG2", "YCoCg Scaled (swizzled DXT5)", "ycg2", &B_DXT5, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_SWIZZLE_RESERVED_ALPHA | FF_SWIZZLE_INTERNAL_SRGB,            Swizzle_YCoCgScaled };
+TexFormat *F_SWIZZLED_DXT5[] = { &F_DXT5_RXGB, &F_DXT5_YCG1, &F_DXT5_YCG2, NULL };
 
 TexCodec  CODEC_DXT = 
 {
@@ -179,112 +169,105 @@ void CodecDXT_Decode(TexDecodeTask *task)
 */
 
 // Color premultiplied by alpha (DXT2/DXT3)
-void Swizzle_Premult(LoadedImage *image, bool decode)
+void Swizzle_Premult(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode)
 {
-	int pitch, y;
+	int y;
 
-	byte *data = Image_GetData(image, NULL, &pitch);
 	if (decode)
 	{
-		for (y = 0; y < image->height; y++)
+		for (y = 0; y < height; y++)
 		{
 			byte *in = data;
-			byte *end = in + image->width*image->bpp;
+			byte *end = in + width*bpp;
 			while(in < end)
 			{
 				float mod = 255.0f / (float)in[3];
 				in[0] = (byte)min(255, max(0, (in[0] * mod)));
 				in[1] = (byte)min(255, max(0, (in[1] * mod)));
 				in[2] = (byte)min(255, max(0, (in[2] * mod)));
-				in += image->bpp;
+				in += bpp;
 			}
 			data += pitch;
 		}
 		return;
 	}
 	// encode
-	for (y = 0; y < image->height; y++)
+	for (y = 0; y < height; y++)
 	{
 		byte *in = data;
-		byte *end = in + image->width*image->bpp;
+		byte *end = in + width*bpp;
 		while(in < end)
 		{
 			float mod = (float)in[3] / 255.0f;
 			in[0] = (byte)(in[0] * mod);
 			in[1] = (byte)(in[1] * mod);
 			in[2] = (byte)(in[2] * mod);
-			in += image->bpp;
+			in += bpp;
 		}
 		data += pitch;
 	}
 }
 
 // Doom 3's normalmap trick (store R channel in DXT5 alpha)
-void Swizzle_XGBR(LoadedImage *image, bool decode)
+void Swizzle_XGBR(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode)
 {
-	int pitch, y;
+	int y;
 
-	if (!decode)
-		Image_ConvertBPP(image, 4);
-	else if (image->bpp != 4)
+	if (bpp != 4)
 		Error("Swizzle_XGBR: image have no alpha channel!\n");
-	byte *data = Image_GetData(image, NULL, &pitch);
 	// decode
 	if (decode)
 	{
-		for (y = 0; y < image->height; y++)
+		for (y = 0; y < height; y++)
 		{
 			byte *in = data;
-			byte *end = in + image->width*image->bpp;
+			byte *end = in + width*bpp;
 			while(in < end)
 			{
 				in[0] = in[3];
 				in[3] = 0;
-				in += image->bpp;
+				in += bpp;
 			}
 			data += pitch;
 		}
-		Image_ConvertBPP(image, 3);
 		return;
 	}
 	// encode
-	for (y = 0; y < image->height; y++)
+	for (y = 0; y < height; y++)
 	{
 		byte *in = data;
-		byte *end = in + image->width*image->bpp;
+		byte *end = in + width*bpp;
 		while(in < end)
 		{
 			in[3] = in[2];
 			in[2] = 0;
-			in += image->bpp;
+			in += bpp;
 		}
 		data += pitch;
 	}
 }
 
 // Doom 3's normalmap trick (store R channel in DXT5 alpha) with alpha stored in R (it seems it is only suitable for binaryalpha)
-void Swizzle_AGBR(LoadedImage *image, bool decode)
+void Swizzle_AGBR(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode)
 {
-	int pitch, y;
+	int y;
 
-	if (!decode)
-		Image_ConvertBPP(image, 4);
-	else if (image->bpp != 4)
+	if (bpp != 4)
 		Error("Swizzle_AGBR: image have no alpha channel!\n");
-	byte *data = Image_GetData(image, NULL, &pitch);
+
 	// decode
 	if (decode)
 	{
-		for (y = 0; y < image->height; y++)
+		for (y = 0; y < height; y++)
 		{
 			byte *in = data;
-			byte *end = in + image->width*image->bpp;
+			byte *end = in + width*bpp;
 			while(in < end)
 			{
 				byte saved = in[0];
 				in[0] = in[3];
 				in[3] = saved;
-				in += image->bpp;
+				in += bpp;
 			}
 			data += pitch;
 		}
@@ -292,13 +275,13 @@ void Swizzle_AGBR(LoadedImage *image, bool decode)
 	}
 	// encode
 	byte saved;
-	for (y = 0; y < image->height; y++)
+	for (y = 0; y < height; y++)
 	{
 		byte *in = data;
-		byte *end = in + image->width*image->bpp;
+		byte *end = in + width*bpp;
 		while(in < end)
 		{
-			if (image->colorSwap == false)
+			if (rgbSwap == false)
 			{
 				saved = in[0];
 				in[0] = in[3];
@@ -310,28 +293,26 @@ void Swizzle_AGBR(LoadedImage *image, bool decode)
 				in[2] = in[3];
 				in[3] = saved;
 			}
-			in += image->bpp;
+			in += bpp;
 		}
 		data += pitch;
 	}
 }
 
 // IdTech5 Chrominance/Luminance swizzle (can store low quality alpha)
-void Swizzle_YCoCg(LoadedImage *image, bool decode)
+void Swizzle_YCoCg(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode)
 {
-	int pitch, y;
+	int y;
 
-	if (!decode)
-		Image_ConvertBPP(image, 4);
-	else if (image->bpp != 4)
+	if (bpp != 4)
 		Error("Swizzle_YCoCg: image have no alpha channel!\n");
-	byte *data = Image_GetData(image, NULL, &pitch);
+
 	if (decode)
 	{
-		for (y = 0; y < image->height; y++)
+		for (y = 0; y < height; y++)
 		{
 			byte *in = data;
-			byte *end = in + image->width*image->bpp;
+			byte *end = in + width*bpp;
 			while(in < end)
 			{
 				byte T;
@@ -347,13 +328,13 @@ void Swizzle_YCoCg(LoadedImage *image, bool decode)
 				in[0] = (byte)(R * 255.0f);
 				in[1] = (byte)(G * 255.0f);
 				in[2] = (byte)(B * 255.0f);
-				if (image->colorSwap == true)
+				if (rgbSwap == true)
 				{
 					T = in[2];
 					in[2] = in[0];
 					in[0] = T;
 				}
-				in += image->bpp;
+				in += bpp;
 			}
 			data += pitch;
 		}
@@ -361,10 +342,10 @@ void Swizzle_YCoCg(LoadedImage *image, bool decode)
 	}
 	// encode
 	byte Y, Co, Cg;
-	for (y = 0; y < image->height; y++)
+	for (y = 0; y < height; y++)
 	{
 		byte *in = data;
-		byte *end = in + image->width*image->bpp;
+		byte *end = in + width*bpp;
 		while(in < end)
 		{
 			Y  = ((in[2] + (in[1] << 1) + in[0]) + 2) >> 2;
@@ -374,34 +355,32 @@ void Swizzle_YCoCg(LoadedImage *image, bool decode)
 			in[1] = (Cg > 255 ? 255 : (Cg < 0 ? 0 : Cg));
 			in[2] = (Co > 255 ? 255 : (Co < 0 ? 0 : Co));
 			in[3] = (Y  > 255 ? 255 : (Y  < 0 ? 0 :  Y));
-			if (image->colorSwap == false)
+			if (rgbSwap == false)
 			{
 				Y = in[2];
 				in[2] = in[0];
 				in[0] = Y;
 			}
-			in += image->bpp;
+			in += bpp;
 		}
 		data += pitch;
 	}
 }
 
 // YCoCg Unscaled Gamma 2.0
-void Swizzle_YCoCg_Gamma2(LoadedImage *image, bool decode)
+void Swizzle_YCoCg_Gamma2(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode)
 {
-	int pitch, y;
+	int y;
 
-	if (!decode)
-		Image_ConvertBPP(image, 4);
-	else if (image->bpp != 4)
-		Error("Swizzle_YCoCg: image have no alpha channel!\n");
-	byte *data = Image_GetData(image, NULL, &pitch);
+	if (bpp != 4)
+		Error("Swizzle_YCoCg_Gamma2: image have no alpha channel!\n");
+
 	if (decode)
 	{
-		for (y = 0; y < image->height; y++)
+		for (y = 0; y < height; y++)
 		{
 			byte *in = data;
-			byte *end = in + image->width*image->bpp;
+			byte *end = in + width*bpp;
 			while(in < end)
 			{
 				byte T;
@@ -420,13 +399,13 @@ void Swizzle_YCoCg_Gamma2(LoadedImage *image, bool decode)
 				in[0] = (byte)(R * 255.0f);
 				in[1] = (byte)(G * 255.0f);
 				in[2] = (byte)(B * 255.0f);
-				if (image->colorSwap == true)
+				if (rgbSwap == true)
 				{
 					T = in[2];
 					in[2] = in[0];
 					in[0] = T;
 				}
-				in += image->bpp;
+				in += bpp;
 			}
 			data += pitch;
 		}
@@ -434,10 +413,10 @@ void Swizzle_YCoCg_Gamma2(LoadedImage *image, bool decode)
 	}
 	// encode
 	byte Y, Co, Cg, R, G, B;
-	for (y = 0; y < image->height; y++)
+	for (y = 0; y < height; y++)
 	{
 		byte *in = data;
-		byte *end = in + image->width*image->bpp;
+		byte *end = in + width*bpp;
 		while(in < end)
 		{
 			R  = (byte)floor(sqrt((float)in[0] / 255.0f) * 255.0f + 0.5f);
@@ -450,37 +429,35 @@ void Swizzle_YCoCg_Gamma2(LoadedImage *image, bool decode)
 			in[1] = (Cg > 255 ? 255 : (Cg < 0 ? 0 : Cg));
 			in[2] = (Co > 255 ? 255 : (Co < 0 ? 0 : Co));
 			in[3] = (Y  > 255 ? 255 : (Y  < 0 ? 0 :  Y));
-			if (image->colorSwap == false)
+			if (rgbSwap == false)
 			{
 				Y = in[2];
 				in[2] = in[0];
 				in[0] = Y;
 			}
-			in += image->bpp;
+			in += bpp;
 		}
 		data += pitch;
 	}
 }
 
 // IdTech5 Chrominance/Luminance swizzle - color scaled variant (doesnt store alpha at all)
-void Swizzle_YCoCgScaled(LoadedImage *image, bool decode)
+void Swizzle_YCoCgScaled(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode)
 {
-	int pitch, y;
+	int y;
 
-	if (!decode)
-		Image_ConvertBPP(image, 4);
-	else if (image->bpp != 4)
+	if (bpp != 4)
 		Error("Swizzle_YCoCg: image have no alpha channel!\n");
-	byte *data = Image_GetData(image, NULL, &pitch);
+
 	if (decode)
 	{
 		byte T;
 		float Y, Co, Cg, R, G, B, s;
 		const float offset = 0.5f * 256.0f / 255.0f;
-		for (y = 0; y < image->height; y++)
+		for (y = 0; y < height; y++)
 		{
 			byte *in = data;
-			byte *end = in + image->width*image->bpp;
+			byte *end = in + width*bpp;
 			while(in < end)
 			{
 				Y  = (float)in[3]/255.0f;
@@ -497,13 +474,13 @@ void Swizzle_YCoCgScaled(LoadedImage *image, bool decode)
 				in[1] = (byte)(G * 255.0f);
 				in[2] = (byte)(B * 255.0f);
 				in[3] = 255; // set alpha to 1
-				if (image->colorSwap == true)
+				if (rgbSwap == true)
 				{
 					T = in[2];
 					in[2] = in[0];
 					in[0] = T;
 				}
-				in += image->bpp;
+				in += bpp;
 			}
 			data += pitch;
 		}
@@ -511,10 +488,10 @@ void Swizzle_YCoCgScaled(LoadedImage *image, bool decode)
 	}
 	// encode YCoCg (scale will be applied during compression)
 	byte Y, Co, Cg;
-	for (y = 0; y < image->height; y++)
+	for (y = 0; y < height; y++)
 	{
 		byte *in = data;
-		byte *end = in + image->width*image->bpp;
+		byte *end = in + width*bpp;
 		while(in < end)
 		{
 			Y  = ((in[2] + (in[1] << 1) + in[0]) + 2) >> 2;
@@ -524,37 +501,35 @@ void Swizzle_YCoCgScaled(LoadedImage *image, bool decode)
 			in[1] = (Cg > 255 ? 255 : (Cg < 0 ? 0 : Cg));
 			in[2] = (Co > 255 ? 255 : (Co < 0 ? 0 : Co));
 			in[3] = (Y  > 255 ? 255 : (Y  < 0 ? 0 :  Y));
-			if (image->colorSwap == false)
+			if (rgbSwap == false)
 			{
 				Y = in[2];
 				in[2] = in[0];
 				in[0] = Y;
 			}
-			in += image->bpp;
+			in += bpp;
 		}
 		data += pitch;
 	}
 }
 
 // YCoCg Scaled Gamma 2.0
-void Swizzle_YCoCgScaled_Gamma2(LoadedImage *image, bool decode)
+void Swizzle_YCoCgScaled_Gamma2(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode)
 {
-	int pitch, y;
+	int y;
 
-	if (!decode)
-		Image_ConvertBPP(image, 4);
-	else if (image->bpp != 4)
+	if (bpp != 4)
 		Error("Swizzle_YCoCg: image have no alpha channel!\n");
-	byte *data = Image_GetData(image, NULL, &pitch);
+
 	if (decode)
 	{
 		byte T;
 		float Y, Co, Cg, R, G, B, s;
 		const float offset = 0.5f * 256.0f / 255.0f;
-		for (y = 0; y < image->height; y++)
+		for (y = 0; y < height; y++)
 		{
 			byte *in = data;
-			byte *end = in + image->width*image->bpp;
+			byte *end = in + width*bpp;
 			while(in < end)
 			{
 				Y  = (float)in[3]/255.0f;
@@ -574,13 +549,13 @@ void Swizzle_YCoCgScaled_Gamma2(LoadedImage *image, bool decode)
 				in[1] = (byte)(G * 255.0f);
 				in[2] = (byte)(B * 255.0f);
 				in[3] = 255; // set alpha to 1
-				if (image->colorSwap == true)
+				if (rgbSwap == true)
 				{
 					T = in[2];
 					in[2] = in[0];
 					in[0] = T;
 				}
-				in += image->bpp;
+				in += bpp;
 			}
 			data += pitch;
 		}
@@ -588,10 +563,10 @@ void Swizzle_YCoCgScaled_Gamma2(LoadedImage *image, bool decode)
 	}
 	// encode YCoCg (scale will be applied during compression)
 	byte Y, Co, Cg, R, G, B;
-	for (y = 0; y < image->height; y++)
+	for (y = 0; y < height; y++)
 	{
 		byte *in = data;
-		byte *end = in + image->width*image->bpp;
+		byte *end = in + width*bpp;
 		while(in < end)
 		{
 			R  = (byte)floor(sqrt((float)in[0] / 255.0f) * 255.0f + 0.5f);
@@ -604,13 +579,13 @@ void Swizzle_YCoCgScaled_Gamma2(LoadedImage *image, bool decode)
 			in[1] = (Cg > 255 ? 255 : (Cg < 0 ? 0 : Cg));
 			in[2] = (Co > 255 ? 255 : (Co < 0 ? 0 : Co));
 			in[3] = (Y  > 255 ? 255 : (Y  < 0 ? 0 :  Y));
-			if (image->colorSwap == false)
+			if (rgbSwap == false)
 			{
 				Y = in[2];
 				in[2] = in[0];
 				in[0] = Y;
 			}
-			in += image->bpp;
+			in += bpp;
 		}
 		data += pitch;
 	}

@@ -246,6 +246,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\codec_pvrtc2.h"
+				>
+			</File>
+			<File
 				RelativePath="..\src\codec_unc.h"
 				>
 			</File>
@@ -275,6 +279,10 @@
 			</File>
 			<File
 				RelativePath=".\..\src\scale2x.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\scalexbr.h"
 				>
 			</File>
 			<File
@@ -797,6 +805,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\codec_pvrtc2.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\src\codec_unc.cpp"
 				>
 			</File>
@@ -826,6 +838,10 @@
 			</File>
 			<File
 				RelativePath=".\..\src\scale2x.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\src\scalexbr.cpp"
 				>
 			</File>
 			<File

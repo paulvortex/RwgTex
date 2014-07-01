@@ -19,12 +19,14 @@
 
 typedef struct
 {
-	bool BinaryAlpha;
-	bool ConvertTosRGB;
-	bool ConvertToLinear;
+	bool   BinaryAlpha;
+	bool   ConvertTosRGB;
+	bool   ConvertToLinear;
+	bool   SwapColors;
+	void (*ColorSwizzle)(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode);
 } MapProcessParms;
 
-void PreprocessMap(ImageMap *map, MapProcessParms *parms, int bpp)
+void PreprocessMap(ImageMap *map, MapProcessParms *parms, int bpp, bool rgbSwap)
 {
 	if (parms->BinaryAlpha)
 	{
@@ -37,9 +39,19 @@ void PreprocessMap(ImageMap *map, MapProcessParms *parms, int bpp)
 		}
 	}
 	if (parms->ConvertTosRGB)
+	{
 		ImageData_ConvertSRGB(map->data, map->width, map->height, map->width*bpp, bpp, false, true);
+		map->sRGB = true;
+	}
 	if (parms->ConvertToLinear)
+	{
 		ImageData_ConvertSRGB(map->data, map->width, map->height, map->width*bpp, bpp, true, false);
+		map->sRGB = false;
+	}
+	if (parms->ColorSwizzle)
+		parms->ColorSwizzle(map->data, map->width, map->height, map->width*bpp, bpp, rgbSwap, map->sRGB, false);
+	if (parms->SwapColors)
+		ImageData_SwapRB(map->data, map->width, map->height, map->width*bpp, bpp);
 }
 
 void GenerateMipMaps(TexEncodeTask *task, bool sRGB)
@@ -55,12 +67,14 @@ void GenerateMipMaps(TexEncodeTask *task, bool sRGB)
 	image = task->image;
 	Image_FreeMaps(image);
 
-	// whats needed
+	// conversions needed
 	mipLevels = (!tex_noMipmaps && !FS_FileMatchList(task->file, image, tex_noMipFiles) && !(task->format->features & FF_NOMIP)) ? true : false;
 	conversions.ConvertTosRGB = (image->sRGB != sRGB && sRGB == true);
 	conversions.ConvertToLinear = (image->sRGB != sRGB && sRGB == false);
 	conversions.BinaryAlpha = (task->format->features & FF_BINARYALPHA && image->hasAlpha) ? true : false;
-	any_conversions = (conversions.BinaryAlpha || conversions.ConvertTosRGB || conversions.ConvertToLinear) ? true : false;
+	conversions.ColorSwizzle = task->format->colorSwizzle;
+	conversions.SwapColors = ((image->colorSwap == true && !(task->tool->inputflags & (TEXINPUT_BGR|TEXINPUT_BGRA))) || (image->colorSwap == false && !(task->tool->inputflags & (TEXINPUT_RGB|TEXINPUT_RGBA)))) ? true : false;
+	any_conversions = (conversions.BinaryAlpha || conversions.ConvertTosRGB || conversions.ConvertToLinear || conversions.SwapColors || conversions.ColorSwizzle != NULL) ? true : false;
 
 	// create base map
 	mem_calloc(&map, sizeof(ImageMap));
@@ -68,7 +82,7 @@ void GenerateMipMaps(TexEncodeTask *task, bool sRGB)
 	map->height = image->height;
 	map->data = Image_GetUnalignedData(image, &map->datasize, &data_allocated, any_conversions );
 	map->sRGB = sRGB;
-	PreprocessMap(map, &conversions, image->bpp);
+	PreprocessMap(map, &conversions, image->bpp, image->colorSwap);
 	if (data_allocated == false)
 		map->external = true;
 	image->maps = map;
@@ -106,7 +120,7 @@ void GenerateMipMaps(TexEncodeTask *task, bool sRGB)
 			}
 			if (mipbitmap != image->bitmap)
 				fiFree(mipbitmap);
-			PreprocessMap(map, &conversions, image->bpp);
+			PreprocessMap(map, &conversions, image->bpp, image->colorSwap);
 		}
 	}
 }
@@ -121,7 +135,7 @@ void GenerateMipMaps(TexEncodeTask *task, bool sRGB)
 
 void Compress(TexEncodeTask *task)
 {
-	bool sRGB;
+	bool sRGB, powerOfTwo, squareSize;
 
 	// force tool
 	if (task->codec->forceTool)
@@ -165,85 +179,38 @@ void Compress(TexEncodeTask *task)
 
 	// determine if we should to compress as sRGB
 	sRGB = false;
-	if (tex_sRGB_allow && (task->format->features & FF_SRGB))
+	if (tex_sRGB_allow && (task->format->features & (FF_SRGB|FF_SWIZZLE_INTERNAL_SRGB)))
 	{
 		sRGB = (task->image->sRGB  || tex_sRGB_forceconvert || FS_FileMatchList(task->file, task->image, tex_sRGBcolorspace));
 		if (tex_sRGB_autoconvert && !sRGB && (task->image->sRGB == false))
 		{
-			// smart conversion: if sRGB colorspace will cause a quality increase (i.e. image contains many dark pixels), convert it
-			int pitch, h;
-			float grayscale;
-			size_t lowpixels = 0, highpixels = 0;
-			byte *data, *in, *end;
-			data = Image_GetData(task->image, NULL, &pitch);
-			if (task->image->colorSwap)
-			{
-				for (h = 0; h < task->image->height; h++)
-				{
-					in = data;
-					end = in + task->image->width * task->image->bpp;
-					while(in < end)
-					{
-						grayscale = (float)in[0] * 0.299f + (float)in[1] * 0.587f + (float)in[2] * 0.114f;
-						if (task->image->bpp == 4 && in[3] == 0)
-							grayscale = 0;
-						if (grayscale > 0) // skip black and transparent pixels
-						{
-							if (grayscale > 30)
-								highpixels++;
-							else
-								lowpixels++;
-						}
-						in += task->image->bpp;
-					}
-					data += pitch;
-				}
-			}
-			else
-			{
-				for (h = 0; h < task->image->height; h++)
-				{
-					in = data;
-					end = in + task->image->width * task->image->bpp;
-					while(in < end)
-					{
-						grayscale = (float)in[2] * 0.299f + (float)in[1] * 0.587f + (float)in[0] * 0.114f;
-						if (task->image->bpp == 4 && in[3] == 0)
-							grayscale = 0;
-						if (grayscale > 0) // skip black and transparent pixels
-						{
-							if (grayscale > 30) // pixels < 30 have 2.5-4x more precision 
-								highpixels++;
-							else
-								lowpixels++;
-						}
-						in += task->image->bpp;
-					}
-					data += pitch;
-				}
-			}
-			//printf("lowpixels %i, highpixels %i\n", lowpixels, highpixels); 
-			if (lowpixels > highpixels)
-				sRGB = true;
+			int pitch;
+			byte *data = Image_GetData(task->image, NULL, &pitch);
+			sRGB = ImageData_ProbeLinearToSRGB_16bit(data, task->image->width, task->image->height, pitch, task->image->bpp, task->image->colorSwap);
 		}
 	}
-
-	// generate maps to be compressed
 	Verbose("Compressing %s as %s:%s (%s%s/%s)\n", task->file->fullpath.c_str(), task->tool->name, task->format->name, (sRGB == true) ? "sRGB_" : "", task->format->block->name, OptionEnumName(tex_profile, tex_profiles));
-	Image_SwapColors(task->image, (task->tool->inputflags & (TEXINPUT_BGR|TEXINPUT_BGRA)) ? true : false);
+
+	// prepare image for tool/format
+	int dest_bpp = task->image->bpp;
 	if (!(task->tool->inputflags & (TEXINPUT_BGR|TEXINPUT_RGB)))
-		Image_ConvertBPP(task->image, 4);
+		dest_bpp = 4;
 	else if (!(task->tool->inputflags & (TEXINPUT_BGRA|TEXINPUT_RGBA)))
-		Image_ConvertBPP(task->image, 3);
-	Image_Swizzle(task->image, task->format->colorSwizzle, false);
+		dest_bpp = 3;
+	if (task->format->features & FF_SWIZZLE_RESERVED_ALPHA)
+		dest_bpp = 4;
+	Image_ConvertBPP(task->image, dest_bpp);
+
+	// apply scalers
+	powerOfTwo = (tex_allowNPOT && !(task->format->features & FF_POT)) ? false : true;
+	squareSize = (task->format->features & FF_SQUARE) ? true : false;
 	if (FS_FileMatchList(task->file, task->image, tex_scale4xFiles) || tex_forceScale4x)
-	{
-		Image_Scale2x(task->image, tex_firstScaler, true);
-		Image_Scale2x(task->image, tex_secondScaler, (tex_allowNPOT && !(task->format->features & FF_POT)) ? false : true);
-	}
+		Image_ScaleBy4(task->image, tex_firstScaler, tex_secondScaler, powerOfTwo);
 	else if (FS_FileMatchList(task->file, task->image, tex_scale2xFiles) || tex_forceScale2x)
-		Image_Scale2x(task->image, tex_firstScaler, (tex_allowNPOT && !(task->format->features & FF_POT)) ? false : true);
-	Image_MakeDimensions(task->image, (tex_allowNPOT == true) ? false : true, (task->format->features & FF_SQUARE) ? true : false);
+		Image_ScaleBy2(task->image, tex_firstScaler, powerOfTwo);
+	Image_MakeDimensions(task->image, powerOfTwo, squareSize);
+
+	// generate mipmaps
 	GenerateMipMaps(task, sRGB);
 
 	// allocate memory for destination file

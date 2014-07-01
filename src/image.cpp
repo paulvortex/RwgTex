@@ -12,6 +12,7 @@
 #include "freeimage.h"
 #include "omnilib/dpomnilib.h"
 #include "scale2x.h"
+#include "scalexBR.h"
 #include "tex.h"
 
 using namespace omnilib;
@@ -95,6 +96,30 @@ void Image_Delete(LoadedImage *image)
 ==========================================================================================
 */
 
+// ImageData_SwapRB
+// swap reg and blue channels
+void ImageData_SwapRB(byte *data, int width, int height, int pitch, int bpp)
+{
+	byte *in, *end, saved;
+	int y;
+
+	for (y = 0; y < height; y++)
+	{
+		in = data;
+		end = in + width*bpp;
+		while(in < end)
+		{
+			saved = in[0];
+			in[0] = in[2];
+			in[2] = saved;
+			in += bpp;
+		}
+		data += pitch;
+	}
+}
+
+// ImageData_ConvertSRGB
+// convert RGB->sRGB colorspace
 #define linear_to_srgb(c) (((c) < 0.0031308f) ? (c) * 12.92f : 1.055f * (float)pow((c), 1.0f/2.4f) - 0.055f)
 #define srgb_to_linear(c) (((c) <= 0.04045f) ? (c) * (1.0f / 12.92f) : (float)pow(((c) + 0.055f)*(1.0f/1.055f), 2.4f))
 void ImageData_ConvertSRGB(byte *data, int width, int height, int pitch, int bpp, bool srcSRGB, bool dstSRGB)
@@ -141,6 +166,66 @@ void ImageData_ConvertSRGB(byte *data, int width, int height, int pitch, int bpp
 		}
 		lines += pitch;
 	}
+}
+
+// probe linear image for 16-bit color sRGB conversion, if overall quality will increase, return true
+// smart conversion: if sRGB colorspace will cause a quality increase (i.e. image contains many dark pixels), convert it
+bool ImageData_ProbeLinearToSRGB_16bit(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap)
+{
+	int h;
+	float grayscale;
+	size_t lowpixels = 0, highpixels = 0;
+	byte *in, *end;
+	if (rgbSwap)
+	{
+		for (h = 0; h < height; h++)
+		{
+			in = data;
+			end = in + width * bpp;
+			while(in < end)
+			{
+				grayscale = (float)in[0] * 0.299f + (float)in[1] * 0.587f + (float)in[2] * 0.114f;
+				if (bpp == 4 && in[3] == 0)
+					grayscale = 0;
+				if (grayscale > 0) // skip black and transparent pixels
+				{
+					if (grayscale > 30)
+						highpixels++;
+					else
+						lowpixels++;
+				}
+				in += bpp;
+			}
+			data += pitch;
+		}
+	}
+	else
+	{
+		for (h = 0; h < height; h++)
+		{
+			in = data;
+			end = in + width * bpp;
+			while(in < end)
+			{
+				grayscale = (float)in[2] * 0.299f + (float)in[1] * 0.587f + (float)in[0] * 0.114f;
+				if (bpp == 4 && in[3] == 0)
+					grayscale = 0;
+				if (grayscale > 0) // skip black and transparent pixels
+				{
+					if (grayscale > 30) // pixels < 30 have 2.5-4x more precision 
+						highpixels++;
+					else
+						lowpixels++;
+				}
+				in += bpp;
+			}
+			data += pitch;
+		}
+	}
+	//printf("lowpixels %i, highpixels %i\n", lowpixels, highpixels); 
+	if (lowpixels > highpixels)
+		return true;
+	return false;
 }
 
 /*
@@ -195,29 +280,15 @@ void Image_ConvertSRGB(LoadedImage *image, bool useSRGB)
 // swap RGB->BGR
 void Image_SwapColors(LoadedImage *image, bool swappedColor)
 {
-	byte *data, *in, *end;
-	int pitch, y;
+	byte *data;
+	int pitch;
 
 	if (!image->bitmap)
 		return;
 	if (swappedColor == image->colorSwap)
 		return;
-
-	// swap
 	data = fiGetData(image->bitmap, &pitch);
-	for (y = 0; y < image->height; y++)
-	{
-		in = data;
-		end = in + image->width*image->bpp;
-		while(in < end)
-		{
-			byte saved = in[0];
-			in[0] = in[2];
-			in[2] = saved;
-			in += image->bpp;
-		}
-		data += pitch;
-	}
+	ImageData_SwapRB(data, image->width, image->height, pitch, image->bpp);
 	image->colorSwap = swappedColor;
 }
 
@@ -291,7 +362,7 @@ int NextPowerOfTwo(int n)
     return 1 << ((((int*)&d)[1]>>20)-1022); 
 }
 
-// scale for 4x and then backscale 1/2 for best quality
+// scale for 4x and then backscale 1/2 for better quality
 void Image_Scale2x_Super2x(LoadedImage *image, bool makePowerOfTwo)
 {
 	byte *in, *end, *out;
@@ -307,10 +378,7 @@ void Image_Scale2x_Super2x(LoadedImage *image, bool makePowerOfTwo)
 
 	// check if we can scale
 	if (sxCheck(4, image->bpp, image->width, image->height) != SCALEX_OK)
-	{
-		//Warning("Image_Scale2x_Super2x: cannot scale image %ix%i bpp %i\n", image->width, image->height, image->bpp);
 		return;
-	}
 
 	// get our desired sizes
 	int w = image->width;
@@ -359,11 +427,8 @@ void Image_Scale2x_Super2x(LoadedImage *image, bool makePowerOfTwo)
 	lanczos = fiConvertBPP(lanczos, 4, 0, NULL);
 	lanczos = fiSharpen(lanczos, 1.1f, 3, true);
 
-	// scale with scale 4x, then apply median, then backscale to 2x
+	// scale with scale 4x, then backscale to 2x
 	FIBITMAP *rescaled = fiScale2x(image->bitmap, 4, false);
-	//FIBITMAP *rescaled2 = fiClone(rescaled);
-	//fiApplyMedianFilter(&rescaled2, 1, 1, 1);
-	//fiCombine(rescaled, rescaled2, COMBINE_RGB, 1.0f, true);
 	rescaled = fiRescale(rescaled, nw, nh, FILTER_LANCZOS3, true);
 	fiBindToImage(rescaled, image);
 
@@ -384,7 +449,7 @@ void Image_Scale2x_Super2x(LoadedImage *image, bool makePowerOfTwo)
 }
 
 // scale for 2x
-void Image_Scale2x_Scale2x(LoadedImage *image)
+void Image_Scale2x(LoadedImage *image, int factor)
 {
 	if (!image->bitmap)
 		return;
@@ -395,20 +460,17 @@ void Image_Scale2x_Scale2x(LoadedImage *image)
 		Image_ConvertBPP(image, 4);
 
 	// check if we can scale
-	if (sxCheck(2, image->bpp, image->width, image->height) != SCALEX_OK)
-	{
-		//Warning("Image_Scale2x_Scale2x: cannot scale image %ix%i bpp %i\n", image->width, image->height, image->bpp);
+	if (sxCheck(factor, image->bpp, image->width, image->height) != SCALEX_OK)
 		return;
-	}
 
 	// scale
 	// vortex: since BPP is 4, data is always properly aligned, so we dont need pitch
 	int w = image->width;
 	int h = image->height;
-	FIBITMAP *scaled = fiCreate(w*2, h*2, 4);
+	FIBITMAP *scaled = fiCreate(w*factor, h*factor, 4);
 	byte *data_scaled = fiGetData(scaled, NULL);
 	byte *data_bitmap = fiGetData(image->bitmap, NULL);
-	sxScale(2, data_scaled, w*2*4, data_bitmap, w*4, 4, w, h);
+	sxScale(factor, data_scaled, w*factor*4, data_bitmap, w*4, 4, w, h);
 	fiBindToImage(scaled, image);
 
 	// finish
@@ -417,8 +479,84 @@ void Image_Scale2x_Scale2x(LoadedImage *image)
 	image->scaled = true;
 }
 
-// scale image using different scale technique
-void Image_Scale2x(LoadedImage *image, ImageScaler scaler, bool makePowerOfTwo)
+// scale using xBR scaler
+void Image_ScalexBR(LoadedImage *image, int factor)
+{
+	xbrz::ScalerCfg scalerconfig;
+
+	// create scaler config
+	memcpy(&scalerconfig, &xbrz::DefaultScalerCfg, sizeof(xbrz::ScalerCfg));
+	//scalerconfig.luminanceWeight_ = 0.2;
+	//scalerconfig.equalColorTolerance_ = 1;
+	//scalerconfig.steepDirectionThreshold = 1;
+
+	// create scaled image
+	FIBITMAP *scaled = fiCreate(image->width*factor, image->height*factor, 4);
+
+	// save out alpha to be scaled in separate pass
+	// vortex: since BPP is 4, data is always properly aligned, so we dont need pitch
+	if (image->hasAlpha)
+	{
+		// extract alpha as RGB image
+		byte *alpha = (byte *)mem_alloc(image->width * image->height * 4);
+		byte *in = fiGetData(image->bitmap, NULL);
+		byte *end = in + image->width*image->height*4;
+		byte *out = alpha;
+		while(in < end)
+		{
+			out[0] = in[3];
+			out[1] = in[3];
+			out[2] = in[3];
+			out[3] = 0;
+			in += 4;
+			out += 4;
+		}
+		// alpha scale
+		xbrz::scale(factor, (uint32_t *)alpha, (uint32_t *)fiGetData(scaled, NULL), image->width, image->height, scalerconfig, 0, image->height);
+		mem_free(alpha);
+		// RGB scale
+		Image_SetAlpha(image, 0);
+		FIBITMAP *rgb_scaled = fiCreate(image->width*factor, image->height*factor, 4);
+		xbrz::scale(factor, (uint32_t *)fiGetData(image->bitmap, NULL), (uint32_t *)fiGetData(rgb_scaled, NULL), image->width, image->height, scalerconfig, 0, image->height);
+		// combine and return
+		fiCombine(rgb_scaled, scaled, COMBINE_R_TO_ALPHA, 1, true);
+		fiBindToImage(rgb_scaled, image);
+		image->scaled = true;
+		return;
+	}
+
+	// RGB scale
+	Image_ConvertBPP(image, 4);
+	Image_SetAlpha(image, 0);
+	xbrz::scale(factor, (uint32_t *)fiGetData(image->bitmap, NULL), (uint32_t *)fiGetData(scaled, NULL), image->width, image->height, scalerconfig, 0, image->height);
+	fiBindToImage(scaled, image);
+	Image_ConvertBPP(image, 3);
+	image->scaled = true;
+}
+
+// Image_ScalexBR_Super2x
+// scale to 4x then backscale to 2x using xBR scaling
+void Image_ScalexBR_Super2x(LoadedImage *image, bool makePowerOfTwo)
+{
+	int dstwidth = image->width * 2;
+	int dstheight = image->height * 2;
+	if (makePowerOfTwo)
+	{
+		dstwidth = NextPowerOfTwo(dstwidth);
+		dstheight = NextPowerOfTwo(dstheight);
+	}
+	Image_ScalexBR(image, 4);
+	// backscale RGB with interpolation
+	FIBITMAP *backscale1 = fiRescale(image->bitmap, dstwidth, dstheight, FILTER_CATMULLROM, false);
+	// backscale alpha with no interpolation
+	FIBITMAP *backscale2 = fiRescaleNearestNeighbor(image->bitmap, dstwidth, dstheight, false);
+	// combine
+	fiCombine(backscale1, backscale2, COMBINE_ALPHA, 1, true);
+	fiBindToImage(backscale1, image);
+}
+
+// scale image by 2x using different scale technique
+void Image_ScaleBy2(LoadedImage *image, ImageScaler scaler, bool makePowerOfTwo)
 {
 	if (!image->bitmap)
 		return;
@@ -430,7 +568,17 @@ void Image_Scale2x(LoadedImage *image, ImageScaler scaler, bool makePowerOfTwo)
 	}
 	if (scaler == IMAGE_SCALER_SCALE2X)
 	{
-		Image_Scale2x_Scale2x(image);
+		Image_Scale2x(image, 2);
+		return;
+	}
+	if (scaler == IMAGE_SCALER_XBRZ)
+	{
+		Image_ScalexBR(image, 2);
+		return;
+	}
+	if (scaler == IMAGE_SCALER_SBRZ)
+	{
+		Image_ScalexBR_Super2x(image, makePowerOfTwo);
 		return;
 	}
 
@@ -457,6 +605,25 @@ void Image_Scale2x(LoadedImage *image, ImageScaler scaler, bool makePowerOfTwo)
 	}
 	fiBindToImage(fiRescale(image->bitmap, w, h, filter, false), image);
 	image->scaled = true;
+}
+
+// scale image by 4x using different scale technique
+void Image_ScaleBy4(LoadedImage *image, ImageScaler scaler, ImageScaler scaler2, bool makePowerOfTwo)
+{
+	// instand 4x scale
+	if (scaler == IMAGE_SCALER_XBRZ && scaler2 == IMAGE_SCALER_XBRZ)
+	{
+		Image_ScalexBR(image, 4);
+		return;
+	}
+	if (scaler == IMAGE_SCALER_SCALE2X && scaler2 == IMAGE_SCALER_SCALE2X)
+	{
+		Image_Scale2x(image, 4);
+		return;
+	}
+	// apply 2x scale two times
+	Image_ScaleBy2(image, scaler, false);
+	Image_ScaleBy2(image, scaler2, makePowerOfTwo);
 }
 
 // scale for 4x and then backscale 1/2 for best quality
@@ -518,16 +685,6 @@ void Image_SetAlpha(LoadedImage *image, byte value)
 		data[3] = value;
 		data += image->bpp;
 	}
-	image->swizzled = true;
-}
-
-void Image_Swizzle(LoadedImage *image, void (*swizzleFunction)(LoadedImage *image, bool decode), bool decode)
-{
-	if (!image->bitmap)
-		return;
-	if (!swizzleFunction)
-		return;
-	swizzleFunction(image, decode);
 	image->swizzled = true;
 }
 

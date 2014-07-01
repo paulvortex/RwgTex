@@ -350,10 +350,36 @@ void Decompress(TexDecodeTask *task, bool exportFile, LoadedImage *original_imag
 			Error("TexDecompress(%s): %s codec does not support decoding of %s format\n", task->filename, task->codec->name, task->format->name);
 		if (!nounswizzle)
 		{
-			Image_ConvertSRGB(task->image, false); // convert to linear color as TGA does not support sRGB
-			Image_Swizzle(task->image, task->format->colorSwizzle, true);
+			// two ways of sRGB handling for swizzled formats
+			// 1. unswizzled color, then convert sRGB -> Linear
+			// 2. convert sRGB->linear then unswizzle
+			if (task->format->features & FF_SWIZZLE_INTERNAL_SRGB)
+			{
+				// unswizzle
+				if (task->format->colorSwizzle)
+				{
+					int pitch;
+					byte *data = Image_GetData(task->image, NULL, &pitch);
+					task->format->colorSwizzle(data, task->image->width, task->image->height, pitch, task->image->bpp, task->image->colorSwap, task->image->sRGB, true);
+				}
+				// convert to linear color
+				Image_ConvertSRGB(task->image, false); 
+			}
+			else
+			{
+				// convert to linear color
+				Image_ConvertSRGB(task->image, false); 
+				// unswizzle
+				if (task->format->colorSwizzle)
+				{
+					int pitch;
+					byte *data = Image_GetData(task->image, NULL, &pitch);
+					task->format->colorSwizzle(data, task->image->width, task->image->height, pitch, task->image->bpp, task->image->colorSwap, task->image->sRGB, true);
+				}
+			}
+			// remove reserved alpha
+			Image_ConvertBPP(task->image, (task->format->features & FF_ALPHA) ? 4 : 3);
 		}
-		Image_ConvertBPP(task->image, (task->format->features & FF_ALPHA) ? 4 : 3);
 		Image_LoadFinish(task->image);
 
 		// calculate errors

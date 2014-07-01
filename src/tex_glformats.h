@@ -40,6 +40,8 @@
 #define GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG               0x8C01 // PVRTC - IMG_texture_compression_pvrtc
 #define GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG              0x8C02 // PVRTC - IMG_texture_compression_pvrtc
 #define GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG              0x8C03 // PVRTC - IMG_texture_compression_pvrtc
+#define GL_COMPRESSED_RGBA_PVRTC_2BPPV2_IMG              0x9137 // PVRTC2 - IMG_texture_compression_pvrtc2
+#define GL_COMPRESSED_RGBA_PVRTC_4BPPV2_IMG              0x9138 // PVRTC2 - IMG_texture_compression_pvrtc2
 
 /* glInternalFormat - sRGB */
 #define GL_SRGB_EXT                                      0x8C40 // GL_EXT_texture_sRGB
@@ -57,5 +59,7 @@
 #define GL_COMPRESSED_SRGB_PVRTC_4BPPV1_EXT              0x8A55 // PVRTC - IMG_texture_compression_pvrtc, EXT_pvrtc_sRGB
 #define GL_COMPRESSED_SRGB_ALPHA_PVRTC_2BPPV1_EXT        0x8A56 // PVRTC - IMG_texture_compression_pvrtc, EXT_pvrtc_sRGB
 #define GL_COMPRESSED_SRGB_ALPHA_PVRTC_4BPPV1_EXT        0x8A57 // PVRTC - IMG_texture_compression_pvrtc, EXT_pvrtc_sRGB
+#define GL_COMPRESSED_SRGB_ALPHA_PVRTC_2BPPV2_IMG        0x93F0 // PVRTC - IMG_texture_compression_pvrtc2, EXT_pvrtc_sRGB
+#define GL_COMPRESSED_SRGB_ALPHA_PVRTC_4BPPV2_IMG        0x93F1 // PVRTC - IMG_texture_compression_pvrtc2, EXT_pvrtc_sRGB
 
 #endif

@@ -25,8 +25,8 @@ extern TexFormat F_BGR3;
 extern TexFormat F_BGR1;
 
 // swizzle functions
-void Swizzle_AlphaInRGB6(LoadedImage *image, bool decode);
-void Swizzle_AlphaInRGB3(LoadedImage *image, bool decode);
-void Swizzle_AlphaInRGB1(LoadedImage *image, bool decode);
+void Swizzle_AlphaInRGB6(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode);
+void Swizzle_AlphaInRGB3(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode);
+void Swizzle_AlphaInRGB1(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode);
 
 #endif

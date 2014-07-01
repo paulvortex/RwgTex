@@ -62,6 +62,8 @@ void PVRTex_Init(void)
 	RegisterFormat(&F_PVRTC_2BPP_RGBA, &TOOL_PVRTEX);
 	RegisterFormat(&F_PVRTC_4BPP_RGB, &TOOL_PVRTEX);
 	RegisterFormat(&F_PVRTC_4BPP_RGBA, &TOOL_PVRTEX);
+	RegisterFormat(&F_PVRTC2_2BPP, &TOOL_PVRTEX);
+	RegisterFormat(&F_PVRTC2_4BPP, &TOOL_PVRTEX);
 	RegisterFormat(&F_DXT1, &TOOL_PVRTEX);
 	RegisterFormat(&F_DXT1A, &TOOL_PVRTEX);
 	RegisterFormat(&F_DXT2, &TOOL_PVRTEX);
@@ -145,6 +147,8 @@ pvrtexture::PixelType *pvrtex_pixeltype_pvrtc_2bpp_rgba = new pvrtexture::PixelT
 pvrtexture::PixelType *pvrtex_pixeltype_pvrtc_2bpp_rgb  = new pvrtexture::PixelType(ePVRTPF_PVRTCI_2bpp_RGB);
 pvrtexture::PixelType *pvrtex_pixeltype_pvrtc_4bpp_rgba = new pvrtexture::PixelType(ePVRTPF_PVRTCI_4bpp_RGBA);
 pvrtexture::PixelType *pvrtex_pixeltype_pvrtc_4bpp_rgb  = new pvrtexture::PixelType(ePVRTPF_PVRTCI_4bpp_RGB);
+pvrtexture::PixelType *pvrtex_pixeltype_pvrtc2_2bpp     = new pvrtexture::PixelType(ePVRTPF_PVRTCII_2bpp);
+pvrtexture::PixelType *pvrtex_pixeltype_pvrtc2_4bpp     = new pvrtexture::PixelType(ePVRTPF_PVRTCII_4bpp);
 pvrtexture::PixelType *pvrtex_pixeltype_dxt1            = new pvrtexture::PixelType(ePVRTPF_DXT1);
 pvrtexture::PixelType *pvrtex_pixeltype_dxt3            = new pvrtexture::PixelType(ePVRTPF_DXT3);
 pvrtexture::PixelType *pvrtex_pixeltype_dxt5            = new pvrtexture::PixelType(ePVRTPF_DXT5);
@@ -225,6 +229,16 @@ size_t PVRTex_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth
 		else
 			pixeltype = pvrtex_pixeltype_pvrtc_4bpp_rgb;
 	}
+	else if (t->format->block == &B_PVRTC2_2BPP)
+	{
+		quality = pvrtex_quality_prvtc[tex_profile];
+		pixeltype = pvrtex_pixeltype_pvrtc2_2bpp;
+	}
+	else if (t->format->block == &B_PVRTC2_4BPP)
+	{
+		quality = pvrtex_quality_prvtc[tex_profile];
+		pixeltype = pvrtex_pixeltype_pvrtc2_4bpp;
+	}
 	else if (t->format->block == &B_DXT1)
 	{
 		quality = pvrtex_quality_prvtc[tex_profile];
@@ -252,7 +266,7 @@ size_t PVRTex_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth
 	outsize = texture.getDataSize(PVRTEX_ALLMIPLEVELS, false, false);
 	memcpy(stream, texture.getDataPtr(0, 0, 0), outsize); 
 
-	return outsize;
+ 	return outsize;
 }
 
 bool PVRTex_Compress(TexEncodeTask *t)

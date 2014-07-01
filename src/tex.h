@@ -17,12 +17,14 @@
 
 // structures
 // compressed format features
-#define FF_ALPHA                1  // alpha
-#define FF_BINARYALPHA          2  // 'punch-though' alpha
-#define FF_NOMIP                4  // does not support maps
-#define FF_POT                  8  // should have power-of-two dimensions
-#define FF_SQUARE               16 // should have width = height
-#define FF_SRGB                 32 // support hardware sRGB decoding
+#define FF_ALPHA                   1   // alpha
+#define FF_BINARYALPHA             2   // 'punch-through' alpha
+#define FF_NOMIP                   4   // does not support mipmaps
+#define FF_POT                     8   // should have power-of-two dimensions
+#define FF_SQUARE                  16  // should have width = height
+#define FF_SRGB                    32  // support hardware sRGB decoding
+#define FF_SWIZZLE_RESERVED_ALPHA  64  // alpha is used to store part of color data
+#define FF_SWIZZLE_INTERNAL_SRGB   128 // internal swizzled color supports sRGB while the swizzled texture is linear, shader decoding is required
 
 // encoding profiles
 enum texprofile
@@ -69,7 +71,7 @@ typedef struct TexFormat_s
 	uint                 glFormat;
 	uint                 glType;
 	ulong                features;
-	void               (*colorSwizzle)(LoadedImage *image, bool decode);
+	void               (*colorSwizzle)(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode);
 	TexFormat_s        **swizzledFormats;
 	// system part
 	char                *cmdParm;
@@ -181,6 +183,7 @@ typedef struct TexContainer_s
 #include "codec_etc1.h"
 #include "codec_etc2.h"
 #include "codec_pvrtc.h"
+#include "codec_pvrtc2.h"
 #include "codec_unc.h"
 
 //

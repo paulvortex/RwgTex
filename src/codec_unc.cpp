@@ -94,137 +94,128 @@ void CodecBGRA_Decode(TexDecodeTask *task)
 */
 
 // alpha stored in RGB bits, stores 2 bits in each channele, resulting in 666 RGB color, 6-bit alpha
-void Swizzle_AlphaInRGB6(LoadedImage *image, bool decode)
+void Swizzle_AlphaInRGB6(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode)
 {
-	int pitch, y;
+	int y;
 
-	if (!decode)
-		Image_ConvertBPP(image, 4);
-	else if (image->bpp != 4)
+	if (bpp != 4)
 		Error("Swizzle_AlphaInRGB6: image have no alpha channel!\n");
-	byte *data = Image_GetData(image, NULL, &pitch);
+
 	// decode
 	if (decode)
 	{
-		for (y = 0; y < image->height; y++)
+		for (y = 0; y < height; y++)
 		{
 			byte *in = data;
-			byte *end = in + image->width*image->bpp;
+			byte *end = in + width*bpp;
 			while(data < end)
 			{
 				in[3] = (((in[0] & 0xC0) >> 6) + ((in[1] & 0xC0) >> 4) + ((in[2] & 0xC0) >> 2)) * 4;
 				in[0] = (in[0] & 0x3F) * 4;
 				in[1] = (in[1] & 0x3F) * 4;
 				in[2] = (in[2] & 0x3F) * 4;
-				in += image->bpp;
+				in += bpp;
 			}
 			data += pitch;
 		}
 		return;
 	}
 	// encode
-	for (y = 0; y < image->height; y++)
+	for (y = 0; y < height; y++)
 	{
 		byte *in = data;
-		byte *end = in + image->width*image->bpp;
+		byte *end = in + width*bpp;
 		while(in < end)
 		{
 			byte a = (byte)(floor((float)in[3] * (63.0f / 255.0f) + 0.5f));
 			in[0] = (byte)(floor((float)in[0] * (63.0f / 255.0f) + 0.5f) + ((a & 0x3) << 6));
 			in[1] = (byte)(floor((float)in[1] * (63.0f / 255.0f) + 0.5f) + (((a >> 2) & 0x3) << 6));
 			in[2] = (byte)(floor((float)in[2] * (63.0f / 255.0f) + 0.5f) + (((a >> 4) & 0x3) << 6));
-			in += image->bpp;
+			in += bpp;
 		}
 		data += pitch;
 	}
-	Image_ConvertBPP(image, 3);
 }
 
 // alpha stored in RGB bits, stores 1 bits in each channele, resulting in 777 RGB color, 3-bit alpha
-void Swizzle_AlphaInRGB3(LoadedImage *image, bool decode)
+void Swizzle_AlphaInRGB3(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode)
 {
-	int pitch, y;
+	int y;
 
-	if (!decode)
-		Image_ConvertBPP(image, 4);
-	else if (image->bpp != 4)
+	if (bpp != 4)
 		Error("Swizzle_AlphaInRGB3: image have no alpha channel!\n");
-	byte *data = Image_GetData(image, NULL, &pitch);
+
 	// decode
 	if (decode)
 	{
-		for (y = 0; y < image->height; y++)
+		for (y = 0; y < height; y++)
 		{
 			byte *in = data;
-			byte *end = in + image->width*image->bpp;
+			byte *end = in + width*bpp;
 			while(in < end)
 			{
 				in[3] =(((in[0] & 0x80) >> 7) + ((in[1] & 0x80) >> 6) + ((in[2] & 0x80) >> 5)) * 32;
 				in[0] = (in[0] & 0x7F) * 2;
 				in[1] = (in[1] & 0x7F) * 2;
 				in[2] = (in[2] & 0x7F) * 2;
-				in += image->bpp;
+				in += bpp;
 			}
 			data += pitch;
 		}
 		return;
 	}
 	// encode
-	for (y = 0; y < image->height; y++)
+	for (y = 0; y < height; y++)
 	{
 		byte *in = data;
-		byte *end = in + image->width*image->bpp;
+		byte *end = in + width*bpp;
 		while(in < end)
 		{
 			byte a = (byte)(floor((float)in[3] * (7.0f   / 255.0f) + 0.5f));
 			in[0] = (byte)(floor((float)in[0] * (127.0f / 255.0f) + 0.5f) + ((a & 0x1) << 7));
 			in[1] = (byte)(floor((float)in[1] * (127.0f / 255.0f) + 0.5f) + (((a >> 1) & 0x1) << 7));
 			in[2] = (byte)(floor((float)in[2] * (127.0f / 255.0f) + 0.5f) + (((a >> 2) & 0x1) << 7));
-			in += image->bpp;
+			in += bpp;
 		}
 		data += pitch;
 	}
-	Image_ConvertBPP(image, 3);
 }
 
 // 1-bit alpha stored in blue channel
-void Swizzle_AlphaInRGB1(LoadedImage *image, bool decode)
+void Swizzle_AlphaInRGB1(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap, bool sRGB, bool decode)
 {
-	int pitch, y;
+	int y;
 
-	if (!decode)
-		Image_ConvertBPP(image, 4);
-	else if (image->bpp != 4)
+	if (bpp != 4)
 		Error("Swizzle_AlphaInRGB1: image have no alpha channel!\n");
-	byte *data = Image_GetData(image, NULL, &pitch);
+
 	// decode
 	if (decode)
 	{
-		for (y = 0; y < image->height; y++)
+		for (y = 0; y < height; y++)
 		{
 			byte *in = data;
-			byte *end = in + image->width*image->bpp;
+			byte *end = in + width*bpp;
 			while(in < end)
 			{
 				in[3] = (byte)((in[2] & 0x80) * 255.0f/128.0f);
 				in[2] = (in[2] & 0x7F) * 2;
-				in += image->bpp;
+				in += bpp;
 			}
 			data += pitch;
 		}
 		return;
 	}
 	// encode
-	for (y = 0; y < image->height; y++)
+	for (y = 0; y < height; y++)
 	{
 		byte *in = data;
-		byte *end = in + image->width*image->bpp;
+		byte *end = in + width*bpp;
 		while(in < end)
 		{
 			in[2] = min(0x7F, (byte)floor((float)in[2] * (127.0f / 255.0f) + 0.5f) + ((in[3] > tex_binaryAlphaCenter) ? 0x80 : 0));
-			in += image->bpp;
+			in += bpp;
 		}
 		data += pitch;
 	}
-	Image_ConvertBPP(image, 3);
 }

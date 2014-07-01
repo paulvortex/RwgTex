@@ -9,10 +9,10 @@
 #include "tex.h"
 #include "pvrtextool/pvrtextool_lib.h"
 
-TexBlock  B_PVRTC_2BPP_RGB   = { FOURCC('P','T','C','1'), "PTC1", 1, 1, 2, 32 };
-TexBlock  B_PVRTC_2BPP_RGBA  = { FOURCC('P','T','C','2'), "PTC2", 1, 1, 4, 32 };
-TexBlock  B_PVRTC_4BPP_RGB   = { FOURCC('P','T','C','3'), "PTC3", 1, 1, 2, 32 };
-TexBlock  B_PVRTC_4BPP_RGBA  = { FOURCC('P','T','C','4'), "PTC4", 1, 1, 4, 32 };
+TexBlock  B_PVRTC_2BPP_RGB   = { FOURCC('P','T','C','1'), "PTC1", 1, 1, 32 };
+TexBlock  B_PVRTC_2BPP_RGBA  = { FOURCC('P','T','C','2'), "PTC2", 1, 1, 32 };
+TexBlock  B_PVRTC_4BPP_RGB   = { FOURCC('P','T','C','3'), "PTC3", 1, 1, 64 };
+TexBlock  B_PVRTC_4BPP_RGBA  = { FOURCC('P','T','C','4'), "PTC4", 1, 1, 64 };
 
 TexFormat F_PVRTC_2BPP_RGB   = { FOURCC('P','T','C','1'), "PVRTC/2BPP/RGB",  "PVRTC 2 bits-per-pixel RGB",  "pvr2",  &B_PVRTC_2BPP_RGB,  &CODEC_PVRTC, GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG,  GL_COMPRESSED_SRGB_PVRTC_2BPPV1_EXT,       GL_RGB,  0, FF_SQUARE | FF_SRGB };
 TexFormat F_PVRTC_2BPP_RGBA  = { FOURCC('P','T','C','2'), "PVRTC/2BPP/RGBA", "PVRTC 2 bits-per-pixel RGBA", "pvr2a", &B_PVRTC_2BPP_RGBA, &CODEC_PVRTC, GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG, GL_COMPRESSED_SRGB_ALPHA_PVRTC_2BPPV1_EXT, GL_RGBA, 0, FF_SQUARE | FF_ALPHA | FF_SRGB };
@@ -116,9 +116,9 @@ void CodecPVRTC_Decode(TexDecodeTask *task)
 	int havebpp = task->image->bpp;
 	if (havebpp != 4)
 		Image_ConvertBPP(task->image, 4);
-	if (task->format->block->bitlength == 2)
+	if (task->format->block->bitlength == 32)
 		do2bit = true;
-	else if (task->format->block->bitlength == 4)
+	else if (task->format->block->bitlength == 64)
 		do2bit = false;
 	else
 		Error("CodecPVRTC_Decode: wrong format '%s' block '%s' bitlength %i\n", task->format->name, task->format->block->name, task->format->block->bitlength);

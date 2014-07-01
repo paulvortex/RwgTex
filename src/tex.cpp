@@ -537,6 +537,10 @@ void CommandLineOptions(void)
 	if (CheckParm("-scale2x"))    tex_firstScaler = tex_secondScaler = IMAGE_SCALER_SCALE2X;	
 	// COMMANDLINEPARM: -super2x: select super2x filter for scaler (2x and 4x)
 	if (CheckParm("-super2x"))    tex_firstScaler = tex_secondScaler = IMAGE_SCALER_SUPER2X;
+	// COMMANDLINEPARM: -xbrz:    select xbrz filter for scaler (2x and 4x)
+	if (CheckParm("-xbrz"))       tex_firstScaler = tex_secondScaler = IMAGE_SCALER_XBRZ;
+	// COMMANDLINEPARM: -sbrz:    select sbrz filter for scaler (2x and 4x)
+	if (CheckParm("-sbrz"))       tex_firstScaler = tex_secondScaler = IMAGE_SCALER_SBRZ;
 	// COMMANDLINEPARM: -2nearest: select nearest filter for second scaler (4x)
 	if (CheckParm("-2nearest"))   tex_secondScaler = IMAGE_SCALER_BOX;
 	// COMMANDLINEPARM: -2bilinear: select bilinear filter for second scaler (4x)
@@ -553,6 +557,10 @@ void CommandLineOptions(void)
 	if (CheckParm("-2scale2x"))   tex_secondScaler = IMAGE_SCALER_SCALE2X;	
 	// COMMANDLINEPARM: -2super2x: select super2x filter for second scaler (4x)
 	if (CheckParm("-2super2x"))   tex_secondScaler = IMAGE_SCALER_SUPER2X;	
+	// COMMANDLINEPARM: -2xbrz: select xBRz filter for second scaler (4x)
+	if (CheckParm("-2xbrz"))      tex_secondScaler = IMAGE_SCALER_XBRZ;	
+	// COMMANDLINEPARM: -2sbrz: select sBRz filter for second scaler (4x)
+	if (CheckParm("-2sbrz"))      tex_secondScaler = IMAGE_SCALER_SBRZ;	
 	// COMMANDLINEPARM: -nosign: do not add comment to generated texture files
 	if (CheckParm("-nosign"))     tex_useSign = false;
 	// COMMANDLINEPARM: -nosign: use GIMP comment for generated texture files
@@ -690,6 +698,7 @@ void Tex_Init(void)
 	RegisterCodec(&CODEC_ETC1);
 	RegisterCodec(&CODEC_ETC2);
 	RegisterCodec(&CODEC_PVRTC);
+	RegisterCodec(&CODEC_PVRTC2);
 	RegisterCodec(&CODEC_BGRA);
 	RegisterContainer(&CONTAINER_DDS);
 	RegisterContainer(&CONTAINER_KTX);

@@ -36,7 +36,9 @@ typedef enum
 	IMAGE_SCALER_CATMULLROM,
 	IMAGE_SCALER_LANCZOS,
 	IMAGE_SCALER_SCALE2X,
-	IMAGE_SCALER_SUPER2X
+	IMAGE_SCALER_SUPER2X,
+	IMAGE_SCALER_XBRZ,
+	IMAGE_SCALER_SBRZ, // scale by 5x then back to 2x
 }ImageScaler;
 #ifdef F_IMAGE_C
 	OptionList ImageScalers[] =
@@ -49,6 +51,8 @@ typedef enum
 		{ "lanczos",    IMAGE_SCALER_LANCZOS },
 		{ "scale2x",    IMAGE_SCALER_SCALE2X },
 		{ "super2x",    IMAGE_SCALER_SUPER2X },
+		{ "xbrz",       IMAGE_SCALER_XBRZ },
+		{ "sbrz",       IMAGE_SCALER_SBRZ },
 		{ 0 },
 	};
 #else
@@ -121,11 +125,11 @@ void  Image_LoadFinish(LoadedImage *image);
 bool  Image_Changed(LoadedImage *image);
 void  Image_GenerateMaps(LoadedImage *image, bool overwrite, bool miplevels, bool binaryalpha, bool srgb);
 void  Image_FreeMaps(LoadedImage *image);
-void  Image_Scale2x(LoadedImage *image, ImageScaler scaler, bool makePowerOfTwo);
+void  Image_ScaleBy2(LoadedImage *image, ImageScaler scaler, bool makePowerOfTwo);
+void  Image_ScaleBy4(LoadedImage *image, ImageScaler scaler, ImageScaler scaler2, bool makePowerOfTwo);
 void  Image_MakeDimensions(LoadedImage *image, bool powerOfTwo, bool square);
 void  Image_MakeAlphaBinary(LoadedImage *image, int thresh);
 void  Image_SetAlpha(LoadedImage *image, byte value);
-void  Image_Swizzle(LoadedImage *image, void (*swizzleFunction)(LoadedImage *image, bool decode), bool decode);
 byte *Image_GetData(LoadedImage *image, size_t *datasize, int *pitch);
 byte *Image_GetUnalignedData(LoadedImage *image, size_t *datasize, bool *data_allocated, bool force_allocate);
 void  Image_StoreUnalignedData(LoadedImage *image, byte *dataptr, size_t datasize);
@@ -134,7 +138,9 @@ void  Image_Unload(LoadedImage *image);
 void  Image_Delete(LoadedImage *image);
 
 // raw data functions
+void ImageData_SwapRB(byte *data, int width, int height, int pitch, int bpp);
 void ImageData_ConvertSRGB(byte *data, int width, int height, int pitch, int bpp, bool srcSRGB, bool dstSRGB);
+bool ImageData_ProbeLinearToSRGB_16bit(byte *data, int width, int height, int pitch, int bpp, bool rgbSwap);
 
 // internal color conversion
 void  Image_ConvertBPP(LoadedImage *image, int bpp);

@@ -41,6 +41,9 @@ FIBITMAP *fiClone(FIBITMAP *bitmap);
 // rescale bitmap
 FIBITMAP *fiRescale(FIBITMAP *bitmap, int width, int height, FREE_IMAGE_FILTER filter, bool removeSource);
 
+// rescale bitmap usign nearest neighbor scaling
+FIBITMAP *fiRescaleNearestNeighbor(FIBITMAP* bitmap, int new_width, int new_height, bool removeSource);
+
 // bind bitmap to image
 bool fiBindToImage(FIBITMAP *bitmap, LoadedImage *image, FREE_IMAGE_FORMAT format = FIF_UNKNOWN);
 
