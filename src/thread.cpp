@@ -62,25 +62,23 @@ double ParallelThreads(int num_threads, int work_count, void *common_data, void(
 	double start;
 	ThreadPool pool = { 0 };
 	ThreadData *threads;
-	int	i;
+	int	i, startThread;
 
 	if (work_count <= 0 || num_threads <= 0 || !thread_func)
 		return 0;
 
 	start = I_DoubleTime();
+	startThread = (central_thread) ? 1 : 0;
 
 	// init threading system
 	if (num_cpu_cores == -1)
 		Thread_Init();
 
-	if (num_threads == 1 && central_thread)
-		num_threads = 2;
-
 	// create thread pool
 	pool.work_num = work_count;
 	pool.work_pending = 0;
 	pool.work_mutex = CreateMutex(NULL, FALSE, NULL);
-	pool.threads_num = max(2, min(num_threads + 1, work_count));
+	pool.threads_num = max(1, min(num_threads, work_count)) + startThread;
 	pool.threads = mem_alloc(sizeof(ThreadData) * pool.threads_num);
 	memset(pool.threads, 0, sizeof(ThreadData) * pool.threads_num);
 	pool.finished = false;
@@ -104,9 +102,9 @@ double ParallelThreads(int num_threads, int work_count, void *common_data, void(
 		if (pool.stop == false)
 		{
 			// run works in paralel
-			for (i = 1; i < pool.threads_num; i++)
+			for (i = startThread; i < pool.threads_num; i++)
 				threads[i].handle = CreateThread(NULL, THREAD_STACK_SIZE, (LPTHREAD_START_ROUTINE)thread_func, (LPVOID)&threads[i], 0, (LPDWORD)&threads[i].id);
-			for (i = 1; i < pool.threads_num; i++)
+			for (i = startThread; i < pool.threads_num; i++)
 				WaitForSingleObject(threads[i].handle, INFINITE);
 		}
 		// set finished mark so central thread will know that we are finished
@@ -116,9 +114,9 @@ double ParallelThreads(int num_threads, int work_count, void *common_data, void(
 	else
 	{
 		// run works in paralel
-		for (i = 0; i < pool.threads_num; i++)
+		for (i = startThread; i < pool.threads_num; i++)
 			threads[i].handle = CreateThread(NULL, THREAD_STACK_SIZE, (LPTHREAD_START_ROUTINE)thread_func, (LPVOID)&threads[i], 0, (LPDWORD)&threads[i].id);
-		for (i = 0; i < pool.threads_num; i++)
+		for (i = startThread; i < pool.threads_num; i++)
 			WaitForSingleObject(threads[i].handle, INFINITE);
 	}
 

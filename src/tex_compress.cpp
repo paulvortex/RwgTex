@@ -362,6 +362,17 @@ void TexCompress_WorkerThread(ThreadData *thread)
 				WriteData->next = SharedData->writeData;
 				SharedData->writeData = WriteData;
 
+				// If WriteData is too big (more than 256mb), wait til it is recorded
+				while(1)
+				{
+					size_t pending_write_datasize = 0;
+					for (TexWriteData *w = SharedData->writeData; w; w = w->next)
+						pending_write_datasize += w->datasize;
+					if(pending_write_datasize < 1024*1024*256)
+						break;
+					Sleep(100);
+				}
+
 				// output stats
 				numexported++;
 			}
@@ -516,6 +527,8 @@ void TexCompress_MainThread(ThreadData *thread)
 					fclose(f);
 				}
 			}
+
+			// free
 			mem_free(WriteData->data);
 			mem_free(WriteData);
 		}

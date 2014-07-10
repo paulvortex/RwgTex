@@ -486,7 +486,7 @@ void Image_ScalexBR(LoadedImage *image, int factor)
 
 	// create scaler config
 	memcpy(&scalerconfig, &xbrz::DefaultScalerCfg, sizeof(xbrz::ScalerCfg));
-	//scalerconfig.luminanceWeight_ = 0.2;
+	scalerconfig.luminanceWeight_ = 0.75;
 	//scalerconfig.equalColorTolerance_ = 1;
 	//scalerconfig.steepDirectionThreshold = 1;
 
@@ -538,6 +538,8 @@ void Image_ScalexBR(LoadedImage *image, int factor)
 // scale to 4x then backscale to 2x using xBR scaling
 void Image_ScalexBR_Super2x(LoadedImage *image, bool makePowerOfTwo)
 {
+	FIBITMAP *backscale1;
+
 	int dstwidth = image->width * 2;
 	int dstheight = image->height * 2;
 	if (makePowerOfTwo)
@@ -546,12 +548,20 @@ void Image_ScalexBR_Super2x(LoadedImage *image, bool makePowerOfTwo)
 		dstheight = NextPowerOfTwo(dstheight);
 	}
 	Image_ScalexBR(image, 4);
-	// backscale RGB with interpolation
-	FIBITMAP *backscale1 = fiRescale(image->bitmap, dstwidth, dstheight, FILTER_CATMULLROM, false);
-	// backscale alpha with no interpolation
-	FIBITMAP *backscale2 = fiRescaleNearestNeighbor(image->bitmap, dstwidth, dstheight, false);
-	// combine
-	fiCombine(backscale1, backscale2, COMBINE_ALPHA, 1, true);
+	if (image->bpp == 4)
+	{
+		// backscale RGB with interpolation
+		backscale1 = fiRescale(image->bitmap, dstwidth, dstheight, FILTER_CATMULLROM, false);
+		// backscale alpha with no interpolation
+		FIBITMAP *backscale2 = fiRescaleNearestNeighbor(image->bitmap, dstwidth, dstheight, false);
+		// combine
+		fiCombine(backscale1, backscale2, COMBINE_ALPHA, 1, true);
+	}
+	else
+	{
+		// backscale RGB with interpolation
+		backscale1 = fiRescale(image->bitmap, dstwidth, dstheight, FILTER_CATMULLROM, false);
+	}
 	fiBindToImage(backscale1, image);
 }
 

@@ -192,7 +192,16 @@ void *_mem_realloc(void *data, size_t size, char *file, int line)
 		return NULL;
 	data = realloc(data, size);
 	if (!data)
+	{
+		if (memstats)
+		{
+			Print("memory allocations: %i\n", sentinels.size());
+			for (std::vector<memsentinel>::iterator s = sentinels.begin(); s < sentinels.end(); s++)
+				if (!s->free)
+					Print("%s:%i (%s) %i bytes (%.3f Mb)\n", s->file, s->line, s->name, s->size, (double)s->size / 1048576.0);
+		}
 		Mem_Error("%s:%i - error reallocating %d bytes (%.2f Mb)\n", file, line, size, (double)size / 1048576.0);
+	}
 	if (!initialized)
 		return data;
 	_mem_sentinel("mem_realloc", data, size, file, line);
@@ -208,7 +217,16 @@ void *_mem_alloc(size_t size, char *file, int line)
 		return NULL;
 	data = malloc(size);
 	if (!data)
+	{
+		if (memstats)
+		{
+			Print("memory allocations: %i\n", sentinels.size());
+			for (std::vector<memsentinel>::iterator s = sentinels.begin(); s < sentinels.end(); s++)
+				if (!s->free)
+					Print("%s:%i (%s) %i bytes (%.3f Mb)\n", s->file, s->line, s->name, s->size, (double)s->size / 1048576.0);
+		}
 		Mem_Error("%s:%i - error allocating %d bytes (%.2f Mb)\n", file, line, size, (double)size / 1048576.0);
+	}
 	if (!initialized)
 		return data;
 	_mem_sentinel("mem_alloc", data, size, file, line);
@@ -224,7 +242,16 @@ void _mem_calloc(void **bufferptr, size_t size, char *file, int line)
 	data = malloc(size);
 	memset(data, 0, size);
 	if (!data)
+	{
+		if (memstats)
+		{
+			Print("memory allocations: %i\n", sentinels.size());
+			for (std::vector<memsentinel>::iterator s = sentinels.begin(); s < sentinels.end(); s++)
+				if (!s->free)
+					Print("%s:%i (%s) %i bytes (%.3f Mb)\n", s->file, s->line, s->name, s->size, (double)s->size / 1048576.0);
+		}
 		Mem_Error("%s:%i - error allocating %d bytes (%.2f Mb)\n", file, line, size, (double)size / 1048576.0);
+	}
 	if (!initialized)
 		return;
 	_mem_sentinel("mem_calloc", data, size, file, line);
