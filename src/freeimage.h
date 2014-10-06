@@ -45,7 +45,7 @@ FIBITMAP *fiRescale(FIBITMAP *bitmap, int width, int height, FREE_IMAGE_FILTER f
 FIBITMAP *fiRescaleNearestNeighbor(FIBITMAP* bitmap, int new_width, int new_height, bool removeSource);
 
 // bind bitmap to image
-bool fiBindToImage(FIBITMAP *bitmap, LoadedImage *image, FREE_IMAGE_FORMAT format = FIF_UNKNOWN);
+bool fiBindToImage(FIBITMAP *bitmap, LoadedImage *image, FREE_IMAGE_FORMAT format = FIF_UNKNOWN, bool keep_color_profile = true);
 
 // load bitmap from memory
 bool fiLoadData(FREE_IMAGE_FORMAT format, FS_File *file, byte *data, size_t datasize, LoadedImage *image);
