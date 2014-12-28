@@ -156,6 +156,7 @@ int main(int argc, char **argv)
 	Print("\n");
 
 	Thread_Shutdown();
+	Tex_Shutdown();
 	Image_Shutdown();
 	FS_Shutdown();
 	Mem_Shutdown();

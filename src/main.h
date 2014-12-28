@@ -4,7 +4,7 @@
 
 #define MAX_FPATH 4096
 #define RWGTEX_VERSION_MAJOR "1"
-#define RWGTEX_VERSION_MINOR "5"
+#define RWGTEX_VERSION_MINOR "6"
 
 #include "cmd.h"
 #include "mem.h"

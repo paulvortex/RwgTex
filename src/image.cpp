@@ -27,9 +27,8 @@ using namespace omnilib;
 
 void FreeImageBitmap(LoadedImage *image)
 {
-	if (!image->bitmap)
-		return;
-	fiFree(image->bitmap);
+	if (image->bitmap != NULL)
+		fiFree(image->bitmap);
 	image->bitmap = NULL;
 }
 
@@ -37,9 +36,7 @@ void FreeImageMaps(LoadedImage *image)
 {
 	ImageMap *map, *next;
 
-	if (!image->maps)
-		return;
-	for (map = image->maps; map; map = next)
+	for (map = image->maps; map != NULL; map = next)
 	{
 		next = map->next;
 		if (map->data && map->external == false)
@@ -467,7 +464,7 @@ void Image_Scale2x(LoadedImage *image, int factor)
 	// vortex: since BPP is 4, data is always properly aligned, so we dont need pitch
 	int w = image->width;
 	int h = image->height;
-	FIBITMAP *scaled = fiCreate(w*factor, h*factor, 4);
+	FIBITMAP *scaled = fiCreate(w*factor, h*factor, 4, "Image_Scale2x");
 	byte *data_scaled = fiGetData(scaled, NULL);
 	byte *data_bitmap = fiGetData(image->bitmap, NULL);
 	sxScale(factor, data_scaled, w*factor*4, data_bitmap, w*4, 4, w, h);
@@ -491,7 +488,7 @@ void Image_ScalexBR(LoadedImage *image, int factor)
 	//scalerconfig.steepDirectionThreshold = 1;
 
 	// create scaled image
-	FIBITMAP *scaled = fiCreate(image->width*factor, image->height*factor, 4);
+	FIBITMAP *scaled = fiCreate(image->width*factor, image->height*factor, 4, "Image_ScalexBR");
 
 	// save out alpha to be scaled in separate pass
 	// vortex: since BPP is 4, data is always properly aligned, so we dont need pitch
@@ -516,7 +513,7 @@ void Image_ScalexBR(LoadedImage *image, int factor)
 		mem_free(alpha);
 		// RGB scale
 		Image_SetAlpha(image, 0);
-		FIBITMAP *rgb_scaled = fiCreate(image->width*factor, image->height*factor, 4);
+		FIBITMAP *rgb_scaled = fiCreate(image->width*factor, image->height*factor, 4, "fiCreate");
 		xbrz::scale(factor, (uint32_t *)fiGetData(image->bitmap, NULL), (uint32_t *)fiGetData(rgb_scaled, NULL), image->width, image->height, scalerconfig, 0, image->height);
 		// combine and return
 		fiCombine(rgb_scaled, scaled, COMBINE_R_TO_ALPHA, 1, true);
@@ -658,7 +655,10 @@ void Image_MakeDimensions(LoadedImage *image, bool powerOfTwo, bool square)
 			h = w;
 	}
 	if (w != image->width || h != image->height)
-		fiBindToImage(fiRescale(image->bitmap, w, h, FILTER_LANCZOS3, false), image);
+	{
+		FIBITMAP *scaled = fiRescale(image->bitmap, w, h, FILTER_LANCZOS3, false);
+		fiBindToImage(scaled, image);
+	}
 }
 
 // make image's alpha binary
@@ -855,7 +855,7 @@ bool Image_ExportTarga(LoadedImage *image, char *filename)
 void Image_Generate(LoadedImage *image, int width, int height, int bpp)
 {
 	Image_Unload(image);
-	image->bitmap = fiCreate(width, height, bpp);
+	image->bitmap = fiCreate(width, height, bpp, "Image_Generate");
 	image->width = width;
 	image->height = height;
 	image->bpp = bpp;
@@ -970,6 +970,7 @@ void LoadImage_QuakeSprite(FS_File *file, byte *filedata, size_t filesize, Loade
 			}
 		}
 	}
+	olFreeSprite(sprite);
 	mem_free(filedata);
 }
 
@@ -1012,9 +1013,6 @@ void LoadImage_QuakeBSP(FS_File *file, byte *filedata, size_t filesize, LoadedIm
 			texnum++;
 		}
 	}
-
-
-
 	mem_free(filedata);
 }
 

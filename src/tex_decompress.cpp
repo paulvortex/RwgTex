@@ -340,7 +340,7 @@ void Decompress(TexDecodeTask *task, bool exportFile, LoadedImage *original_imag
 		task->image->sRGB = task->ImageParms.sRGB;
 		task->image->datatype = task->ImageParms.isNormalmap ? IMAGE_NORMALMAP : IMAGE_COLOR;
 		task->image->bpp = compressedTextureBPP(task->image, task->format, task->container);
-		task->image->bitmap = fiCreate(task->image->width, task->image->height, task->image->bpp);
+		task->image->bitmap = fiCreate(task->image->width, task->image->height, task->image->bpp, "Decompress");
 		size_t compressedSize = compressedTextureSize(task->image, task->format, task->container, true, false);
 		if (compressedSize > task->pixeldatasize)
 			Error("TexDecompress(%s): image data %i is lesser than estimated data size %i\n", task->filename, task->pixeldatasize, compressedSize);

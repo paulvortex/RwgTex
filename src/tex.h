@@ -222,15 +222,19 @@ extern size_t        tex_containers_scanbytes;
 TexCodec     *findCodec(const char *name, bool quiet);
 void          RegisterCodec(TexCodec *codec);
 void          UseCodec(TexCodec *codec);
+void          FreeCodecs(void);
 void          RegisterTool(TexTool *tool, TexCodec *codec);
 TexTool      *findTool(const char *name, bool quiet);
+void          FreeTools(void);
 void          RegisterFormat(TexFormat *format, TexTool *tool);
 TexFormat    *findFormat(const char *name, bool quiet);
 bool          findFormatByFourCCAndAlpha(DWORD fourCC, bool alpha, TexCodec **codec, TexFormat **format);
 bool          findFormatByGLType(uint glFormat, uint glInternalFormat, uint glType, TexCodec **codec, TexFormat **format);
+void          FreeFormats(void);
 TexContainer *findContainer(const char *name, bool quiet);
 void          RegisterContainer(TexContainer *container);
 TexContainer *findContainerForFile(char *filename, byte *data, size_t datasize);
+void          FreeContainers(void);
 
 // main
 size_t        compressedTextureSize(LoadedImage *image, TexFormat *format, TexContainer *container, bool baseTex, bool mipLevels);
@@ -240,6 +244,7 @@ void          Tex_PrintTools(void);
 void          Tex_PrintContainers(void);
 void          Tex_PrintModules(void);
 void          Tex_Init(void);
+void          Tex_Shutdown(void);
 int           TexMain(int argc, char **argv);
 
 // options

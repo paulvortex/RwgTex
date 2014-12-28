@@ -70,7 +70,7 @@ void Mem_Shutdown(void)
 			if (!s->free)
 			{
 				leaked += s->size;
-				leaks;
+				leaks++;
 			}
 		}
 

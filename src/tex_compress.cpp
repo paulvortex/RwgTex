@@ -257,9 +257,9 @@ void TexCompress_WorkerThread(ThreadData *thread)
 		for (codec = tex_active_codecs; codec; codec = codec->nextActive)
 		{
 			// load image
-			if (!image->bitmap)
+			if (image->bitmap == NULL)
 				Image_Load(task.file, image);
-			if (!image->bitmap)
+			if (image->bitmap == NULL)
 				continue;
 
 			// check if codec accepts task

@@ -152,6 +152,25 @@ void UseCodec(TexCodec *codec)
 	tex_active_codecs = codec;
 }
 
+void FreeCodecs(void)
+{
+	TexCodec *c;
+
+	for (c = tex_codecs; c; c = c->next)
+	{
+		if (c->cmdParm != NULL)
+		{
+			mem_free(c->cmdParm);
+			c->cmdParm = NULL;
+		}
+		if (c->cmdParmDisabled != NULL)
+		{
+			mem_free(c->cmdParmDisabled);
+			c->cmdParmDisabled = NULL;
+		}
+	}
+}
+
 /*
 ==========================================================================================
 
@@ -213,6 +232,45 @@ void RegisterTool(TexTool *tool, TexCodec *codec)
 		tool->fInit();
 }
 
+void FreeTools(void)
+{
+	TexTool *t;
+
+	for (t = tex_tools; t; t = t->next)
+	{
+		if (t->cmdParm != NULL)
+		{
+			mem_free(t->cmdParm);
+			t->cmdParm = NULL;
+		}
+		if (t->cmdParmDisabled != NULL)
+		{
+			mem_free(t->cmdParmDisabled);
+			t->cmdParmDisabled = NULL;
+		}
+		if (t->forceGroup != NULL)
+		{
+			mem_free(t->forceGroup);
+			t->forceGroup = NULL;
+		}
+		if (t->suffix != NULL)
+		{
+			mem_free(t->suffix);
+			t->suffix = NULL;
+		}
+		if (t->featuredCodecs != NULL)
+		{
+			mem_free(t->featuredCodecs);
+			t->featuredCodecs = NULL;
+		}
+		if (t->featuredFormats != NULL)
+		{
+			mem_free(t->featuredFormats);
+			t->featuredFormats = NULL;
+		}
+	}
+}
+
 /*
 ==========================================================================================
 
@@ -265,21 +323,26 @@ void _RegisterFormat(TexFormat *format, TexTool *tool, TexFormat *baseFormat)
 	// initialize
 	format->baseFormat = baseFormat;
 	uint len = strlen(format->parmName);
-	format->cmdParm = (char *)mem_alloc(len + 2);
+	if( format->cmdParm == NULL )
+		format->cmdParm = (char *)mem_alloc(len + 2);
 	sprintf(format->cmdParm, "-%s", format->parmName);
-	format->cmdParmDisabled = (char *)mem_alloc(len + 10);
+	if( format->cmdParmDisabled == NULL )
+		format->cmdParmDisabled = (char *)mem_alloc(len + 10);
 	sprintf(format->cmdParmDisabled, "-disable-%s", format->parmName);
-	format->forceGroup = (char *)mem_alloc(len + 7);
+	if( format->forceGroup == NULL )
+		format->forceGroup = (char *)mem_alloc(len + 7);
 	sprintf(format->forceGroup, "force_%s", format->parmName);
 	format->forceFileList.clear();
 	if (format->baseFormat != NULL)
 	{
-		format->suffix = (char *)mem_alloc(strlen(baseFormat->parmName) + len + 3);
+		if( format->suffix == NULL )
+			format->suffix = (char *)mem_alloc(strlen(baseFormat->parmName) + len + 3);
 		sprintf(format->suffix, "_%s%s", baseFormat->parmName, format->parmName);
 	}
 	else
 	{
-		format->suffix = (char *)mem_alloc(len + 2);
+		if( format->suffix == NULL )
+			format->suffix = (char *)mem_alloc(len + 2);
 		sprintf(format->suffix, "_%s", format->parmName);
 	}
 	// register swizzled versions
@@ -400,6 +463,35 @@ bool findFormatByGLType(uint glFormat, uint glInternalFormat, uint glType, TexCo
 	return false;
 }
 
+void FreeFormats(void)
+{
+	TexFormat *f;
+
+	for (f = tex_formats; f; f = f->next)
+	{
+		if (f->cmdParm != NULL)
+		{
+			mem_free(f->cmdParm);
+			f->cmdParm = NULL;
+		}
+		if (f->cmdParmDisabled != NULL)
+		{
+			mem_free(f->cmdParmDisabled);
+			f->cmdParmDisabled = NULL;
+		}
+		if (f->forceGroup != NULL)
+		{
+			mem_free(f->forceGroup);
+			f->forceGroup = NULL;
+		}
+		if (f->suffix != NULL)
+		{
+			mem_free(f->suffix);
+			f->suffix = NULL;
+		}
+	}
+}
+
 /*
 ==========================================================================================
 
@@ -492,6 +584,20 @@ TexContainer *findContainerForFile(char *filename, byte *data, size_t datasize)
 	if (c)
 		return c;
 	return NULL;
+}
+
+void FreeContainers(void)
+{
+	TexContainer *c;
+
+	for (c = tex_containers; c; c = c->next)
+	{
+		if (c->cmdParm != NULL)
+		{
+			mem_free(c->cmdParm);
+			c->cmdParm = NULL;
+		}
+	}
 }
 
 /*
@@ -755,6 +861,14 @@ void Tex_Init(void)
 	tex_useSuffix = 0;
 	tex_testCompresion = false;
 	tex_container = findContainer("DDS", false);
+}
+
+void Tex_Shutdown(void)
+{
+	FreeCodecs();
+	FreeTools();
+	FreeFormats();
+	FreeContainers();
 }
 
 /*

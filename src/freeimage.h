@@ -33,7 +33,7 @@ FIBITMAP *_fiFree(FIBITMAP *bitmap, char *file, int line);
 #define fiFree(bitmap) _fiFree(bitmap, __FILE__, __LINE__)
 
 // create empty bitmap
-FIBITMAP *fiCreate(int width, int height, int bpp);
+FIBITMAP *fiCreate(int width, int height, int bpp, char *sentinelName);
 
 // clone bitmap
 FIBITMAP *fiClone(FIBITMAP *bitmap);
