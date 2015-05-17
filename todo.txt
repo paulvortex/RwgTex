@@ -1,2 +1,0 @@
-- finish support for KTX files
-- fix the bugs for 1.5

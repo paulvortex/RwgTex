@@ -1,0 +1,19 @@
+RwgTex is licensed under GNU Lesser General Public License, version 3.0
+http://www.gnu.org/licenses/lgpl.html
+
+Copyright (c) 2012-2015 Pavel [VorteX] Timofeyev
+
+For the licenses of sub-parts of RwgTex (image libs and compressor libs) see the LICENSE folder
+
+- FreeImage is licensed under the GNU General Public License, version 2.0 (GPLv2) or version 3.0 (GPLv3), and the FreeImage Public License (FIPL).
+- ZLib is licensed under ZLIB license
+- OmniLib is licensed under ZLIB license
+- rg_etc1 compression lib is licensed under ZLIB license
+- CrnLib is licensed under ZLIB license
+- xBRz scaler is licensed under GNU General Public License
+- Scale2X scaler is licensed under GNU General Public License
+- GimpDDS plugin is licensed under GNU General Public License
+- PvrTexTool is licensed under MIT license
+- NVidia Texture Tools is licensed under MIT license
+- EtcPack compression tool is licensed under SLA-type license (see LICENSE/EtcPack.txt)
+- AtiCompressor lib is licensed under SLA-type license (see LICENSE/AtiCompress.txt)

@@ -1,7 +1,6 @@
 ////////////////////////////////////////////////////////////////
 //
 // RwgTex / Commandline Functions Library
-// (c) Pavel [VorteX] Timofeyev
 // based on functions picked from Darkplaces hmap2
 // See LICENSE text file for a license agreement
 //

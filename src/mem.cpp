@@ -2,7 +2,6 @@
 //
 // RwgTex / memory management
 // (c) Pavel [VorteX] Timofeyev
-// based on functions picked from Darkplaces engine
 // See LICENSE text file for a license agreement
 //
 ////////////////////////////////

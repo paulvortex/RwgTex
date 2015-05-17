@@ -1,8 +1,14 @@
+////////////////////////////////////////////////////////////////
+//
+// RwgTex / Scale2X (part of the Scale2x project)
+// Copyright (C) 2003, 2004 Andrea Mazzoleni
+// See LICENSE text file for a license agreement
+//
+////////////////////////////////
+
 /*
  * This file is part of the Scale2x project.
- *
- * Copyright (C) 2003, 2004 Andrea Mazzoleni
- *
+ * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
