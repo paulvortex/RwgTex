@@ -26,13 +26,13 @@ Features
 Usage
 ------
 
-1) rwgdds.exe <input_dir> <output_dir>
+1) rwgtex.exe <input_dir> <output_dir>
    Scan <input_dir> for tga, jpg, png, spr32 files and convert them to DDS to
    output dir. Also it will generate a filescrc.txt file holding crc32 sums for
-   source files used to make DDS. So next time you will run RwgDDS with this
+   source files used to make DDS. So next time you will run RwgTex with this
    output folder it will only convert files that was changed.
 
-2) rwgdds.exe <path>
+2) rwgtex.exe <path>
    If <path> is file, it will convert it and place in same folder. 
    If it's a directory, it will convert all files in it and place
    in dds/ subdirectory.
@@ -88,7 +88,7 @@ Commandline parms
              DDS to be readable in GIMP
 
 Trick: commandline parms could be included to exe name, this way they become defaults.
-Example: rwgdds-ati-w.exe
+Example: rwgtex-ati-w.exe
 
 Compression formats
 ------

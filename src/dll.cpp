@@ -63,7 +63,7 @@ bool LoadDll (const char** dllnames, dllhandle_t* handle, const dllfunction_t *f
 #ifdef SUPPORTDLL
 	const dllfunction_t *func;
 	dllhandle_t dllhandle = 0;
-	char dllpath[MAX_FPATH];
+	char dllpath[1024];
 	unsigned int i;
 
 	if (handle == NULL)

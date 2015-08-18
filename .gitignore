@@ -1,7 +1,6 @@
 src/freeimage/FreeImage.dll
 src/freeimage/FreeImage.h
 src/freeimage/FreeImageDLL.lib
-rwgtex.exe
 rwgtex-dds.exe
 rwgtex-dds-ati.exe
 rwgtex-dds-bgra.exe
