@@ -1004,7 +1004,7 @@ void LoadImage_QuakeBSP(FS_File *file, byte *filedata, size_t filesize, LoadedIm
 				sprintf(tex->texname, "%s/%s", file->name.c_str(), texname);
 				if (texwidth < 0 || texwidth > 32768 || texheight < 0 || texheight > 32768)
 					Error("LoadImage_QuakeBSP(%s) bogus texture size: %ix%i", tex->texname, texwidth, texheight);
-				fiLoadDataRaw(texwidth, texheight, 1, (byte *)(buf + textureoffsets[texnum] + texmipofs), texwidth * texheight, quake_palette, false, tex);
+				fiLoadDataRaw(texwidth, texheight, 1, (byte *)(buf + textureoffsets[texnum] + texmipofs), texwidth * texheight, quake_palette, true, tex);
 				Image_LoadFinish(tex);
 				// set next texture
 				tex->next = Image_Create();

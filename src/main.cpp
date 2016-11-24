@@ -19,9 +19,10 @@ int Help(void)
 	"Options:\n"
 	"       -nc: print no caption\n"
 	"        -w: wait for key when finished\n"
+	"       -mw: do not wait for key\n"
 	"      -mem: show memstats\n"
 	"        -v: show verbose messages\n"
-	"       -sp: solid pacifier prints\n"
+	"     -spac: solid pacifier prints\n"
 	"        -c: compact mode (only generic prints)\n"
 	"        -f: function mode (only pacifier prints)\n"
 	"     -cd S: set a different working directory\n"
@@ -71,8 +72,8 @@ int main(int argc, char **argv)
 	memstats = CheckParm("-mem");
 	// COMMANDLINEPARM: -v: show verbose messages
 	verbose = CheckParm("-v");
-	// COMMANDLINEPARM: -sp: solid pacifier prints
-	solidpacifier = CheckParm("-sp");
+	// COMMANDLINEPARM: -spac: solid pacifier prints
+	solidpacifier = CheckParm("-spac");
 	// COMMANDLINEPARM: -errlog: write errlog.txt on error
 	errorlog = CheckParm("-errlog");
 	// COMMANDLINEPARM: -c: compact mode (only generic prints)
@@ -138,7 +139,8 @@ int main(int argc, char **argv)
 		Print("%i threads", numthreads);
 		if (memstats)
 			Print(", showing memstats");
-		if (waitforkey)
+		// COMMANDLINEPARM: -nw: don't wait for key
+		if (waitforkey && !CheckParm("-nw"))
 			Print(", waiting for key");
 		Print("\n\n");
 	}
@@ -162,7 +164,7 @@ int main(int argc, char **argv)
 	Mem_Shutdown();
 
 #if _MSC_VER
-	if (waitforkey && !noprint)
+	if (waitforkey && !noprint && !CheckParm("-nw"))
 	{
 		printf("press any key\n");
 		getchar();

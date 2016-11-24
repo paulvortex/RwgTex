@@ -54,6 +54,7 @@ Commandline parms
 
 -dds       : enforces DDS file creation and texture compression
 -w         : wait for key press once finished
+-nw        : don't wait for key press
 -f         : suppress any prints
 -mem       : show memory usage stats at end
 -threads X : manually sets the number of threads
@@ -159,6 +160,14 @@ Known issues
 --------------------------------------------------------------------------------
  Version History + Changelog
 --------------------------------------------------------------------------------
+
+1.6
+------
+- Internal bugfixes release
+
+1.5
+------
+- Internal bugfixes release
 
 1.4
 ------

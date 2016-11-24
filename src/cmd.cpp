@@ -153,10 +153,18 @@ void PercentPacifier(char *str, ...)
 	va_start(argptr, str);
 	vsprintf(msg, str, argptr);
 	va_end(argptr);
-	if (!solidpacifier)
-		printf("\r%s%%\r", msg);
+	if (solidpacifier)
+	{
+		printf(msg);
+		printf("\n");
+		Sleep(20);
+	}
 	else
-		printf("\r%s%%                                      \r", msg);
+	{
+		printf("\r");
+		printf(msg);
+		printf("%\r");
+	}
 	fflush(stdout);
 }
 
@@ -236,7 +244,7 @@ void Error (char *error, ...)
 		}
 	}
 #if _MSC_VER
-	if (waitforkey)
+	if (waitforkey && !CheckParm("-nw"))
 	{
 		printf("press any key\n");
 		getchar();
