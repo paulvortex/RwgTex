@@ -8,20 +8,40 @@
 
 #include "main.h"
 #include "tex.h"
-#ifndef NO_NVTT
 
 #pragma comment(lib, "nvtt.lib")
 
 TexTool TOOL_NVTT =
 {
 	"NVTT", "NVidia Texture Tools", "nvtt",
-	TEXINPUT_BGR | TEXINPUT_BGRA,
+	TEXINPUT_BGRA,
 	&NvTT_Init,
 	&NvTT_Option,
 	&NvTT_Load,
 	&NvTT_Compress,
 	&NvTT_Version,
 };
+
+TexTool TOOL_NVDXTLIB =
+{
+	"NvDXTlib", "NVidia DXTlib (deprecated, wrapped to NVidia Texture Tools)", "nv",
+	TEXINPUT_BGRA,
+	&NvDXTLib_Init,
+	&NvTT_Option,
+	&NvTT_Load,
+	&NvTT_Compress,
+	&NvTT_Version,
+};
+
+void NvDXTLib_Init(void)
+{
+	RegisterFormat(&F_DXT1, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_DXT1A, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_DXT2, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_DXT3, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_DXT4, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_DXT5, &TOOL_NVDXTLIB);
+}
 
 void NvTT_Init(void)
 {
@@ -108,6 +128,7 @@ bool NvTT_Compress(TexEncodeTask *t)
 		inputOptions.setAlphaMode(nvtt::AlphaMode_Transparency);
 	else
 		inputOptions.setAlphaMode(nvtt::AlphaMode_None);
+
 	//if (image->useChannelWeighting)
 	//	compressionOptions.setColorWeights(image->weightRed, image->weightGreen, image->weightBlue);
 	if (t->format->block == &B_DXT1)
@@ -155,5 +176,3 @@ bool NvTT_Compress(TexEncodeTask *t)
 	}
 	return true;
 }
-
-#endif

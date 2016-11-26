@@ -38,12 +38,10 @@ FOR %%i IN (images\*.tga) DO (
 	REM --- PVRTC (4BPP) ---
 	FOR %%t IN (pvrtex) DO (
 		echo ..%%t ^(PVRTC 4BPP^)
-		%rwgtex% -f "%%i" -pvrtc -o "~comparison_%profile%\%%~ni" -%%t -%profile% -t
 	)
 	REM --- PVRTC (2BPP) ---
 	FOR %%t IN (pvrtex) DO (
 		echo ..%%t ^(PVRTC 2BPP^)
-		%rwgtex% -f "%%i" -pvrtc2 -o "~comparison_%profile%\%%~ni" -%%t -%profile% -t
 	)
 	
 )

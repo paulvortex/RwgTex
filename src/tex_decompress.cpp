@@ -312,7 +312,7 @@ void CalculateCompressionError(LoadedImage *compressed, LoadedImage *original, L
 ==========================================================================================
 */
 
-void Decompress(TexDecodeTask *task, bool exportFile, LoadedImage *original_image)
+void Decompress(TexDecodeTask *task, bool exportWholeFileWithMipLevels, LoadedImage *originalImage)
 {
 	char outfile[MAX_FPATH], filepath[MAX_FPATH];
 	int levels;
@@ -382,18 +382,31 @@ void Decompress(TexDecodeTask *task, bool exportFile, LoadedImage *original_imag
 		}
 		Image_LoadFinish(task->image);
 
+		// rescale to original size
+		// todo: make work with tex_testCompresionError?
+		if (originalImage && tex_testCompresion_keepSize && !exportWholeFileWithMipLevels)
+		{
+			if (originalImage->width != originalImage->loadedState.width || originalImage->height != originalImage->loadedState.height)
+			{
+				FIBITMAP *scaled = fiRescale(task->image->bitmap, originalImage->loadedState.width, originalImage->loadedState.height, FILTER_LANCZOS3, false);
+				bool oldColorSwap = task->image->colorSwap; // fiBindToImage assumes image is loaded as BGR, we should keep it as is
+				fiBindToImage(scaled, task->image);
+				task->image->colorSwap = oldColorSwap;
+			}
+		}
+
 		// calculate errors
-		if (original_image && tex_testCompresionError)
+		if (originalImage && tex_testCompresionError)
 		{
 			if (!tex_testCompresionAllErrors)
-				CalculateCompressionError(task->image, original_image, task->image, tex_errorMetric);
+				CalculateCompressionError(task->image, originalImage, task->image, tex_errorMetric);
 			else
 			{
 				LoadedImage *ext = Image_Create();
-				Image_Generate(ext, original_image->width, original_image->height, original_image->bpp);
+				Image_Generate(ext, originalImage->width, originalImage->height, originalImage->bpp);
 				for (TexErrorMetric metric = ERRORMETRIC_AUTO; metric < NUM_ERRORMETRICS; metric = (TexErrorMetric)(metric + 1))
 				{
-					CalculateCompressionError(task->image, original_image, ext, tex_errorMetric);
+					CalculateCompressionError(task->image, originalImage, ext, tex_errorMetric);
 					// export
 					StripFileExtension(task->filename, filepath);
 					sprintf(outfile, "%s_error_%s.tga", filepath, OptionEnumName(metric, tex_error_metrics));
@@ -409,7 +422,7 @@ void Decompress(TexDecodeTask *task, bool exportFile, LoadedImage *original_imag
 			sprintf(outfile, "%s_%i.tga", filepath, level);
 		else
 			sprintf(outfile, "%s.tga", filepath);
-		if (exportFile)
+		if (exportWholeFileWithMipLevels)
 		{
 			Image_ExportTarga(task->image, outfile);
 			task->pixeldata += compressedSize;
@@ -425,7 +438,7 @@ void Decompress(TexDecodeTask *task, bool exportFile, LoadedImage *original_imag
 		task->image->bitmap = NULL;
 		
 		// next mip level
-		if (task->image->width < 2 || !exportFile)
+		if (task->image->width < 2 || !exportWholeFileWithMipLevels)
 			break;
 		task->image->width = task->image->width / 2;
 		task->image->height = task->image->height / 2;
@@ -464,7 +477,7 @@ byte *TexDecompress(char *filename, TexEncodeTask *encodetask, size_t *outdatasi
 	Decompress(&task, false, encodetask->image);
 	*outdatasize = task.datasize;
 	return task.data;
-}
+} 
 
 bool TexDecompress(char *filename)
 {

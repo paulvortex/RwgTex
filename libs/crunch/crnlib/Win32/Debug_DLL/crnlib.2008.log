@@ -1,0 +1,83 @@
+﻿  crn_core.cpp
+  crn_assert.cpp
+  crn_mem.cpp
+  crn_platform.cpp
+  crn_math.cpp
+  crn_rand.cpp
+  crn_hash_map.cpp
+  crn_sparse_bit_array.cpp
+  crn_value.cpp
+  crn_vector.cpp
+  crn_dds_texture.cpp
+  crn_dxt_image.cpp
+  crn_image_utils.cpp
+  crn_pixel_format.cpp
+  crn_resample_filters.cpp
+  crn_resampler.cpp
+  crn_threaded_resampler.cpp
+  crn_dxt.cpp
+  crn_dxt1.cpp
+  crn_dxt5a.cpp
+  crn_dxt_endpoint_refiner.cpp
+  Создание кода...
+  Компиляция...
+  crn_dxt_fast.cpp
+  crn_dxt_hc_common.cpp
+  crn_huffman_codes.cpp
+  crn_lzma_codec.cpp
+  crn_prefix_coding.cpp
+  crn_qdxt1.cpp
+  crn_qdxt5.cpp
+  crn_ryg_dxt.cpp
+  crn_symbol_codec.cpp
+  crn_zeng.cpp
+  crn_dynamic_string.cpp
+  crn_dynamic_wstring.cpp
+  crn_strutils.cpp
+  crn_win32_console.cpp
+  crn_win32_file_utils.cpp
+  crn_win32_find_files.cpp
+  crn_win32_threading.cpp
+  crn_win32_timer.cpp
+  crn_arealist.cpp
+  crn_checksum.cpp
+  Создание кода...
+  Компиляция...
+  crn_command_line_params.cpp
+  crn_hash.cpp
+  crn_utils.cpp
+  crn_data_stream.cpp
+  crn_console.cpp
+  crn_condition_var.cpp
+  crn_task_pool.cpp
+  lzma_7zBuf.cpp
+  lzma_7zBuf2.cpp
+  lzma_7zCrc.cpp
+  lzma_7zFile.cpp
+  lzma_7zStream.cpp
+  lzma_Alloc.cpp
+  lzma_Bcj2.cpp
+  lzma_Bra.cpp
+  lzma_Bra86.cpp
+  lzma_BraIA64.cpp
+  lzma_LzFind.cpp
+  lzma_LzFindMt.cpp
+  lzma_LzmaDec.cpp
+  Создание кода...
+  Компиляция...
+  lzma_LzmaEnc.cpp
+  lzma_LzmaLib.cpp
+  lzma_Threads.cpp
+  crn_comp.cpp
+  crn_dds_comp.cpp
+  crn_decomp.cpp
+  crn_dxt_hc.cpp
+  crn_texture_comp.cpp
+  crn_texture_conversion.cpp
+  crn_texture_file_types.cpp
+  crnlib.cpp
+  Создание кода...
+  crn_stb_image.cpp
+C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(1354,5): warning MSB8012: TargetPath(W:\SVN\GitHub\RwgTex\libs\crunch\lib\VC9\Debug_DLL\Win32\crnlib.lib) does not match the Library's OutputFile property value (W:\SVN\GitHub\RwgTex\libs\crunch\lib\VC9\Debug_DLL\Win32\crnlibD_DLL_VC9.lib). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Lib.OutputFile).
+C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\V120\Microsoft.CppBuild.targets(1356,5): warning MSB8012: TargetName(crnlib) does not match the Library's OutputFile property value (crnlibD_DLL_VC9). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Lib.OutputFile).
+  crnlib.2008.vcxproj -> W:\SVN\GitHub\RwgTex\libs\crunch\lib\VC9\Debug_DLL\Win32\crnlib.lib

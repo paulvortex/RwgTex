@@ -1,0 +1,388 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{1d91535f-f658-4b14-b394-6d519538bc72}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Util">
+      <UniqueIdentifier>{395291f2-9bfb-4e30-8898-032a63fd814a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Docs">
+      <UniqueIdentifier>{750ee5d4-a80d-4bf8-8dbd-24f053bb84b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs">
+      <UniqueIdentifier>{cc9c7aba-152a-42d3-a862-2e6ab98b7863}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\nvTT">
+      <UniqueIdentifier>{e4ef7159-b1d3-4101-a5e3-706264b25caf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\FreeImage">
+      <UniqueIdentifier>{99416627-75aa-4b39-a3fb-d61de5c92881}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\ASTC">
+      <UniqueIdentifier>{445e4617-ad69-4671-8eab-395a3726cd41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\ASTC\Source">
+      <UniqueIdentifier>{287a3186-0ff1-4eb1-b2d4-6e12f3cdd7f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\GimpDDS">
+      <UniqueIdentifier>{c4725967-6cbc-41ea-8a26-ce943b518fc1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\EtcPack">
+      <UniqueIdentifier>{929c74a3-86b8-4816-b42a-1ff378b214cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\atiTC">
+      <UniqueIdentifier>{258b2b95-6a5f-4579-b196-257d96b87b24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\rg_etc1">
+      <UniqueIdentifier>{0047f21b-5f4b-4193-be9f-af7753654b85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\CrnLib">
+      <UniqueIdentifier>{7707f93a-3611-4d20-8a29-75907c7081c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\PVRTexTool">
+      <UniqueIdentifier>{1d3f8480-a8bc-4305-88bd-20a58f81ee23}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\PVRTexTool\inc">
+      <UniqueIdentifier>{d89a8e55-b5c9-43ee-8112-6a4fabdeb64f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\OmniLib">
+      <UniqueIdentifier>{cf04c4f2-70bf-41d8-8606-9d670a4e42ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{53626ba7-19bb-43c0-8b07-e0f31062a562}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Source Files\Util">
+      <UniqueIdentifier>{fb429874-4c03-49f5-9c94-8ecf50318b2e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\codec_dxt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\codec_etc1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\codec_etc2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\codec_pvrtc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\codec_pvrtc2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\codec_unc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\file_dds.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\file_ktx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\fs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\options.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\scale2x.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\scalexbr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tex_compress.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tex_decompress.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tex_glformats.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tool_atitc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tool_crunch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tool_etcpack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tool_gimp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tool_nvdxtlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tool_nvtt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tool_pvrtex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tool_rgetc1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tool_rwgtt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\cmd.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\crc32.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\dll.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\freeimage.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\mem.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\resource.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\thread.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\unzip.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\zip.h">
+      <Filter>Header Files\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\nvlibs\inc\nvtt.h">
+      <Filter>Libs\nvTT</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\nvlibs\inc\nvtt_wrapper.h">
+      <Filter>Libs\nvTT</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\freeimage\FreeImage.h">
+      <Filter>Libs\FreeImage</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\gimpdds\ddsplugin_lib.h">
+      <Filter>Libs\GimpDDS</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etcpack\etcpack_lib.h">
+      <Filter>Libs\EtcPack</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\aticompress\inc\ATI_Compress.h">
+      <Filter>Libs\atiTC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\aticompress\inc\ATI_Compress_Test_Helpers.h">
+      <Filter>Libs\atiTC</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\rg_etc1\rg_etc1.h">
+      <Filter>Libs\rg_etc1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\crunch\inc\crn_decomp.h">
+      <Filter>Libs\CrnLib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\crunch\inc\crnlib.h">
+      <Filter>Libs\CrnLib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\crunch\inc\dds_defs.h">
+      <Filter>Libs\CrnLib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\pvrtextool_lib.h">
+      <Filter>Libs\PVRTexTool</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\inc\PVRTArray.h">
+      <Filter>Libs\PVRTexTool\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\inc\PVRTDecompress.h">
+      <Filter>Libs\PVRTexTool\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\inc\PVRTError.h">
+      <Filter>Libs\PVRTexTool\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\inc\PVRTexture.h">
+      <Filter>Libs\PVRTexTool\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\inc\PVRTextureDefines.h">
+      <Filter>Libs\PVRTexTool\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\inc\PVRTextureFormat.h">
+      <Filter>Libs\PVRTexTool\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\inc\PVRTextureHeader.h">
+      <Filter>Libs\PVRTexTool\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\inc\PVRTextureUtilities.h">
+      <Filter>Libs\PVRTexTool\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\inc\PVRTextureVersion.h">
+      <Filter>Libs\PVRTexTool\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\inc\PVRTGlobal.h">
+      <Filter>Libs\PVRTexTool\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\inc\PVRTMap.h">
+      <Filter>Libs\PVRTexTool\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\inc\PVRTString.h">
+      <Filter>Libs\PVRTexTool\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\pvrtextool\inc\PVRTTexture.h">
+      <Filter>Libs\PVRTexTool\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\omnilib\dpomnilib.h">
+      <Filter>Libs\OmniLib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\omnilib\dpomnilibinternal.h">
+      <Filter>Libs\OmniLib</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="postbuild.bat">
+      <Filter>Docs</Filter>
+    </None>
+    <None Include="..\README.md">
+      <Filter>Docs</Filter>
+    </None>
+    <None Include="..\win32\rwgtex.ini">
+      <Filter>Docs</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\libs\gimpdds\src\color.c">
+      <Filter>Libs\GimpDDS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\gimpdds\src\dxt.cpp">
+      <Filter>Libs\GimpDDS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etcpack\etcdecwrap.cpp">
+      <Filter>Libs\EtcPack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etcpack\etcimagewrap.cpp">
+      <Filter>Libs\EtcPack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etcpack\etcpackwrap.cpp">
+      <Filter>Libs\EtcPack</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\rg_etc1\rg_etc1.cpp">
+      <Filter>Libs\rg_etc1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\omnilib\libinternal.cpp">
+      <Filter>Libs\OmniLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\omnilib\libsprite.cpp">
+      <Filter>Libs\OmniLib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\codec_dxt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\codec_etc1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\codec_etc2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\codec_pvrtc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\codec_pvrtc2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\codec_unc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\file_dds.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\file_ktx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\fs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\options.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scale2x.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scalexbr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tex.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tex_compress.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tex_decompress.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tool_atitc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tool_crunch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tool_etcpack.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tool_gimp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tool_nvtt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tool_pvrtex.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tool_rgetc1.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tool_rwgtt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cmd.cpp">
+      <Filter>Source Files\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\crc32.cpp">
+      <Filter>Source Files\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dll.cpp">
+      <Filter>Source Files\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\freeimage.cpp">
+      <Filter>Source Files\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mem.cpp">
+      <Filter>Source Files\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\thread.cpp">
+      <Filter>Source Files\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\unzip.cpp">
+      <Filter>Source Files\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\zip.cpp">
+      <Filter>Source Files\Util</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -8,7 +8,6 @@
 
 // disable certain tools
 // #define NO_ATITC
-#define NO_NVTT
 
 // fourCC macro
 #ifndef FOURCC
@@ -108,7 +107,7 @@ typedef struct TexTool_s
 	char              *forceGroup;
 	FCLIST             forceFileList;
 	char              *suffix;
-	char              *featuredCodecs; // filled by Tex_LinkTools()
+	char              *featuredCodecs;  // filled by Tex_LinkTools()
 	char              *featuredFormats; // filled by Tex_LinkTools()
 	TexTool_s         *next;
 } TexTool;
@@ -302,6 +301,7 @@ extern ImageScaler   tex_firstScaler;
 extern ImageScaler   tex_secondScaler;
 extern int           tex_useSuffix;
 extern bool          tex_testCompresion;
+extern bool          tex_testCompresion_keepSize;
 extern bool          tex_testCompresionError;
 extern bool          tex_testCompresionAllErrors;
 

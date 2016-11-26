@@ -1,0 +1,577 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\math">
+      <UniqueIdentifier>{5fa71b3b-f83e-441e-96f0-0d1610e88a35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\containers">
+      <UniqueIdentifier>{f1eeecea-9f95-415f-bdd3-af513352243b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\image">
+      <UniqueIdentifier>{7be5ddba-4a9e-4086-aec2-06de968fa938}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\comp">
+      <UniqueIdentifier>{8c2bad16-29ac-4a87-9945-88844f9afe37}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\string">
+      <UniqueIdentifier>{5af588c0-53cc-44c4-8f7b-e744bde3bb0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\win32">
+      <UniqueIdentifier>{60b64628-8837-440b-97bf-26ff032fc172}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utils">
+      <UniqueIdentifier>{7234b101-9f15-4801-829a-33ed13488f7e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\stream">
+      <UniqueIdentifier>{8bd21c0d-52a9-41dd-8d06-cdd59dccd370}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\console">
+      <UniqueIdentifier>{9a454737-981f-49f4-bfc6-674916bbdf29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\threading">
+      <UniqueIdentifier>{6339d30f-124a-4608-8c9c-8d557654a0d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\lzmalib">
+      <UniqueIdentifier>{00586241-0adf-434c-be6c-2515229fa744}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\crn">
+      <UniqueIdentifier>{79c48fac-c6b8-4e65-a2b8-f4e45e211d26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\texture_conversion">
+      <UniqueIdentifier>{1bfb7eb8-5ece-4510-b47e-db59ba9b6e91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\api">
+      <UniqueIdentifier>{7e9084ba-ab36-4714-a695-0831d454a322}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\inc">
+      <UniqueIdentifier>{c6fafb46-afcd-4b09-ab09-5ad726d3af66}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="crn_assert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_core.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_mem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_platform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_math.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_rand.cpp">
+      <Filter>Source Files\math</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_hash_map.cpp">
+      <Filter>Source Files\containers</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_sparse_bit_array.cpp">
+      <Filter>Source Files\containers</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_value.cpp">
+      <Filter>Source Files\containers</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_vector.cpp">
+      <Filter>Source Files\containers</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_dds_texture.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_dxt_image.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_image_utils.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_pixel_format.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_resample_filters.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_resampler.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_stb_image.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_threaded_resampler.cpp">
+      <Filter>Source Files\image</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_dxt.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_dxt1.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_dxt5a.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_dxt_endpoint_refiner.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_dxt_fast.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_dxt_hc_common.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_huffman_codes.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_lzma_codec.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_prefix_coding.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_qdxt1.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_qdxt5.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_ryg_dxt.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_symbol_codec.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_zeng.cpp">
+      <Filter>Source Files\comp</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_dynamic_string.cpp">
+      <Filter>Source Files\string</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_dynamic_wstring.cpp">
+      <Filter>Source Files\string</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_strutils.cpp">
+      <Filter>Source Files\string</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_win32_console.cpp">
+      <Filter>Source Files\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_win32_file_utils.cpp">
+      <Filter>Source Files\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_win32_find_files.cpp">
+      <Filter>Source Files\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_win32_threading.cpp">
+      <Filter>Source Files\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_win32_timer.cpp">
+      <Filter>Source Files\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_arealist.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_checksum.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_command_line_params.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_hash.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_utils.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_data_stream.cpp">
+      <Filter>Source Files\stream</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_console.cpp">
+      <Filter>Source Files\console</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_condition_var.cpp">
+      <Filter>Source Files\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_task_pool.cpp">
+      <Filter>Source Files\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_7zBuf.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_7zBuf2.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_7zCrc.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_7zFile.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_7zStream.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_Alloc.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_Bcj2.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_Bra.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_Bra86.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_BraIA64.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_LzFind.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_LzFindMt.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_LzmaDec.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_LzmaEnc.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_LzmaLib.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="lzma_Threads.cpp">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_comp.cpp">
+      <Filter>Source Files\crn</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_dds_comp.cpp">
+      <Filter>Source Files\crn</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_decomp.cpp">
+      <Filter>Source Files\crn</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_dxt_hc.cpp">
+      <Filter>Source Files\crn</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_texture_comp.cpp">
+      <Filter>Source Files\crn</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_texture_conversion.cpp">
+      <Filter>Source Files\texture_conversion</Filter>
+    </ClCompile>
+    <ClCompile Include="crn_texture_file_types.cpp">
+      <Filter>Source Files\texture_conversion</Filter>
+    </ClCompile>
+    <ClCompile Include="crnlib.cpp">
+      <Filter>Source Files\api</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="crn_assert.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_core.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_mem.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_platform.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_types.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_winhdr.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_intersect.h">
+      <Filter>Source Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_math.h">
+      <Filter>Source Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_matrix.h">
+      <Filter>Source Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_rand.h">
+      <Filter>Source Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_ray.h">
+      <Filter>Source Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_rect.h">
+      <Filter>Source Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_vec.h">
+      <Filter>Source Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_vec_interval.h">
+      <Filter>Source Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_hash_map.h">
+      <Filter>Source Files\containers</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_sparse_array.h">
+      <Filter>Source Files\containers</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_sparse_bit_array.h">
+      <Filter>Source Files\containers</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_value.h">
+      <Filter>Source Files\containers</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_vector.h">
+      <Filter>Source Files\containers</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_color.h">
+      <Filter>Source Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_dds_texture.h">
+      <Filter>Source Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_dxt_image.h">
+      <Filter>Source Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_image.h">
+      <Filter>Source Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_image_utils.h">
+      <Filter>Source Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_pixel_format.h">
+      <Filter>Source Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_resample_filters.h">
+      <Filter>Source Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_resampler.h">
+      <Filter>Source Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_threaded_resampler.h">
+      <Filter>Source Files\image</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_clusterizer.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_dxt.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_dxt1.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_dxt5a.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_dxt_endpoint_refiner.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_dxt_fast.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_dxt_hc_common.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_huffman_codes.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_lzma_codec.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_prefix_coding.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_qdxt1.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_qdxt5.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_ryg_dxt.hpp">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_ryg_types.hpp">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_symbol_codec.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_threaded_clusterizer.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_tree_clusterizer.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_zeng.h">
+      <Filter>Source Files\comp</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_dynamic_string.h">
+      <Filter>Source Files\string</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_dynamic_wstring.h">
+      <Filter>Source Files\string</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_strutils.h">
+      <Filter>Source Files\string</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_win32_console.h">
+      <Filter>Source Files\win32</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_win32_file_utils.h">
+      <Filter>Source Files\win32</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_win32_find_files.h">
+      <Filter>Source Files\win32</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_win32_threading.h">
+      <Filter>Source Files\win32</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_win32_timer.h">
+      <Filter>Source Files\win32</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_arealist.h">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_checksum.h">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_command_line_params.h">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_hash.h">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_helpers.h">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_packed_uint.h">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_traits.h">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_utils.h">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_buffer_stream.h">
+      <Filter>Source Files\stream</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_cfile_stream.h">
+      <Filter>Source Files\stream</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_data_stream.h">
+      <Filter>Source Files\stream</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_data_stream_serializer.h">
+      <Filter>Source Files\stream</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_dynamic_stream.h">
+      <Filter>Source Files\stream</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_console.h">
+      <Filter>Source Files\console</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_condition_var.h">
+      <Filter>Source Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_event.h">
+      <Filter>Source Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_mutex.h">
+      <Filter>Source Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_semaphore.h">
+      <Filter>Source Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_spinlock.h">
+      <Filter>Source Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_task_pool.h">
+      <Filter>Source Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_7zBuf.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_7zCrc.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_7zFile.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_7zVersion.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_Alloc.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_Bcj2.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_Bra.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_CpuArch.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_LzFind.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_LzFindMt.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_LzHash.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_LzmaDec.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_LzmaEnc.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_LzmaLib.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_MyVersion.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_Threads.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="lzma_Types.h">
+      <Filter>Source Files\lzmalib</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_comp.h">
+      <Filter>Source Files\crn</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_dds_comp.h">
+      <Filter>Source Files\crn</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_dxt_hc.h">
+      <Filter>Source Files\crn</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_texture_comp.h">
+      <Filter>Source Files\crn</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_texture_conversion.h">
+      <Filter>Source Files\texture_conversion</Filter>
+    </ClInclude>
+    <ClInclude Include="crn_texture_file_types.h">
+      <Filter>Source Files\texture_conversion</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\crn_decomp.h">
+      <Filter>Source Files\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\crnlib.h">
+      <Filter>Source Files\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\dds_defs.h">
+      <Filter>Source Files\inc</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

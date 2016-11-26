@@ -231,11 +231,13 @@ size_t PVRTex_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth
 	}
 	else if (t->format->block == &B_PVRTC2_2BPP)
 	{
+		printf("B_PVRTC2_2BPP\n");
 		quality = pvrtex_quality_prvtc[tex_profile];
 		pixeltype = pvrtex_pixeltype_pvrtc2_2bpp;
 	}
 	else if (t->format->block == &B_PVRTC2_4BPP)
 	{
+		printf("B_PVRTC2_2BPPB_PVRTC2_4BPPn");
 		quality = pvrtex_quality_prvtc[tex_profile];
 		pixeltype = pvrtex_pixeltype_pvrtc2_4bpp;
 	}

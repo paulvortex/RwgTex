@@ -202,12 +202,14 @@ void Compress(TexEncodeTask *task)
 	Image_ConvertBPP(task->image, dest_bpp);
 
 	// apply scalers
-	powerOfTwo = (tex_allowNPOT && !(task->format->features & FF_POT)) ? false : true;
-	squareSize = (task->format->features & FF_SQUARE) ? true : false;
 	if (FS_FileMatchList(task->file, task->image, tex_scale4xFiles) || tex_forceScale4x)
 		Image_ScaleBy4(task->image, tex_firstScaler, tex_secondScaler, powerOfTwo);
 	else if (FS_FileMatchList(task->file, task->image, tex_scale2xFiles) || tex_forceScale2x)
 		Image_ScaleBy2(task->image, tex_firstScaler, powerOfTwo);
+
+	// apply dimensions
+	powerOfTwo = (tex_allowNPOT && !(task->format->features & FF_POT)) ? false : true;
+	squareSize = (task->format->features & FF_SQUARE) ? true : false;
 	Image_MakeDimensions(task->image, powerOfTwo, squareSize);
 
 	// generate mipmaps
@@ -261,19 +263,22 @@ void TexCompress_WorkerThread(ThreadData *thread)
 				Image_Load(task.file, image);
 			if (image->bitmap == NULL)
 				continue;
-
+			
 			// check if codec accepts task
 			// discarded files get fallback codec
 			task.codec = codec;
-			if (task.codec->disabled)
-				continue;
-			if (!task.codec->fAccept(&task) || FS_FileMatchList(task.file, task.image, task.codec->discardList))
+			if (!task.codec->forceFormat)
 			{
-				task.codec = task.codec->fallback;
-				if (!task.codec)
-					continue;
 				if (task.codec->disabled)
 					continue;
+				if (!task.codec->fAccept(&task) || FS_FileMatchList(task.file, task.image, task.codec->discardList))
+				{
+					task.codec = task.codec->fallback;
+					if (!task.codec)
+						continue;
+					if (task.codec->disabled)
+						continue;
+				}
 			}
 
 			// global stats
@@ -818,7 +823,11 @@ void TexCompress_Load(void)
 			Print("Showing compression errors (metric = %s)\n", OptionEnumName(tex_errorMetric, tex_error_metrics, "auto"));
 	}
 	else if (tex_testCompresion)
+	{
 		Print("Generating decompressed test files\n");
+		if (tex_testCompresion_keepSize)
+			Print("Keeping original image dimensions\n");
+	}
 
 	// load codecs
 	for (TexCodec *codec = tex_active_codecs; codec; codec = codec->nextActive)

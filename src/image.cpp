@@ -642,18 +642,50 @@ void Image_MakeDimensions(LoadedImage *image, bool powerOfTwo, bool square)
 		return;
 	w = image->width;
 	h = image->height;
+	if (square)
+	{
+		// we should keep image compressed, maximum 2x of original texture size, so we should scale down
+		if (w > h)
+		{
+			while (w != h)
+			{
+				// 1 - increase height
+				h = h * 2;
+				if (h > w)
+					h = w;
+				else
+				{
+					// 2 - reduce width
+					w = w / 2;
+					if (w < h)
+						w = h;
+				}
+			}
+		}
+		else
+		{
+			while (w != h)
+			{
+				// 1 - increase width
+				w = w * 2;
+				if (w > h)
+					w = h;
+				else
+				{
+					// 2 - reduce height
+					h = h / 2;
+					if (h < w)
+						h = w;
+				}
+			}
+		}
+	}
 	if (powerOfTwo)
 	{
 		w = NextPowerOfTwo(w);
 		h = NextPowerOfTwo(h);
 	}
-	if (square)
-	{
-		if (w < h)
-			w = h;
-		if (w > h)
-			h = w;
-	}
+	// apply
 	if (w != image->width || h != image->height)
 	{
 		FIBITMAP *scaled = fiRescale(image->bitmap, w, h, FILTER_LANCZOS3, false);

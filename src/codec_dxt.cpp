@@ -42,14 +42,12 @@ TexCodec  CODEC_DXT =
 void CodecDXT_Init(void)
 {
 	RegisterTool(&TOOL_NVDXTLIB, &CODEC_DXT);
+	RegisterTool(&TOOL_NVTT, &CODEC_DXT);
 	RegisterTool(&TOOL_GIMPDDS, &CODEC_DXT);
 	RegisterTool(&TOOL_CRUNCH, &CODEC_DXT);
 	RegisterTool(&TOOL_PVRTEX, &CODEC_DXT);
 #ifndef NO_ATITC
 	RegisterTool(&TOOL_ATITC, &CODEC_DXT);
-#endif
-#ifndef NO_NVTT
-	RegisterTool(&TOOL_NVTT, &CODEC_DXT);
 #endif
 }
 
@@ -120,7 +118,7 @@ void CodecDXT_Encode(TexEncodeTask *task)
 		// while ATI wins over general DXT1 and DXT5
 #ifndef NO_ATITC
 		if (task->image->datatype == IMAGE_NORMALMAP)
-			task->tool = &TOOL_NVDXTLIB;
+			task->tool = &TOOL_NVTT;
 		else
 			task->tool = &TOOL_ATITC;
 #else

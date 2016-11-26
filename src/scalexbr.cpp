@@ -408,9 +408,9 @@ inline double distYUV(uint32_t pix1, uint32_t pix2, double luminanceWeight)
     double u = scale_u * (b_diff - y);					  //value range: 255 * 2 * u_max * [-1, 1]
     double v = scale_v * (r_diff - y);					  //value range: 255 * 2 * v_max * [-1, 1]
 
-    assert(std::abs(y) <= 255 + eps);
-    assert(std::abs(u) <= 255 * 2 * u_max + eps);
-    assert(std::abs(v) <= 255 * 2 * v_max + eps);
+    //assert(std::abs(y) <= 255 + eps);
+    //assert(std::abs(u) <= 255 * 2 * u_max + eps);
+    //assert(std::abs(v) <= 255 * 2 * v_max + eps);
 
     return sqrt(square(luminanceWeight * y) + square(u) +  square(v));
 }

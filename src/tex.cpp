@@ -59,6 +59,7 @@ ImageScaler   tex_firstScaler;
 ImageScaler   tex_secondScaler;
 int           tex_useSuffix;
 bool          tex_testCompresion = false;
+bool          tex_testCompresion_keepSize = false;
 bool          tex_testCompresionError = false;
 bool          tex_testCompresionAllErrors = false;
 TexErrorMetric tex_errorMetric = ERRORMETRIC_AUTO;
@@ -679,9 +680,13 @@ void CommandLineOptions(void)
 	if (CheckParm("-st"))     { tex_useSuffix = TEXSUFF_TOOL; }
 	if (CheckParm("-sf"))     { tex_useSuffix = TEXSUFF_FORMAT; }
 	if (CheckParm("-sp"))     { tex_useSuffix = TEXSUFF_PROFILE; }
-	if (CheckParm("-t"))      { tex_testCompresion = true;  if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL|TEXSUFF_FORMAT; }
-	if (CheckParm("-te"))     { tex_testCompresion = true; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL|TEXSUFF_FORMAT; tex_testCompresionError = true; }
-	if (CheckParm("-ta"))     { tex_testCompresion = true; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL|TEXSUFF_FORMAT; tex_testCompresionAllErrors = true; }
+	if (CheckParm("-t"))      { tex_testCompresion = true; tex_testCompresion_keepSize = false; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL | TEXSUFF_FORMAT; }
+	if (CheckParm("-te"))     { tex_testCompresion = true; tex_testCompresion_keepSize = false; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL | TEXSUFF_FORMAT; tex_testCompresionError = true; }
+	if (CheckParm("-ta"))     { tex_testCompresion = true; tex_testCompresion_keepSize = false; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL | TEXSUFF_FORMAT; tex_testCompresionAllErrors = true; }
+	if (CheckParm("-tk"))     { tex_testCompresion = true; tex_testCompresion_keepSize = true; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL | TEXSUFF_FORMAT; }
+	if (CheckParm("-tek"))    { tex_testCompresion = true; tex_testCompresion_keepSize = true; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL | TEXSUFF_FORMAT; tex_testCompresionError = true; }
+	if (CheckParm("-tak"))    { tex_testCompresion = true; tex_testCompresion_keepSize = true; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL | TEXSUFF_FORMAT; tex_testCompresionAllErrors = true; }
+
 	// string parameters
 	for (int i = 1; i < myargc; i++) 
 	{
@@ -860,6 +865,7 @@ void Tex_Init(void)
 	tex_zipAddFiles.clear();
 	tex_useSuffix = 0;
 	tex_testCompresion = false;
+	tex_testCompresion_keepSize = false;
 	tex_container = findContainer("DDS", false);
 }
 
