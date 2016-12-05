@@ -20,7 +20,7 @@ int    OptionEnum(const char *name, OptionList *num, int def_value, const char *
 char  *OptionEnumName(const int val, OptionList *num);
 char  *OptionEnumName(const int val, OptionList *num, char *def_name);
 char  *OptionEnumName(const int val, OptionList *num, char *def_name, const char *warningname);
-bool   OptionBoolean(const char *val);
+bool   OptionBoolean(const char *val, bool default_value = false);
 int    OptionInt(const char *val);
 bool   OptionFCList(FCLIST *list, const char *key, const char *val);
 void   LoadOptions(char *filename);

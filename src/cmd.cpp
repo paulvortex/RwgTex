@@ -163,7 +163,8 @@ void PercentPacifier(char *str, ...)
 	{
 		printf("\r");
 		printf(msg);
-		printf("%\r");
+		printf("%%");
+		printf("\r");
 	}
 	fflush(stdout);
 }

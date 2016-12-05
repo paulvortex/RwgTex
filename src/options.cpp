@@ -62,7 +62,7 @@ char *OptionEnumName(const int val, OptionList *num)
 
 // OptionBoolean
 // boolean option
-bool OptionBoolean(const char *val)
+bool OptionBoolean(const char *val, bool default_value)
 {
 	if (!stricmp(val, "true"))    return true;
 	if (!stricmp(val, "enabled")) return true;
@@ -70,7 +70,17 @@ bool OptionBoolean(const char *val)
 	if (!stricmp(val, "on"))      return true;
 	if (!stricmp(val, "yes"))     return true;
 	if (!stricmp(val, "1"))       return true;
-	return false;
+
+	if (!stricmp(val, "false"))    return false;
+	if (!stricmp(val, "disabled")) return false;
+	if (!stricmp(val, "disable"))  return false;
+	if (!stricmp(val, "off"))      return false;
+	if (!stricmp(val, "no"))       return false;
+	if (!stricmp(val, "0"))        return false;
+
+	if (!stricmp(val, "default"))  return false;
+
+	return default_value;
 }
 
 // OptionFCList
@@ -203,7 +213,7 @@ void LoadOptions(char *filename)
 		if (!strcmp(section, "GENERAL"))
 		{
 			if (!stricmp(key, "waitforkey"))
-				waitforkey = OptionBoolean(val);
+				waitforkey = OptionBoolean(val, waitforkey);
 			continue;
 		}
 		if (!strcmp(section, "TEXCOMPRESS"))

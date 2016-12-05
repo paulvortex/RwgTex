@@ -76,7 +76,14 @@ Commandline parms
 -ycg2      : forces YCoCg Scaled compression
 -ycg3      : forces YCoCg Gamma 2.0 compression
 -ycg4      : forces YCoCg Scaled Gamma 2.0 compression
--bgra      : forces BGRA DDS file creation
+-etc1      : forces ETC1 compression
+-etc2      : forces ETC2 compression
+-etc2rgb   : forces ETC2RGB compression
+-etc2rgba  : forces ETC2RGBA compression
+-etc2rgba1 : forces ETC2RGBA1 compression
+-pvr2      : forces PVRTC 2bpp compression
+-pvr4      : forces PVRTC 4bpp compressi
+
 -ap X      : sets archive internal path for ZIP file creation
 -zipmem X  : create ZIP file is memory (X is number of megabytes),
              makes compression of many files faster

@@ -946,6 +946,7 @@ void Tex_Help(void)
 	"      -fast: sacrifice quality for fast encoding\n"
 	"   -regular: high quality and average quality, for regular usage (default)\n"
 	"        -hq: most exhaustive methods for best quality (take a lot of time)\n"
+	"\n"
 	"Scalers:\n"
 	"        box: nearest\n"
 	"   bilinear: bilinear filter\n"
