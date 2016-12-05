@@ -32,6 +32,7 @@ void CodecETC1_Init(void)
 #endif
 	RegisterTool(&TOOL_RGETC1, &CODEC_ETC1);
 	RegisterTool(&TOOL_PVRTEX, &CODEC_ETC1);
+	RegisterTool(&TOOL_ETC2COMP, &CODEC_ETC1);
 }
 
 void CodecETC1_Option(const char *group, const char *key, const char *val, const char *filename, int linenum)
@@ -94,7 +95,7 @@ void CodecETC1_Encode(TexEncodeTask *task)
 		task->format = &F_ETC1;
 	// select compressor tool
 	if (!task->tool)
-		task->tool = &TOOL_PVRTEX;
+		task->tool = &TOOL_ETC2COMP;
 }
 
 /*

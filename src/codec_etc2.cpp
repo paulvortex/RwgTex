@@ -95,7 +95,7 @@ void CodecETC2_Encode(TexEncodeTask *task)
 
 	// select compressor tool
 	if (!task->tool)
-		task->tool = &TOOL_ETCPACK;
+		task->tool = &TOOL_ETC2COMP;
 }
 
 /*
