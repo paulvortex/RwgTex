@@ -22,26 +22,17 @@ TexTool TOOL_NVTT =
 	&NvTT_Version,
 };
 
-TexTool TOOL_NVDXTLIB =
+// tool option
+nvtt::Quality         nvtt_quality[NUM_PROFILES];
+bool                  nvtt_dithering;
+OptionList            nvtt_compressionOption[] =
 {
-	"NvDXTlib", "NVidia DXTlib (deprecated, wrapped to NVidia Texture Tools)", "nv",
-	TEXINPUT_BGRA,
-	&NvDXTLib_Init,
-	&NvTT_Option,
-	&NvTT_Load,
-	&NvTT_Compress,
-	&NvTT_Version,
+	{ "fastest", nvtt::Quality_Fastest },
+	{ "normal", nvtt::Quality_Normal },
+	{ "production", nvtt::Quality_Production },
+	{ "highest", nvtt::Quality_Highest },
+	{ 0 }
 };
-
-void NvDXTLib_Init(void)
-{
-	RegisterFormat(&F_DXT1, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_DXT1A, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_DXT2, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_DXT3, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_DXT4, &TOOL_NVDXTLIB);
-	RegisterFormat(&F_DXT5, &TOOL_NVDXTLIB);
-}
 
 void NvTT_Init(void)
 {
@@ -51,14 +42,46 @@ void NvTT_Init(void)
 	RegisterFormat(&F_DXT3, &TOOL_NVTT);
 	RegisterFormat(&F_DXT4, &TOOL_NVTT);
 	RegisterFormat(&F_DXT5, &TOOL_NVTT);
+
+	// options
+	nvtt_quality[PROFILE_FAST] = nvtt::Quality_Fastest;
+	nvtt_quality[PROFILE_REGULAR] = nvtt::Quality_Production;
+	nvtt_quality[PROFILE_BEST] = nvtt::Quality_Highest;
+	nvtt_dithering = false;
 }
 
 void NvTT_Option(const char *group, const char *key, const char *val, const char *filename, int linenum)
 {
+	if (!stricmp(group, "profiles"))
+	{
+		if (!stricmp(key, "fast"))
+			nvtt_quality[PROFILE_FAST] = (nvtt::Quality)OptionEnum(val, nvtt_compressionOption, nvtt_quality[PROFILE_FAST], TOOL_NVTT.name);
+		else if (!stricmp(key, "regular"))
+			nvtt_quality[PROFILE_REGULAR] = (nvtt::Quality)OptionEnum(val, nvtt_compressionOption, nvtt_quality[PROFILE_REGULAR], TOOL_NVTT.name);
+		else if (!stricmp(key, "best"))
+			nvtt_quality[PROFILE_BEST] = (nvtt::Quality)OptionEnum(val, nvtt_compressionOption, nvtt_quality[PROFILE_BEST], TOOL_NVTT.name);
+		else
+			Warning("%s:%i: unknown key '%s'", filename, linenum, key);
+		return;
+	}
+	if (!stricmp(group, "options"))
+	{
+		if (!stricmp(key, "dither"))
+			nvtt_dithering = OptionBoolean(val) ? 1 : 0;
+		else
+			Warning("%s:%i: unknown key '%s'", filename, linenum, key);
+		return;
+	}
+	Warning("%s:%i: unknown group '%s'", filename, linenum, group);
 }
 
 void NvTT_Load(void)
 {
+	if (CheckParm("-dither"))
+		nvtt_dithering = true;
+	// note options
+	if (nvtt_dithering)
+		Print("%s tool: enabled dithering\n", TOOL_NVTT.name);
 }
 
 const char *NvTT_Version(void)
@@ -110,7 +133,7 @@ void NvTT_CompressSingleImage(nvtt::InputOptions &inputOptions, nvtt::OutputOpti
 	compressor.process(inputOptions, compressionOptions, outputOptions);
 }
 
-bool NvTT_Compress(TexEncodeTask *t)
+bool NvTT_Compress_Task(TexEncodeTask *t, nvtt::Quality quality, bool dithering)
 {
 	nvtt::CompressionOptions compressionOptions;
 	nvtt::OutputOptions outputOptions;
@@ -131,6 +154,7 @@ bool NvTT_Compress(TexEncodeTask *t)
 
 	//if (image->useChannelWeighting)
 	//	compressionOptions.setColorWeights(image->weightRed, image->weightGreen, image->weightBlue);
+
 	if (t->format->block == &B_DXT1)
 	{
 		if (t->image->hasAlpha)
@@ -151,14 +175,17 @@ bool NvTT_Compress(TexEncodeTask *t)
 		compressionOptions.setPixelFormat(32, 0x0000FF, 0x00FF00, 0xFF0000, 0xFF000000);
 	else
 		compressionOptions.setPixelFormat(24, 0x0000FF, 0x00FF00, 0xFF0000, 0);
-	compressionOptions.setQuality(nvtt::Quality_Production);
-	
+	compressionOptions.setQuality(quality);
+
+	// dithering
+	compressionOptions.setQuantization(dithering, false, t->image->hasAlpha && t->image->hasGradientAlpha);
+
 	// set output parameters
 	outputOptions.setOutputHeader(false);
 	outputOptions.setErrorHandler(&errorHandler);
 	errorHandler.errorCode = nvtt::Error_Unknown;
 	outputOptions.setOutputHandler(&outputHandler);
-	outputHandler.stream = t->stream; 
+	outputHandler.stream = t->stream;
 
 	// write base texture and maps
 	for (ImageMap *map = t->image->maps; map; map = map->next)
@@ -167,7 +194,7 @@ bool NvTT_Compress(TexEncodeTask *t)
 		if (errorHandler.errorCode != nvtt::Error_Unknown)
 			break;
 	}
-	
+
 	// end, advance stats
 	if (errorHandler.errorCode != nvtt::Error_Unknown)
 	{
@@ -176,3 +203,80 @@ bool NvTT_Compress(TexEncodeTask *t)
 	}
 	return true;
 }
+
+bool NvTT_Compress(TexEncodeTask *t)
+{
+	return NvTT_Compress_Task(t, nvtt_quality[tex_profile], nvtt_dithering);
+}
+
+/*
+==========================================================================================
+
+NVDXTLIB Legacy Support
+
+==========================================================================================
+*/
+
+// tool options
+bool              nvdxtlib_dithering;
+nvtt::Quality     nvdxtlib_quality[NUM_PROFILES];
+
+void NvTT_NvDXTLib_Init(void)
+{
+	RegisterFormat(&F_DXT1, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_DXT1A, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_DXT2, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_DXT3, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_DXT4, &TOOL_NVDXTLIB);
+	RegisterFormat(&F_DXT5, &TOOL_NVDXTLIB);
+}
+
+void NvTT_NvDXTLib_Option(const char *group, const char *key, const char *val, const char *filename, int linenum)
+{
+	if (!stricmp(group, "profiles"))
+	{
+		if (!stricmp(key, "fast"))
+			nvdxtlib_quality[PROFILE_FAST] = (nvtt::Quality)OptionEnum(val, nvtt_compressionOption, nvdxtlib_quality[PROFILE_FAST], TOOL_NVDXTLIB.name);
+		else if (!stricmp(key, "regular"))
+			nvdxtlib_quality[PROFILE_REGULAR] = (nvtt::Quality)OptionEnum(val, nvtt_compressionOption, nvdxtlib_quality[PROFILE_REGULAR], TOOL_NVDXTLIB.name);
+		else if (!stricmp(key, "best"))
+			nvdxtlib_quality[PROFILE_BEST] = (nvtt::Quality)OptionEnum(val, nvtt_compressionOption, nvdxtlib_quality[PROFILE_BEST], TOOL_NVDXTLIB.name);
+		else
+			Warning("%s:%i: unknown key '%s'", filename, linenum, key);
+		return;
+	}
+	if (!stricmp(group, "options"))
+	{
+		if (!stricmp(key, "dither"))
+			nvdxtlib_dithering = OptionBoolean(val);
+		else
+			Warning("%s:%i: unknown key '%s'", filename, linenum, key);
+		return;
+	}
+	Warning("%s:%i: unknown group '%s'", filename, linenum, group);
+}
+
+void NvTT_NvDXTLib_Load(void)
+{
+	if (CheckParm("-dither"))
+		nvdxtlib_dithering = true;
+	// note options
+	if (nvdxtlib_dithering)
+		Print("%s tool: enabled dithering\n", TOOL_NVDXTLIB.name);
+}
+
+bool NvTT_NvDXTLib_Compress(TexEncodeTask *t)
+{
+	return NvTT_Compress_Task(t, nvdxtlib_quality[tex_profile], nvdxtlib_dithering);
+}
+
+TexTool TOOL_NVDXTLIB =
+{
+	"NvDXTlib", "NVidia DXTlib (deprecated to NVidia Texture Tools)", "nv",
+	TEXINPUT_BGRA,
+	&NvTT_NvDXTLib_Init,
+	&NvTT_NvDXTLib_Option,
+	&NvTT_NvDXTLib_Load,
+	&NvTT_NvDXTLib_Compress,
+	&NvTT_Version,
+};

@@ -130,26 +130,30 @@ Compression modes
    Supported compressions: DXT1-5, RXGB, YCG1-4
 2. "NV" - NVidia DXTlib compressor.
    Supported compressions: DXT1-5, RXGB, YCG1-4
-3. "Hybrid"  - mixed compressor which uses ATI mode for color textures (as The
+   Now deprecated to NVidia Texture Tools (all options is keeped for compatibility reasons).
+3. "NVTT" - NVidia Texture Tools.
+   Supported compressions: DXT1-5, RXGB, YCG1-4
+4. "Hybrid"  - mixed compressor which uses ATI mode for color textures (as The
    Compressonator generally gives better perceptural quality, which is good for
    color textures. NVidia DXTlib is used for normalmaps and heightmaps
    (as it gives better PSNR).
    Supported compressions: DXT1-5, RXGB, YCG1-4
-4. "CrnLib" - Crunch Library.
+5. "CrnLib" - Crunch Library.
    Supported compressions: DXT1-5, RXGB, YCG1-4
-5. "PvrTex" - PowerVR's PvrTex tool.
+6. "PvrTex" - PowerVR's PvrTex tool.
    Supported compressions: PVR2, PVR2A, PVR4, PVR4A, DXT1-5, RXGB, YCG1-4, ETC1
-6. "RgEtc1" - Fast, high quality ETC1 compression tool
+7. "RgEtc1" - Fast, high quality ETC1 compression tool
    Supported compressions: ETC1
-7. "EtcPack" - Official ETC/ETC2 compression tool
+8. "EtcPack" - Official ETC/ETC2 compression tool
    Supported compressions: ETC1, ETC2, ETC2A, ETC2A1, EAC1, EAC2
-8. "Gimp DDS" - GIMP DDS plugin
+9. "Etc2Comp" - Google's ETC/ETC2 compression tool
+   Supported compressions: ETC1, ETC2, ETC2A, ETC2A1, EAC1, EAC2
+10. "Gimp DDS" - GIMP DDS plugin
    Supported compressions: DXT1-5, YCG1-4
-9. "BRGA" - simple tool that write 32-bit BGRA files
+11. "BRGA" - simple tool that write 32-bit BGRA files
    Supported compressions: none
 
 Trick: .ini file have parms to set compression mode on a per-file basis using name masks.
-
 
 Known issues
 ------
@@ -160,6 +164,17 @@ Known issues
 --------------------------------------------------------------------------------
  Version History + Changelog
 --------------------------------------------------------------------------------
+
+1.7
+------
+- Project moved to MSVS 2015
+- NvDxtlib support removed (conflicts with MSVC 2015 runtimes)
+- New tool: NVidia Texture Tools (NvTT), improved version of NvDxtLib
+- NvTT now wraps NvDXTlib options and code (for compatibility reasons)
+- New superb ETC2 compressor: Google Etc2Comp! Good quality ETC2 with reasonable speed!
+- Bump PvrTexTool: version is now 4.13.0 (fixes some bugs and improves PVRTC compression)
+- Fixed PVRTC 2bpp compression crash
+- Win32 build: now supplied with 2 new dll's: nvtt.dll, PVRTexLib.dll
 
 1.6
 ------

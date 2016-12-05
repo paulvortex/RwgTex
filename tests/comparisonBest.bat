@@ -1,3 +1,3 @@
 @echo off
-call ~comparison.bat best
+call comparison.bat best
 pause

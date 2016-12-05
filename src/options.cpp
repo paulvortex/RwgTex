@@ -8,6 +8,7 @@
 
 #include "main.h"
 
+// OptionEnum
 // enumeration
 int OptionEnum(const char *name, OptionList *num, int def_value, const char *warningname)
 {
@@ -33,6 +34,7 @@ int OptionEnum(const char *name, OptionList *num)
 	return OptionEnum(name, num, 0, NULL);
 }
 
+// OptionEnumName
 // reverse enumeration
 char *OptionEnumName(const int val, OptionList *num, char *def_name, const char *warningname)
 {
@@ -58,6 +60,7 @@ char *OptionEnumName(const int val, OptionList *num)
 	return OptionEnumName(val, num, 0, NULL);
 }
 
+// OptionBoolean
 // boolean option
 bool OptionBoolean(const char *val)
 {
@@ -70,6 +73,7 @@ bool OptionBoolean(const char *val)
 	return false;
 }
 
+// OptionFCList
 // file include/exclude option
 bool OptionFCList(FCLIST *list, const char *key, const char *val)
 {
@@ -85,6 +89,44 @@ bool OptionFCList(FCLIST *list, const char *key, const char *val)
 	O.pattern = val;
 	list->push_back(O);
 	return true;
+}
+
+// OptionInt
+// int option
+int OptionInt(const char *val)
+{
+	if (val == NULL)
+	{
+		Warning("Value NULL cannot be parsed as integer");
+		return 0;
+	}
+	if (*val == '\0')
+	{
+		Warning("Value '%s' cannot be parsed as integer", val);
+		return 0;
+	}
+	const char *s = val;
+	bool negate = (s[0] == '-');
+	if (*s == '+' || *s == '-')
+		++s;
+	if (*s == '\0')
+	{
+		Warning("Value '%s' cannot be parsed as integer", val);
+		return 0;
+	}
+	int result = 0;
+	while (*s)
+	{
+		if (*s >= '0' && *s <= '9')
+			result = result * 10 - (*s - '0'); // assume negative number
+		else
+		{
+			Warning("Value '%s' cannot be parsed as integer", val);
+			return 0;
+		}
+		++s;
+	}
+	return negate ? result : -result; // -result is positive!
 }
 
 // load options file

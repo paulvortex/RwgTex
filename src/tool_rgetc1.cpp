@@ -56,11 +56,11 @@ void RgEtc1_Option(const char *group, const char *key, const char *val, const ch
 	if (!stricmp(group, "profiles"))
 	{
 		if (!stricmp(key, "fast"))
-			rgetc1_quality[PROFILE_FAST] = (rg_etc1::etc1_quality)OptionEnum(val, rgetc1_compressionOption, rgetc1_quality[PROFILE_REGULAR], TOOL_RGETC1.name);
+			rgetc1_quality[PROFILE_FAST] = (rg_etc1::etc1_quality)OptionEnum(val, rgetc1_compressionOption, rgetc1_quality[PROFILE_FAST], TOOL_RGETC1.name);
 		else if (!stricmp(key, "regular"))
 			rgetc1_quality[PROFILE_REGULAR] = (rg_etc1::etc1_quality)OptionEnum(val, rgetc1_compressionOption, rgetc1_quality[PROFILE_REGULAR], TOOL_RGETC1.name);
 		else if (!stricmp(key, "best"))
-			rgetc1_quality[PROFILE_BEST] = (rg_etc1::etc1_quality)OptionEnum(val, rgetc1_compressionOption, rgetc1_quality[PROFILE_REGULAR], TOOL_RGETC1.name);
+			rgetc1_quality[PROFILE_BEST] = (rg_etc1::etc1_quality)OptionEnum(val, rgetc1_compressionOption, rgetc1_quality[PROFILE_BEST], TOOL_RGETC1.name);
 		else
 			Warning("%s:%i: unknown key '%s'", filename, linenum, key);
 		return;
@@ -122,7 +122,6 @@ bool RgEtc1_Compress(TexEncodeTask *t)
 {
 	size_t output_size;
 	rg_etc1::etc1_pack_params options;
-	int pitch;
 
 	// RgEtc1 requires 32-bit images to have all alpha  == 255
 	Image_SetAlpha(t->image, 255);
@@ -134,7 +133,6 @@ bool RgEtc1_Compress(TexEncodeTask *t)
 
 	// compress
 	byte *stream = t->stream;
-	byte *data = Image_GetData(t->image, NULL, &pitch);
 	for (ImageMap *map = t->image->maps; map; map = map->next)
 	{
 		output_size = RgEtc1_CompressSingleImage(stream, t, map->width, map->height, map->data, map->width*t->image->bpp, options);

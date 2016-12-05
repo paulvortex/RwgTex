@@ -87,8 +87,8 @@ void PVRTex_Option(const char *group, const char *key, const char *val, const ch
 	{
 		if (!stricmp(key, "fast"))
 		{
-			pvrtex_quality_prvtc[PROFILE_FAST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionPVRTC, pvrtex_quality_prvtc[PROFILE_REGULAR], TOOL_PVRTEX.name);
-			pvrtex_quality_etc[PROFILE_FAST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionETC, pvrtex_quality_etc[PROFILE_REGULAR], TOOL_PVRTEX.name);
+			pvrtex_quality_prvtc[PROFILE_FAST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionPVRTC, pvrtex_quality_prvtc[PROFILE_FAST], TOOL_PVRTEX.name);
+			pvrtex_quality_etc[PROFILE_FAST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionETC, pvrtex_quality_etc[PROFILE_FAST], TOOL_PVRTEX.name);
 		}
 		else if (!stricmp(key, "regular"))
 		{
@@ -97,8 +97,8 @@ void PVRTex_Option(const char *group, const char *key, const char *val, const ch
 		}
 		else if (!stricmp(key, "best"))
 		{
-			pvrtex_quality_prvtc[PROFILE_BEST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionPVRTC, pvrtex_quality_prvtc[PROFILE_REGULAR], TOOL_PVRTEX.name);
-			pvrtex_quality_etc[PROFILE_BEST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionETC, pvrtex_quality_etc[PROFILE_REGULAR], TOOL_PVRTEX.name);
+			pvrtex_quality_prvtc[PROFILE_BEST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionPVRTC, pvrtex_quality_prvtc[PROFILE_BEST], TOOL_PVRTEX.name);
+			pvrtex_quality_etc[PROFILE_BEST] = (pvrtexture::ECompressorQuality)OptionEnum(val, pvrtex_compressionOptionETC, pvrtex_quality_etc[PROFILE_BEST], TOOL_PVRTEX.name);
 		}
 		else
 			Warning("%s:%i: unknown key '%s'", filename, linenum, key);
@@ -231,13 +231,11 @@ size_t PVRTex_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth
 	}
 	else if (t->format->block == &B_PVRTC2_2BPP)
 	{
-		printf("B_PVRTC2_2BPP\n");
 		quality = pvrtex_quality_prvtc[tex_profile];
 		pixeltype = pvrtex_pixeltype_pvrtc2_2bpp;
 	}
 	else if (t->format->block == &B_PVRTC2_4BPP)
 	{
-		printf("B_PVRTC2_2BPPB_PVRTC2_4BPPn");
 		quality = pvrtex_quality_prvtc[tex_profile];
 		pixeltype = pvrtex_pixeltype_pvrtc2_4bpp;
 	}
@@ -255,6 +253,11 @@ size_t PVRTex_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewidth
 	{
 		quality = pvrtex_quality_prvtc[tex_profile];
 		pixeltype = pvrtex_pixeltype_dxt5;
+	}
+	else if (t->format->block == &B_ETC1)
+	{
+		quality = pvrtex_quality_prvtc[tex_profile];
+		pixeltype = pvrtex_pixeltype_etc1;
 	}
 	else
 	{

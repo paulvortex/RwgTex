@@ -67,11 +67,11 @@ void ETCPack_Option(const char *group, const char *key, const char *val, const c
 	if (!stricmp(group, "profiles"))
 	{
 		if (!stricmp(key, "fast"))
-			etcpack_speed[PROFILE_FAST] = OptionEnum(val, etcpack_speedOption, etcpack_speed[PROFILE_REGULAR], TOOL_ETCPACK.name);
+			etcpack_speed[PROFILE_FAST] = OptionEnum(val, etcpack_speedOption, etcpack_speed[PROFILE_FAST], TOOL_ETCPACK.name);
 		else if (!stricmp(key, "regular"))
 			etcpack_speed[PROFILE_REGULAR] = OptionEnum(val, etcpack_speedOption, etcpack_speed[PROFILE_REGULAR], TOOL_ETCPACK.name);
 		else if (!stricmp(key, "best"))
-			etcpack_speed[PROFILE_BEST] = OptionEnum(val, etcpack_speedOption, etcpack_speed[PROFILE_REGULAR], TOOL_ETCPACK.name);
+			etcpack_speed[PROFILE_BEST] = OptionEnum(val, etcpack_speedOption, etcpack_speed[PROFILE_BEST], TOOL_ETCPACK.name);
 		else
 			Warning("%s:%i: unknown key '%s'", filename, linenum, key);
 		return;

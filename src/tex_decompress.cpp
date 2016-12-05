@@ -388,7 +388,7 @@ void Decompress(TexDecodeTask *task, bool exportWholeFileWithMipLevels, LoadedIm
 		{
 			if (originalImage->width != originalImage->loadedState.width || originalImage->height != originalImage->loadedState.height)
 			{
-				FIBITMAP *scaled = fiRescale(task->image->bitmap, originalImage->loadedState.width, originalImage->loadedState.height, FILTER_LANCZOS3, false);
+				FIBITMAP *scaled = fiRescale(task->image->bitmap, originalImage->loadedState.width, originalImage->loadedState.height, FILTER_BILINEAR, false);
 				bool oldColorSwap = task->image->colorSwap; // fiBindToImage assumes image is loaded as BGR, we should keep it as is
 				fiBindToImage(scaled, task->image);
 				task->image->colorSwap = oldColorSwap;

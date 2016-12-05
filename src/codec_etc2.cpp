@@ -36,6 +36,7 @@ void CodecETC2_Init(void)
 {
 	RegisterTool(&TOOL_ETCPACK, &CODEC_ETC2);
 	RegisterTool(&TOOL_PVRTEX, &CODEC_ETC2);
+	RegisterTool(&TOOL_ETC2COMP, &CODEC_ETC2);
 }
 
 void CodecETC2_Option(const char *group, const char *key, const char *val, const char *filename, int linenum)

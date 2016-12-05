@@ -65,11 +65,11 @@ void ATITC_Option(const char *group, const char *key, const char *val, const cha
 	if (!stricmp(group, "profiles"))
 	{
 		if (!stricmp(key, "fast"))
-			atitc_compressionSpeed[PROFILE_FAST] = (ATI_TC_Speed)OptionEnum(val, atitc_compressionOption, atitc_compressionSpeed[PROFILE_REGULAR], TOOL_ATITC.name);
+			atitc_compressionSpeed[PROFILE_FAST] = (ATI_TC_Speed)OptionEnum(val, atitc_compressionOption, atitc_compressionSpeed[PROFILE_FAST], TOOL_ATITC.name);
 		else if (!stricmp(key, "regular"))
 			atitc_compressionSpeed[PROFILE_REGULAR] = (ATI_TC_Speed)OptionEnum(val, atitc_compressionOption, atitc_compressionSpeed[PROFILE_REGULAR], TOOL_ATITC.name);
 		else if (!stricmp(key, "best"))
-			atitc_compressionSpeed[PROFILE_BEST] = (ATI_TC_Speed)OptionEnum(val, atitc_compressionOption, atitc_compressionSpeed[PROFILE_REGULAR], TOOL_ATITC.name);
+			atitc_compressionSpeed[PROFILE_BEST] = (ATI_TC_Speed)OptionEnum(val, atitc_compressionOption, atitc_compressionSpeed[PROFILE_BEST], TOOL_ATITC.name);
 		else
 			Warning("%s:%i: unknown key '%s'", filename, linenum, key);
 		return;

@@ -189,7 +189,6 @@ typedef struct TexContainer_s
 // compression tools
 //
 
-#include "tool_nvdxtlib.h"
 #include "tool_nvtt.h"
 #include "tool_atitc.h"
 #include "tool_rwgtt.h"
@@ -198,6 +197,7 @@ typedef struct TexContainer_s
 #include "tool_crunch.h"
 #include "tool_rgetc1.h"
 #include "tool_pvrtex.h"
+#include "tool_etc2comp.h"
 
 //
 // Texture container files

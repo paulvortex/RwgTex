@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -13,17 +13,18 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EF16070B-8F0A-4A84-9A80-1F9E2C56E460}</ProjectGuid>
     <RootNamespace>rwgtex</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140_xp</PlatformToolset>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
     <CLRSupport>false</CLRSupport>
@@ -41,7 +42,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <_ProjectFileVersion>12.0.21005.1</_ProjectFileVersion>
+    <_ProjectFileVersion>14.0.25431.1</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>.\Release\</OutDir>
@@ -90,10 +91,10 @@
     </ResourceCompile>
     <Link>
       <AdditionalOptions>/IGNORE:4089 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>../win32/rwgtex.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>.\..\libs\nvlibs\lib\release;.\..\libs\aticompress\lib;.\..\libs\freeimage;.\..\libs\crunch\lib\VC9\Release\Win32;.\..\libs\pvrtextool\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\libs\nvlibs\lib;.\..\libs\aticompress\lib;.\..\libs\freeimage;.\..\libs\crunch\lib\VC9\Release\Win32;.\..\libs\pvrtextool\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <ProgramDatabaseFile>Release/rwgtex.pdb</ProgramDatabaseFile>
       <GenerateMapFile>false</GenerateMapFile>
@@ -144,7 +145,7 @@
       <AdditionalOptions>/IGNORE:4089 %(AdditionalOptions)</AdditionalOptions>
       <OutputFile>../win32/rwgtex.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>.\..\libs\nvlibs\lib\release;.\..\libs\aticompress\lib;.\..\libs\freeimage;.\..\libs\crunch\lib\VC9\Release\Win32;.\..\libs\pvrtextool\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\..\libs\nvlibs\lib;.\..\libs\aticompress\lib;.\..\libs\freeimage;.\..\libs\crunch\lib\VC9\Release\Win32;.\..\libs\pvrtextool\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>../win32/rwgtex.pdb</ProgramDatabaseFile>
       <GenerateMapFile>true</GenerateMapFile>
@@ -162,54 +163,38 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\src\codec_dxt.h" />
-    <ClInclude Include="..\src\codec_etc1.h" />
-    <ClInclude Include="..\src\codec_etc2.h" />
-    <ClInclude Include="..\src\codec_pvrtc.h" />
-    <ClInclude Include="..\src\codec_pvrtc2.h" />
-    <ClInclude Include="..\src\codec_unc.h" />
-    <ClInclude Include="..\src\file_dds.h" />
-    <ClInclude Include="..\src\file_ktx.h" />
-    <ClInclude Include="..\src\fs.h" />
-    <ClInclude Include="..\src\image.h" />
-    <ClInclude Include="..\src\main.h" />
-    <ClInclude Include="..\src\options.h" />
-    <ClInclude Include="..\src\scale2x.h" />
-    <ClInclude Include="..\src\scalexbr.h" />
-    <ClInclude Include="..\src\tex.h" />
-    <ClInclude Include="..\src\tex_compress.h" />
-    <ClInclude Include="..\src\tex_decompress.h" />
-    <ClInclude Include="..\src\tex_glformats.h" />
-    <ClInclude Include="..\src\tool_atitc.h" />
-    <ClInclude Include="..\src\tool_crunch.h" />
-    <ClInclude Include="..\src\tool_etcpack.h" />
-    <ClInclude Include="..\src\tool_gimp.h" />
-    <ClInclude Include="..\src\tool_nvdxtlib.h" />
-    <ClInclude Include="..\src\tool_nvtt.h" />
-    <ClInclude Include="..\src\tool_pvrtex.h" />
-    <ClInclude Include="..\src\tool_rgetc1.h" />
-    <ClInclude Include="..\src\tool_rwgtt.h" />
-    <ClInclude Include="..\src\cmd.h" />
-    <ClInclude Include="..\src\crc32.h" />
-    <ClInclude Include="..\src\dll.h" />
-    <ClInclude Include="..\src\freeimage.h" />
-    <ClInclude Include="..\src\mem.h" />
-    <ClInclude Include="..\src\resource.h" />
-    <ClInclude Include="..\src\thread.h" />
-    <ClInclude Include="..\src\unzip.h" />
-    <ClInclude Include="..\src\zip.h" />
-    <ClInclude Include="..\libs\nvlibs\inc\nvtt.h" />
-    <ClInclude Include="..\libs\nvlibs\inc\nvtt_wrapper.h" />
-    <ClInclude Include="..\libs\freeimage\FreeImage.h" />
-    <ClInclude Include="..\libs\gimpdds\ddsplugin_lib.h" />
-    <ClInclude Include="..\libs\etcpack\etcpack_lib.h" />
     <ClInclude Include="..\libs\aticompress\inc\ATI_Compress.h" />
     <ClInclude Include="..\libs\aticompress\inc\ATI_Compress_Test_Helpers.h" />
-    <ClInclude Include="..\libs\rg_etc1\rg_etc1.h" />
-    <ClInclude Include="..\libs\crunch\inc\crn_decomp.h" />
     <ClInclude Include="..\libs\crunch\inc\crnlib.h" />
+    <ClInclude Include="..\libs\crunch\inc\crn_decomp.h" />
     <ClInclude Include="..\libs\crunch\inc\dds_defs.h" />
-    <ClInclude Include="..\libs\pvrtextool\pvrtextool_lib.h" />
+    <ClInclude Include="..\libs\etc2comp\etc2comp_lib.h" />
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4.h" />
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding.h" />
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4EncodingBits.h" />
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_ETC1.h" />
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_R11.h" />
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RG11.h" />
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RGB8.h" />
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RGB8A1.h" />
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RGBA8.h" />
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcDifferentialTrys.h" />
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcErrorMetric.h" />
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcIndividualTrys.h" />
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcSortedBlockList.h" />
+    <ClInclude Include="..\libs\etc2comp\Etc\Etc.h" />
+    <ClInclude Include="..\libs\etc2comp\Etc\EtcColor.h" />
+    <ClInclude Include="..\libs\etc2comp\Etc\EtcColorFloatRGBA.h" />
+    <ClInclude Include="..\libs\etc2comp\Etc\EtcConfig.h" />
+    <ClInclude Include="..\libs\etc2comp\Etc\EtcImage.h" />
+    <ClInclude Include="..\libs\etc2comp\Etc\EtcMath.h" />
+    <ClInclude Include="..\libs\etcpack\etcpack_lib.h" />
+    <ClInclude Include="..\libs\freeimage\FreeImage.h" />
+    <ClInclude Include="..\libs\gimpdds\ddsplugin_lib.h" />
+    <ClInclude Include="..\libs\nvlibs\inc\nvtt.h" />
+    <ClInclude Include="..\libs\nvlibs\inc\nvtt_wrapper.h" />
+    <ClInclude Include="..\libs\omnilib\dpomnilib.h" />
+    <ClInclude Include="..\libs\omnilib\dpomnilibinternal.h" />
     <ClInclude Include="..\libs\pvrtextool\inc\PVRTArray.h" />
     <ClInclude Include="..\libs\pvrtextool\inc\PVRTDecompress.h" />
     <ClInclude Include="..\libs\pvrtextool\inc\PVRTError.h" />
@@ -223,17 +208,66 @@
     <ClInclude Include="..\libs\pvrtextool\inc\PVRTMap.h" />
     <ClInclude Include="..\libs\pvrtextool\inc\PVRTString.h" />
     <ClInclude Include="..\libs\pvrtextool\inc\PVRTTexture.h" />
-    <ClInclude Include="..\libs\omnilib\dpomnilib.h" />
-    <ClInclude Include="..\libs\omnilib\dpomnilibinternal.h" />
+    <ClInclude Include="..\libs\pvrtextool\pvrtextool_lib.h" />
+    <ClInclude Include="..\libs\rg_etc1\rg_etc1.h" />
+    <ClInclude Include="..\src\cmd.h" />
+    <ClInclude Include="..\src\codec_dxt.h" />
+    <ClInclude Include="..\src\codec_etc1.h" />
+    <ClInclude Include="..\src\codec_etc2.h" />
+    <ClInclude Include="..\src\codec_pvrtc.h" />
+    <ClInclude Include="..\src\codec_pvrtc2.h" />
+    <ClInclude Include="..\src\codec_unc.h" />
+    <ClInclude Include="..\src\crc32.h" />
+    <ClInclude Include="..\src\dll.h" />
+    <ClInclude Include="..\src\file_dds.h" />
+    <ClInclude Include="..\src\file_ktx.h" />
+    <ClInclude Include="..\src\freeimage.h" />
+    <ClInclude Include="..\src\fs.h" />
+    <ClInclude Include="..\src\image.h" />
+    <ClInclude Include="..\src\main.h" />
+    <ClInclude Include="..\src\mem.h" />
+    <ClInclude Include="..\src\options.h" />
+    <ClInclude Include="..\src\resource.h" />
+    <ClInclude Include="..\src\scale2x.h" />
+    <ClInclude Include="..\src\scalexbr.h" />
+    <ClInclude Include="..\src\tex.h" />
+    <ClInclude Include="..\src\tex_compress.h" />
+    <ClInclude Include="..\src\tex_decompress.h" />
+    <ClInclude Include="..\src\tex_glformats.h" />
+    <ClInclude Include="..\src\thread.h" />
+    <ClInclude Include="..\src\tool_atitc.h" />
+    <ClInclude Include="..\src\tool_crunch.h" />
+    <ClInclude Include="..\src\tool_etc2comp.h" />
+    <ClInclude Include="..\src\tool_etcpack.h" />
+    <ClInclude Include="..\src\tool_gimp.h" />
+    <ClInclude Include="..\src\tool_nvtt.h" />
+    <ClInclude Include="..\src\tool_pvrtex.h" />
+    <ClInclude Include="..\src\tool_rgetc1.h" />
+    <ClInclude Include="..\src\tool_rwgtt.h" />
+    <ClInclude Include="..\src\unzip.h" />
+    <ClInclude Include="..\src\zip.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="postbuild.bat" />
     <None Include="..\README.md" />
     <None Include="..\win32\rwgtex.ini" />
+    <None Include="postbuild.bat" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\libs\gimpdds\src\color.c" />
-    <ClCompile Include="..\libs\gimpdds\src\dxt.cpp" />
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4.cpp" />
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding.cpp" />
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_ETC1.cpp" />
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_R11.cpp" />
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RG11.cpp" />
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RGB8.cpp" />
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RGB8A1.cpp" />
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RGBA8.cpp" />
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcDifferentialTrys.cpp" />
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcIndividualTrys.cpp" />
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcSortedBlockList.cpp" />
+    <ClCompile Include="..\libs\etc2comp\Etc\Etc.cpp" />
+    <ClCompile Include="..\libs\etc2comp\Etc\EtcImage.cpp" />
+    <ClCompile Include="..\libs\etc2comp\Etc\EtcMath.cpp" />
     <ClCompile Include="..\libs\etcpack\etcdecwrap.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MaxSpeed</Optimization>
       <InlineFunctionExpansion Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AnySuitable</InlineFunctionExpansion>
@@ -252,42 +286,52 @@
       <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Speed</FavorSizeOrSpeed>
       <FloatingPointModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Fast</FloatingPointModel>
     </ClCompile>
-    <ClCompile Include="..\libs\rg_etc1\rg_etc1.cpp" />
+    <ClCompile Include="..\libs\gimpdds\src\color.c" />
+    <ClCompile Include="..\libs\gimpdds\src\dxt.cpp" />
     <ClCompile Include="..\libs\omnilib\libinternal.cpp" />
     <ClCompile Include="..\libs\omnilib\libsprite.cpp" />
+    <ClCompile Include="..\libs\pvrtextool\source\PVRTDecompress.cpp" />
+    <ClCompile Include="..\libs\rg_etc1\rg_etc1.cpp" />
+    <ClCompile Include="..\src\cmd.cpp" />
     <ClCompile Include="..\src\codec_dxt.cpp" />
     <ClCompile Include="..\src\codec_etc1.cpp" />
     <ClCompile Include="..\src\codec_etc2.cpp" />
     <ClCompile Include="..\src\codec_pvrtc.cpp" />
     <ClCompile Include="..\src\codec_pvrtc2.cpp" />
     <ClCompile Include="..\src\codec_unc.cpp" />
+    <ClCompile Include="..\src\crc32.cpp" />
+    <ClCompile Include="..\src\dll.cpp" />
     <ClCompile Include="..\src\file_dds.cpp" />
     <ClCompile Include="..\src\file_ktx.cpp" />
+    <ClCompile Include="..\src\freeimage.cpp" />
     <ClCompile Include="..\src\fs.cpp" />
     <ClCompile Include="..\src\image.cpp" />
     <ClCompile Include="..\src\main.cpp" />
+    <ClCompile Include="..\src\mem.cpp" />
     <ClCompile Include="..\src\options.cpp" />
     <ClCompile Include="..\src\scale2x.cpp" />
     <ClCompile Include="..\src\scalexbr.cpp" />
     <ClCompile Include="..\src\tex.cpp" />
     <ClCompile Include="..\src\tex_compress.cpp" />
     <ClCompile Include="..\src\tex_decompress.cpp" />
+    <ClCompile Include="..\src\thread.cpp" />
     <ClCompile Include="..\src\tool_atitc.cpp" />
     <ClCompile Include="..\src\tool_crunch.cpp" />
+    <ClCompile Include="..\src\tool_etc2comp.cpp" />
     <ClCompile Include="..\src\tool_etcpack.cpp" />
     <ClCompile Include="..\src\tool_gimp.cpp" />
     <ClCompile Include="..\src\tool_nvtt.cpp" />
     <ClCompile Include="..\src\tool_pvrtex.cpp" />
     <ClCompile Include="..\src\tool_rgetc1.cpp" />
     <ClCompile Include="..\src\tool_rwgtt.cpp" />
-    <ClCompile Include="..\src\cmd.cpp" />
-    <ClCompile Include="..\src\crc32.cpp" />
-    <ClCompile Include="..\src\dll.cpp" />
-    <ClCompile Include="..\src\freeimage.cpp" />
-    <ClCompile Include="..\src\mem.cpp" />
-    <ClCompile Include="..\src\thread.cpp" />
     <ClCompile Include="..\src\unzip.cpp" />
     <ClCompile Include="..\src\zip.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="rwgtex.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\src\rwgtex.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

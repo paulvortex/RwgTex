@@ -1,4 +1,4 @@
-// tool_crunch.h
+// tool_rg-etc1.h
 #ifndef H_TOOL_RGETC1_H
 #define H_TOOL_RGETC1_H
 

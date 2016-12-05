@@ -2,60 +2,63 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{1d91535f-f658-4b14-b394-6d519538bc72}</UniqueIdentifier>
+      <UniqueIdentifier>{27282bdc-59ca-40b7-80d3-712c9a1d96c0}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
     <Filter Include="Header Files\Util">
-      <UniqueIdentifier>{395291f2-9bfb-4e30-8898-032a63fd814a}</UniqueIdentifier>
+      <UniqueIdentifier>{0bf61603-9de5-4bbc-bffb-228457e002de}</UniqueIdentifier>
     </Filter>
     <Filter Include="Docs">
-      <UniqueIdentifier>{750ee5d4-a80d-4bf8-8dbd-24f053bb84b3}</UniqueIdentifier>
+      <UniqueIdentifier>{e50ae51a-d7c6-4f5b-bee9-e2173c477e9b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Libs">
-      <UniqueIdentifier>{cc9c7aba-152a-42d3-a862-2e6ab98b7863}</UniqueIdentifier>
+      <UniqueIdentifier>{a138e0ab-0db7-4180-83cc-32f54e335684}</UniqueIdentifier>
     </Filter>
     <Filter Include="Libs\nvTT">
-      <UniqueIdentifier>{e4ef7159-b1d3-4101-a5e3-706264b25caf}</UniqueIdentifier>
+      <UniqueIdentifier>{267788a5-4820-4b64-b0af-1da59a49fd69}</UniqueIdentifier>
     </Filter>
     <Filter Include="Libs\FreeImage">
-      <UniqueIdentifier>{99416627-75aa-4b39-a3fb-d61de5c92881}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Libs\ASTC">
-      <UniqueIdentifier>{445e4617-ad69-4671-8eab-395a3726cd41}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Libs\ASTC\Source">
-      <UniqueIdentifier>{287a3186-0ff1-4eb1-b2d4-6e12f3cdd7f9}</UniqueIdentifier>
+      <UniqueIdentifier>{af20475b-75ce-4843-a0ed-7c4f6bb7d6a8}</UniqueIdentifier>
     </Filter>
     <Filter Include="Libs\GimpDDS">
-      <UniqueIdentifier>{c4725967-6cbc-41ea-8a26-ce943b518fc1}</UniqueIdentifier>
+      <UniqueIdentifier>{3d1ebcae-5053-4a21-a1c4-c04d55d2d5bd}</UniqueIdentifier>
     </Filter>
     <Filter Include="Libs\EtcPack">
-      <UniqueIdentifier>{929c74a3-86b8-4816-b42a-1ff378b214cd}</UniqueIdentifier>
+      <UniqueIdentifier>{ab831fae-3455-4bcd-ba7e-30146401b622}</UniqueIdentifier>
     </Filter>
     <Filter Include="Libs\atiTC">
-      <UniqueIdentifier>{258b2b95-6a5f-4579-b196-257d96b87b24}</UniqueIdentifier>
+      <UniqueIdentifier>{ded1786a-a0ea-4bd6-98eb-37280f9c9d72}</UniqueIdentifier>
     </Filter>
     <Filter Include="Libs\rg_etc1">
-      <UniqueIdentifier>{0047f21b-5f4b-4193-be9f-af7753654b85}</UniqueIdentifier>
+      <UniqueIdentifier>{5170dfb8-005b-44c6-b50f-b7ee597c1794}</UniqueIdentifier>
     </Filter>
     <Filter Include="Libs\CrnLib">
-      <UniqueIdentifier>{7707f93a-3611-4d20-8a29-75907c7081c1}</UniqueIdentifier>
+      <UniqueIdentifier>{878b95de-94d7-4e01-ad86-49b6f3c22ae0}</UniqueIdentifier>
     </Filter>
     <Filter Include="Libs\PVRTexTool">
-      <UniqueIdentifier>{1d3f8480-a8bc-4305-88bd-20a58f81ee23}</UniqueIdentifier>
+      <UniqueIdentifier>{8a879602-71b1-441a-9b8e-1642ce3e8777}</UniqueIdentifier>
     </Filter>
     <Filter Include="Libs\PVRTexTool\inc">
-      <UniqueIdentifier>{d89a8e55-b5c9-43ee-8112-6a4fabdeb64f}</UniqueIdentifier>
+      <UniqueIdentifier>{49429c20-ba17-4a13-ac10-0fd24853e9b6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Libs\OmniLib">
-      <UniqueIdentifier>{cf04c4f2-70bf-41d8-8606-9d670a4e42ad}</UniqueIdentifier>
+      <UniqueIdentifier>{d97ea7c2-d4d3-4d6d-8dd1-a723f3265541}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{53626ba7-19bb-43c0-8b07-e0f31062a562}</UniqueIdentifier>
+      <UniqueIdentifier>{d799dae9-823a-43fa-8523-2fa8425edea1}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
     <Filter Include="Source Files\Util">
-      <UniqueIdentifier>{fb429874-4c03-49f5-9c94-8ecf50318b2e}</UniqueIdentifier>
+      <UniqueIdentifier>{16866948-bf23-4620-aeb7-3e7e5e42e29b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\Etc2Comp">
+      <UniqueIdentifier>{bf977707-8472-40ff-8864-a5e56cd20980}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\Etc2Comp\Etc">
+      <UniqueIdentifier>{2af656d6-91ad-44b6-ab1c-d9f43eb554f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Libs\Etc2Comp\EtcCodec">
+      <UniqueIdentifier>{896a8ae9-b0aa-4a67-ad0c-394614d3bd5e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -123,9 +126,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\tool_gimp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\tool_nvdxtlib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\tool_nvtt.h">
@@ -247,6 +247,72 @@
     </ClInclude>
     <ClInclude Include="..\libs\omnilib\dpomnilibinternal.h">
       <Filter>Libs\OmniLib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\tool_etc2comp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\etc2comp_lib.h">
+      <Filter>Libs\Etc2Comp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\Etc\Etc.h">
+      <Filter>Libs\Etc2Comp\Etc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\Etc\EtcColor.h">
+      <Filter>Libs\Etc2Comp\Etc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\Etc\EtcColorFloatRGBA.h">
+      <Filter>Libs\Etc2Comp\Etc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\Etc\EtcConfig.h">
+      <Filter>Libs\Etc2Comp\Etc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\Etc\EtcImage.h">
+      <Filter>Libs\Etc2Comp\Etc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\Etc\EtcMath.h">
+      <Filter>Libs\Etc2Comp\Etc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4.h">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding.h">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_ETC1.h">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_R11.h">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RG11.h">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RGB8.h">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RGB8A1.h">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RGBA8.h">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4EncodingBits.h">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcDifferentialTrys.h">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcErrorMetric.h">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcIndividualTrys.h">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\etc2comp\EtcCodec\EtcSortedBlockList.h">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -384,5 +450,61 @@
     <ClCompile Include="..\src\zip.cpp">
       <Filter>Source Files\Util</Filter>
     </ClCompile>
+    <ClCompile Include="..\libs\pvrtextool\source\PVRTDecompress.cpp">
+      <Filter>Libs\PVRTexTool</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tool_etc2comp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\Etc\Etc.cpp">
+      <Filter>Libs\Etc2Comp\Etc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\Etc\EtcImage.cpp">
+      <Filter>Libs\Etc2Comp\Etc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\Etc\EtcMath.cpp">
+      <Filter>Libs\Etc2Comp\Etc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4.cpp">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding.cpp">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_ETC1.cpp">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_R11.cpp">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RG11.cpp">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RGB8.cpp">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RGB8A1.cpp">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcBlock4x4Encoding_RGBA8.cpp">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcDifferentialTrys.cpp">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcIndividualTrys.cpp">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcSortedBlockList.cpp">
+      <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="rwgtex.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\src\rwgtex.ico" />
   </ItemGroup>
 </Project>

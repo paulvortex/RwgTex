@@ -126,7 +126,7 @@ void CodecPVRTC_Decode(TexDecodeTask *task)
 	// decompress
 	// vortex: since BPP is 4, data is always properly aligned, so we dont need pitch
 	byte *data = Image_GetData(task->image, NULL, NULL);
-	PVRTDecompressPVRTC(task->pixeldata, do2bit, task->image->width, task->image->height, data);
+	pvr::PVRTDecompressPVRTC(task->pixeldata, do2bit, task->image->width, task->image->height, data);
 	if (havebpp != task->image->bpp)
 		Image_ConvertBPP(task->image, havebpp);
 }

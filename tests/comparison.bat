@@ -9,21 +9,16 @@ IF "%1"=="" (
 rmdir ~comparison_%profile% /S /Q
 mkdir ~comparison_%profile%
 echo --- running comparison (%profile%) ---
-FOR %%i IN (images\*.tga) DO (
+FOR %%i IN (images\*.*) DO (
 	echo %%~ni
 	REM --- DXT ---
 	FOR %%t IN (nv ati gimp crunch pvrtex) DO (
 		echo ..%%t ^(DXT^)
 		%rwgtex% -f "%%i" -dxt -o "~comparison_%profile%\%%~ni" -%%t -%profile% -t
-		echo ..%%t ^(DXT,sRGB^)
-		%rwgtex% -f "%%i" -dxt -o "~comparison_%profile%\%%~ni" -%%t -%profile% -t -srgb
 		FOR %%x IN (rxgb ycg1 ycg2) DO (
 			echo ..%%t ^(DXT,%%x^)
 			%rwgtex% -f "%%i" -dxt -o "~comparison_%profile%\%%~ni" -%%t -%profile% -t -%%x
-			echo ..%%t ^(DXT,%%x,sRGB^)
-			%rwgtex% -f "%%i" -dxt -o "~comparison_%profile%\%%~ni" -%%t -%profile% -t -%%x -srgb
 		)
-
 	)
 	REM --- ETC1 ---
 	FOR %%t IN (etcpack ati rgetc1 pvrtex) DO (
@@ -31,21 +26,17 @@ FOR %%i IN (images\*.tga) DO (
 		%rwgtex% -f "%%i" -etc1 -o "~comparison_%profile%\%%~ni" -%%t -%profile% -t
 	)
 	REM --- ETC2 ---
-	FOR %%t IN (etcpack) DO (
+	FOR %%t IN (etcpack, etc2comp pvrtex) DO (
 		echo ..%%t ^(ETC2^)
 		%rwgtex% -f "%%i" -etc2 -o "~comparison_%profile%\%%~ni" -%%t -%profile% -t
 	)
-	REM --- PVRTC (4BPP) ---
+	REM --- PVRTC ---
 	FOR %%t IN (pvrtex) DO (
-		echo ..%%t ^(PVRTC 4BPP^)
-		%rwgtex% -f "%%i" -pvrtc -pvr4 -o "~comparison_%profile%\%%~ni" -%%t -%profile% -tk
+		FOR %%x IN (pvr2 pvr4) DO (
+			echo ..%%t ^(PVRTC,%%x^)
+			%rwgtex% -f "%%i" -pvrtc -o "~comparison_%profile%\%%~ni" -%%t -%profile% -tk -%%x
+		)
 	)
-	REM --- PVRTC (2BPP) ---
-	FOR %%t IN (pvrtex) DO (
-		echo ..%%t ^(PVRTC 2BPP^)
-		%rwgtex% -f "%%i" -pvrtc -pvr2 -o "~comparison_%profile%\%%~ni" -%%t -%profile% -tk
-	)
-	
 )
 IF "%pausable%"=="" (
 	GOTO EXIT

@@ -25,7 +25,7 @@ TexTool TOOL_CRUNCH =
 // tool options
 crn_dxt_quality         crnlib_speed[NUM_PROFILES];
 crn_dxt_compressor_type crnlib_compressor_type;
-OptionList               crnlib_speedOption[] = 
+OptionList              crnlib_speedOption[] = 
 { 
 	{ "superfast", cCRNDXTQualitySuperFast }, 
 	{ "fast", cCRNDXTQualityFast }, 
@@ -64,11 +64,11 @@ void Crunch_Option(const char *group, const char *key, const char *val, const ch
 	if (!stricmp(group, "profiles"))
 	{
 		if (!stricmp(key, "fast"))
-			crnlib_speed[PROFILE_FAST] = (crn_dxt_quality)OptionEnum(val, crnlib_speedOption, crnlib_speed[PROFILE_REGULAR], TOOL_CRUNCH.name);
+			crnlib_speed[PROFILE_FAST] = (crn_dxt_quality)OptionEnum(val, crnlib_speedOption, crnlib_speed[PROFILE_FAST], TOOL_CRUNCH.name);
 		else if (!stricmp(key, "regular"))
 			crnlib_speed[PROFILE_REGULAR] = (crn_dxt_quality)OptionEnum(val, crnlib_speedOption, crnlib_speed[PROFILE_REGULAR], TOOL_CRUNCH.name);
 		else if (!stricmp(key, "best"))
-			crnlib_speed[PROFILE_BEST] = (crn_dxt_quality)OptionEnum(val, crnlib_speedOption, crnlib_speed[PROFILE_REGULAR], TOOL_CRUNCH.name);
+			crnlib_speed[PROFILE_BEST] = (crn_dxt_quality)OptionEnum(val, crnlib_speedOption, crnlib_speed[PROFILE_BEST], TOOL_CRUNCH.name);
 		else
 			Warning("%s:%i: unknown key '%s'", filename, linenum, key);
 		return;

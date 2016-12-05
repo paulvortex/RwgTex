@@ -202,13 +202,13 @@ void Compress(TexEncodeTask *task)
 	Image_ConvertBPP(task->image, dest_bpp);
 
 	// apply scalers
+	powerOfTwo = (tex_allowNPOT && !(task->format->features & FF_POT)) ? false : true;
 	if (FS_FileMatchList(task->file, task->image, tex_scale4xFiles) || tex_forceScale4x)
 		Image_ScaleBy4(task->image, tex_firstScaler, tex_secondScaler, powerOfTwo);
 	else if (FS_FileMatchList(task->file, task->image, tex_scale2xFiles) || tex_forceScale2x)
 		Image_ScaleBy2(task->image, tex_firstScaler, powerOfTwo);
 
 	// apply dimensions
-	powerOfTwo = (tex_allowNPOT && !(task->format->features & FF_POT)) ? false : true;
 	squareSize = (task->format->features & FF_SQUARE) ? true : false;
 	Image_MakeDimensions(task->image, powerOfTwo, squareSize);
 
