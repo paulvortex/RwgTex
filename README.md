@@ -16,7 +16,7 @@ Features
 - supported specific texture containers: SPR32, Quake 1 .BSP
 - textures read/export for .ZIP archives
 - wide range of options to get it run with particlular engine/mod
-- supported compression formats: DXT1-5
+- supported compression formats: DXT1-5, ETC1, ETC2, PVRTC
 - supported DXT swizzled formats: Doom 3 RXGB, YCoCg, YCoCg Scaled, YCoCg Gamma 2.0, YCoCg Scaled Gamma 2.0
 - support uncompressed BGRA DDS
 - saves a cache of files crc32 to check if they were modified (speeds up
@@ -53,6 +53,7 @@ Commandline parms
 ------
 
 -dds       : enforces DDS file creation and texture compression
+-ktx       : enforces KTX (Chronos Texture) file creation and texture compression
 -w         : wait for key press once finished
 -nw        : don't wait for key press
 -f         : suppress any prints
@@ -61,9 +62,13 @@ Commandline parms
 -cd X      : change to this dir once started
 -nomip     : do not generate any mip-maps
 -opt X     : load custom option file
--ati       : use ATI compressor instead of mixed mode
--nv        : use Nvidia DXTlib instead of mixed mode
+-ati       : use ATI compressor
+-nv        : use Nvidia DXTlib (deprecated to Nvidia Texture Tools) compressor
+-nvtt      : use Nvidia Texture Tools compressor
 -gimp      : use GIMP DDS plugin compressor
+-etcpack   : use EtcPack compressor
+-pvrtex    : use PowerVR's PvrTex compressor
+-etc2comp  : use Google's Etc2Comp compressor
 -npot      : allow non-power-of-two texture dimensions
 -nm        : forces texture to be processed as normalmap
 -dxt1      : forces DXT1 compression
@@ -133,6 +138,10 @@ PVR2A  : 4 bits per pixel, RGBA
 
 Compression modes
 ------
+0. Default compressor. Use best speed/quality compressor for the current codec.
+   For the DXT it's ATI Compressonator for color, NVidia Texture Tools for normalmaps
+   For ETC1/ETC1 it's Google's Etc2Comp
+   For PVRTC it is PowerVR TexTool
 1. "ATI" - AMD's The Compressonator tool.
    Supported compressions: DXT1-5, RXGB, YCG1-4
 2. "NV" - NVidia DXTlib compressor.
@@ -140,24 +149,19 @@ Compression modes
    Now deprecated to NVidia Texture Tools (all options is keeped for compatibility reasons).
 3. "NVTT" - NVidia Texture Tools.
    Supported compressions: DXT1-5, RXGB, YCG1-4
-4. "Hybrid"  - mixed compressor which uses ATI mode for color textures (as The
-   Compressonator generally gives better perceptural quality, which is good for
-   color textures. NVidia DXTlib is used for normalmaps and heightmaps
-   (as it gives better PSNR).
+4. "CrnLib" - Crunch Library.
    Supported compressions: DXT1-5, RXGB, YCG1-4
-5. "CrnLib" - Crunch Library.
-   Supported compressions: DXT1-5, RXGB, YCG1-4
-6. "PvrTex" - PowerVR's PvrTex tool.
+5. "PvrTex" - PowerVR's PvrTex tool.
    Supported compressions: PVR2, PVR2A, PVR4, PVR4A, DXT1-5, RXGB, YCG1-4, ETC1
-7. "RgEtc1" - Fast, high quality ETC1 compression tool
+6. "RgEtc1" - Fast, high quality ETC1 compression tool
    Supported compressions: ETC1
-8. "EtcPack" - Official ETC/ETC2 compression tool
+7. "EtcPack" - Official ETC/ETC2 compression tool
    Supported compressions: ETC1, ETC2, ETC2A, ETC2A1, EAC1, EAC2
-9. "Etc2Comp" - Google's ETC/ETC2 compression tool
+8. "Etc2Comp" - Google's ETC/ETC2 compression tool
    Supported compressions: ETC1, ETC2, ETC2A, ETC2A1, EAC1, EAC2
-10. "Gimp DDS" - GIMP DDS plugin
+9. "Gimp DDS" - GIMP DDS plugin
    Supported compressions: DXT1-5, YCG1-4
-11. "BRGA" - simple tool that write 32-bit BGRA files
+10. "BRGA" - simple tool that write 32-bit BGRA files
    Supported compressions: none
 
 Trick: .ini file have parms to set compression mode on a per-file basis using name masks.
