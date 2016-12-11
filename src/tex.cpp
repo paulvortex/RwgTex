@@ -913,7 +913,7 @@ void Tex_Help(void)
 {
 	waitforkey = true;
 	Print(
-	"Usage: rwgtex \"input path\" [-o \"output path\"] [codec] [options]\n"
+	"Usage: rwgtex [options] \"input path\" [-o \"output path\"] [codec] [codec options]\n"
 	"\n"
 	"Input path:\n"
 	"  - folder\n"

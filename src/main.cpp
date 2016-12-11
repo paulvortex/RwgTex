@@ -19,7 +19,7 @@ int Help(void)
 	"Options:\n"
 	"       -nc: print no caption\n"
 	"        -w: wait for key when finished\n"
-	"       -mw: do not wait for key\n"
+	"       -nw: do not wait for key\n"
 	"      -mem: show memstats\n"
 	"        -v: show verbose messages\n"
 	"     -spac: solid pacifier prints\n"
@@ -34,7 +34,7 @@ int Help(void)
 	Tex_PrintCodecs();
 	Tex_PrintTools();
 	Tex_PrintContainers();
-	Print("Check out rwgtex -codec for more help\n");
+	Print("Use rwgtex -<codec> for more help\n");
 	return 0;
 }
 

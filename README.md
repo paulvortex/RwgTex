@@ -32,12 +32,13 @@ Usage
    source files used to make DDS. So next time you will run RwgTex with this
    output folder it will only convert files that was changed.
 
-2) rwgtex.exe <path>
+2) rwgtex.exe -<codec> <path>
    If <path> is file, it will convert it and place in same folder. 
    If it's a directory, it will convert all files in it and place
    in dds/ subdirectory.
 
-3) Drag&drop files or directories to .exe (it acually launches method 1 or 2)
+3) Drag&drop files or directories to .exe (it actually launches method 1 or 2).
+   Needs a codec to be forced (like, rwgtex-dxt.exe).
 
 
 General options
@@ -49,58 +50,69 @@ is used, other tricks etc.), there can be several .ini files for different
 platforms.
 
 
-Commandline parms
+Generic Commandline params
 ------
 
--dds       : enforces DDS file creation and texture compression
--ktx       : enforces KTX (Chronos Texture) file creation and texture compression
--w         : wait for key press once finished
--nw        : don't wait for key press
--f         : suppress any prints
--mem       : show memory usage stats at end
--threads X : manually sets the number of threads
--cd X      : change to this dir once started
--nomip     : do not generate any mip-maps
--opt X     : load custom option file
--ati       : use ATI compressor
--nv        : use Nvidia DXTlib (deprecated to Nvidia Texture Tools) compressor
--nvtt      : use Nvidia Texture Tools compressor
--gimp      : use GIMP DDS plugin compressor
--etcpack   : use EtcPack compressor
--pvrtex    : use PowerVR's PvrTex compressor
--etc2comp  : use Google's Etc2Comp compressor
--npot      : allow non-power-of-two texture dimensions
--nm        : forces texture to be processed as normalmap
--dxt1      : forces DXT1 compression
--dxt2      : forces DXT2 compression
--dxt3      : forces DXT3 compression
--dxt4      : forces DXT4 compression
--dxt5      : forces DXT5 compression
--rxgb      : forces RXGB compression
--ycg1      : forces YCoCg compression
--ycg2      : forces YCoCg Scaled compression
--ycg3      : forces YCoCg Gamma 2.0 compression
--ycg4      : forces YCoCg Scaled Gamma 2.0 compression
--etc1      : forces ETC1 compression
--etc2      : forces ETC2 compression
--etc2rgb   : forces ETC2RGB compression
--etc2rgba  : forces ETC2RGBA compression
--etc2rgba1 : forces ETC2RGBA1 compression
--pvr2      : forces PVRTC 2bpp compression
--pvr4      : forces PVRTC 4bpp compressi
+- -dds : enforces DDS file creation
+- -ktx : enforces KTX (Chronos Texture) file creation
+- -nc : print no captions
+- -w : wait for key press once finished
+- -nw : don't wait for key press
+- -mem : show memory usage stats
+- -v : show verbose messages
+- -spac : solid pacifier prints (no line flush)
+- -c : compact mode (only generic prints)
+- -f : function mode (suppress any prints)
+- -cd X : change to this dir once started
+- -threads X : manually sets the number of threads
+- -opt X : load custom option file
+- -errlog : writes "errlog.txt" on error
+- -version : show version info
 
--ap X      : sets archive internal path for ZIP file creation
--zipmem X  : create ZIP file is memory (X is number of megabytes),
-             makes compression of many files faster
--2x        : Scale texture by 2x before compression
--scaler x  : Sets scaler for 2x scaling, possible scalers: nearest, bilinear,
-             bicubic, bspline, catmullrom, lanczos, scale2x (default), super2x
-			 (scale 4x with backscale to 2x using lanczos filter).
--nosign    : disable DDS magic sign
--gimpsign  : enables "GIMP-DDS" magic sign which makes generated swizzled
-             DDS to be readable in GIMP
+Compression Commandline params
+------
 
-Trick: commandline parms could be included to exe name, this way they become defaults.
+- -nv : use Nvidia DXTlib (deprecated to Nvidia Texture Tools) compressor
+- -nvtt : use Nvidia Texture Tools compressor
+- -gimp : use GIMP DDS plugin compressor
+- -crunch : use Crunch (CrnLib) compressor
+- -pvrtex : use PowerVR's PvrTex compressor
+- -ati : use ATI compressor
+- -etcpack : use EtcPack compressor
+- -rgetc1 : use Rg-Etc1 compressor
+- -etc2comp : use Google's Etc2Comp compressor
+- -bgra : forces BRGA 'Compressor'
+- -dxt1 : forces DXT1 compression
+- -dxt2 : forces DXT2 compression
+- -dxt3 : forces DXT3 compression
+- -dxt4 : forces DXT4 compression
+- -dxt5 : forces DXT5 compression
+- -etc1 : forces ETC1 compression
+- -etc2 : forces ETC2 compression
+- -etc2rgb : forces ETC2RGB compression
+- -etc2rgba : forces ETC2RGBA compression
+- -etc2rgba1 : forces ETC2RGBA1 compression
+- -pvr2 : forces PVRTC 2bpp compression
+- -pvr4 : forces PVRTC 4bpp compression
+- -rxgb : forces RXGB swizzled compression
+- -ycg1 : forces YCoCg swizzled compression
+- -ycg2 : forces YCoCg Scaled swizzled compression
+- -ycg3 : forces YCoCg Gamma 2.0 swizzled compression
+- -ycg4 : forces YCoCg Scaled Gamma 2.0 swizzled compression
+
+Output generation Commandline params
+------
+
+- -dds : use DDS file format
+- -ktx : KTX (Chronos Texture) file format
+- -ap X : sets archive internal path for ZIP file creation
+- -zipmem X : create ZIP file is memory (X is number of megabytes),  makes compression of many files faster.		 
+- -2x : Scale texture by 2x before compression
+- -scaler x : Sets scaler for 2x scaling. Possible scalers: nearest, bilinear, bicubic, bspline, catmullrom, lanczos, scale2x (default), super2x (scale 4x with backscale to 2x using lanczos filter).
+- -nosign : disable DDS magic sign
+- -gimpsign  : enables "GIMP-DDS" magic sign which makes generated swizzled DDS to be readable in GIMP
+
+Trick: commandline params could be included to exe name, this way they become defaults.
 Example: rwgtex-ati-w.exe
 
 Compression formats
@@ -161,10 +173,10 @@ Compression modes
    Supported compressions: ETC1, ETC2, ETC2A, ETC2A1, EAC1, EAC2
 9. "Gimp DDS" - GIMP DDS plugin
    Supported compressions: DXT1-5, YCG1-4
-10. "BRGA" - simple tool that write 32-bit BGRA files
+10. "BGRA" - simple tool that write 32-bit BGRA files
    Supported compressions: none
 
-Trick: .ini file have parms to set compression mode on a per-file basis using name masks.
+Trick: .ini file have params to set compression mode on a per-file basis using name masks.
 
 Known issues
 ------
@@ -217,7 +229,7 @@ Known issues
   readable in GIMP)
 - Added 4x scaling. This is done by double applying 2x scale filter.
   Each pass can have its' own scale filter (by default second scaler =
-  first scaler). This feature adds new commandline parms: -4x and -scaler
+  first scaler). This feature adds new commandline params: -4x and -scaler
   and also new exe-name switches: -4x -2bilinear, -2bicubic, -2bspline,
   -2catmullrom, -2lanczos, -2scale2x, -2super2x. Not that first scaler
   always set the second scaler. So second scaler keys must be after first

@@ -46,7 +46,7 @@ void Etc2Comp_Init(void)
 	RegisterFormat(&F_EAC2, &TOOL_ETC2COMP);
 
 	// options
-	etc2comp_effortLevel[PROFILE_FAST] = 20;
+	etc2comp_effortLevel[PROFILE_FAST] = 10;
 	etc2comp_effortLevel[PROFILE_REGULAR] = 40;
 	etc2comp_effortLevel[PROFILE_BEST] = 60;
 }
@@ -117,6 +117,7 @@ size_t Etc2Comp_CompressSingleImage(byte *stream, TexEncodeTask *t, int imagewid
 	// write to stream
 	size_t encodedBytes = image.GetEncodingBitsBytes();
 	memcpy(stream, image.GetEncodingBits(), encodedBytes);
+
 	return encodedBytes;
 }
 
@@ -165,5 +166,8 @@ bool Etc2Comp_Compress(TexEncodeTask *t)
 		if (output_size)
 			stream += output_size;
 	}
+
+	// finish
+	delete floatPixels;
 	return true;
 }
