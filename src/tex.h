@@ -283,6 +283,8 @@ extern FCLIST        tex_includeFiles;
 extern FCLIST        tex_noMipFiles;
 extern FCLIST        tex_normalMapFiles;
 extern FCLIST        tex_grayScaleFiles;
+extern FCLIST        tex_glossMapFiles;
+extern FCLIST        tex_glowMapFiles;
 extern FCLIST        tex_sRGBcolorspace;
 extern bool          tex_forceBestPSNR;
 extern bool          tex_detectBinaryAlpha;

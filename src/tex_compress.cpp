@@ -291,6 +291,16 @@ void TexCompress_WorkerThread(ThreadData *thread)
 				image->datatype = IMAGE_NORMALMAP;
 			else if (FS_FileMatchList(task.file, image, tex_grayScaleFiles))
 				image->datatype = IMAGE_GRAYSCALE;
+			else if (FS_FileMatchList(task.file, image, tex_glossMapFiles))
+				image->datatype = IMAGE_GLOSSMAP;
+			else if (FS_FileMatchList(task.file, image, tex_glowMapFiles))
+				image->datatype = IMAGE_GLOWMAP;
+
+			// special texture formats normalmap, gloss stores render-specific data in alpha channel
+			// disable punch-through alpha for them
+			if (image->datatype != IMAGE_COLOR)
+				if (image->hasAlpha)
+					image->hasGradientAlpha = true;
 
 			// postprocess and export all frames for all encoders
 			size_t numexported = 0;
@@ -623,6 +633,8 @@ void TexCompress_Option(const char *section, const char *group, const char *key,
 	if (!stricmp(group, "nomip")) { OptionFCList(&tex_noMipFiles, key, val); return; }
 	if (!stricmp(group, "is_normalmap")) { OptionFCList(&tex_normalMapFiles, key, val); return; }
 	if (!stricmp(group, "is_heightmap")) { OptionFCList(&tex_grayScaleFiles, key, val); return; }
+	if (!stricmp(group, "is_glossmap")) { OptionFCList(&tex_glossMapFiles, key, val); return; }
+	if (!stricmp(group, "is_glowmap")) { OptionFCList(&tex_glowMapFiles, key, val); return; }
 	if (!stricmp(group, "archives")) { OptionFCList(&tex_archiveFiles, key, val); return; }
 	if (!stricmp(group, "scale") || !stricmp(group, "scale_2x")) { OptionFCList(&tex_scale2xFiles, key, val); return; }
 	if (!stricmp(group, "scale_4x")) { OptionFCList(&tex_scale2xFiles, key, val); return; }

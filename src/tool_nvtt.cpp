@@ -150,11 +150,10 @@ bool NvTT_Compress_Task(TexEncodeTask *t, nvtt::Quality quality, bool dithering)
 	if (t->image->hasAlpha)
 		inputOptions.setAlphaMode(nvtt::AlphaMode_Transparency);
 	else
-		inputOptions.setAlphaMode(nvtt::AlphaMode_None);
+		inputOptions.setAlphaMode(nvtt::AlphaMode_Transparency);
 
 	//if (image->useChannelWeighting)
 	//	compressionOptions.setColorWeights(image->weightRed, image->weightGreen, image->weightBlue);
-
 	if (t->format->block == &B_DXT1)
 	{
 		if (t->image->hasAlpha)
@@ -178,7 +177,7 @@ bool NvTT_Compress_Task(TexEncodeTask *t, nvtt::Quality quality, bool dithering)
 	compressionOptions.setQuality(quality);
 
 	// dithering
-	compressionOptions.setQuantization(dithering, false, t->image->hasAlpha && t->image->hasGradientAlpha);
+	compressionOptions.setQuantization(dithering, false, t->image->hasAlpha && !t->image->hasGradientAlpha);
 
 	// set output parameters
 	outputOptions.setOutputHeader(false);

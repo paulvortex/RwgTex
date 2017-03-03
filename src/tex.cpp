@@ -41,6 +41,8 @@ FCLIST        tex_includeFiles;
 FCLIST        tex_noMipFiles;
 FCLIST        tex_normalMapFiles;
 FCLIST        tex_grayScaleFiles;
+FCLIST        tex_glossMapFiles;
+FCLIST        tex_glowMapFiles;
 FCLIST        tex_sRGBcolorspace;
 bool          tex_forceBestPSNR;
 bool          tex_detectBinaryAlpha;
@@ -842,6 +844,8 @@ void Tex_Init(void)
 	tex_sRGBcolorspace.clear();
 	tex_normalMapFiles.clear();
 	tex_grayScaleFiles.clear();
+	tex_glossMapFiles.clear();
+	tex_glowMapFiles.clear();
 	tex_gameDir = "id1";
 	tex_archiveFiles.clear();
 	tex_addPath = "";

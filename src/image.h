@@ -23,7 +23,9 @@ typedef enum
 {
 	IMAGE_COLOR,
 	IMAGE_NORMALMAP,
-	IMAGE_GRAYSCALE
+	IMAGE_GRAYSCALE,
+	IMAGE_GLOSSMAP,
+	IMAGE_GLOWMAP
 }ImageType;
 
 // scalers
@@ -128,7 +130,7 @@ void  Image_FreeMaps(LoadedImage *image);
 void  Image_ScaleBy2(LoadedImage *image, ImageScaler scaler, bool makePowerOfTwo);
 void  Image_ScaleBy4(LoadedImage *image, ImageScaler scaler, ImageScaler scaler2, bool makePowerOfTwo);
 void  Image_MakeDimensions(LoadedImage *image, bool powerOfTwo, bool square);
-void  Image_MakeAlphaBinary(LoadedImage *image, int thresh);
+//void  Image_MakeAlphaBinary(LoadedImage *image, int thresh);
 void  Image_SetAlpha(LoadedImage *image, byte value);
 byte *Image_GetData(LoadedImage *image, size_t *datasize, int *pitch);
 byte *Image_GetUnalignedData(LoadedImage *image, size_t *datasize, bool *data_allocated, bool force_allocate);

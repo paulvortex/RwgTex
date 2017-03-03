@@ -694,6 +694,7 @@ void Image_MakeDimensions(LoadedImage *image, bool powerOfTwo, bool square)
 }
 
 // make image's alpha binary
+/*
 void Image_MakeAlphaBinary(LoadedImage *image, int thresh)
 {
 	if (!image->bitmap)
@@ -714,6 +715,7 @@ void Image_MakeAlphaBinary(LoadedImage *image, int thresh)
 	image->hasGradientAlpha = false;
 	image->swizzled = true;
 }
+*/
 
 // force alpha to certain value
 void Image_SetAlpha(LoadedImage *image, byte value)
@@ -912,7 +914,6 @@ void Image_LoadFinish(LoadedImage *image)
 
 	// we want bitmap image type
 	image->bitmap = fiConvertType(image->bitmap, FIT_BITMAP);
-
 	// check color type (only RGB and RGBA allowed)
 	FREE_IMAGE_COLOR_TYPE colorType = FreeImage_GetColorType(image->bitmap);
 	image->bpp = FreeImage_GetBPP(image->bitmap) / 8;
