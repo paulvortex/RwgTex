@@ -231,6 +231,7 @@
     <ClInclude Include="..\src\scale2x.h" />
     <ClInclude Include="..\src\scalexbr.h" />
     <ClInclude Include="..\src\tex.h" />
+    <ClInclude Include="..\src\tex_calcerror.h" />
     <ClInclude Include="..\src\tex_compress.h" />
     <ClInclude Include="..\src\tex_decompress.h" />
     <ClInclude Include="..\src\tex_glformats.h" />
@@ -312,6 +313,7 @@
     <ClCompile Include="..\src\scale2x.cpp" />
     <ClCompile Include="..\src\scalexbr.cpp" />
     <ClCompile Include="..\src\tex.cpp" />
+    <ClCompile Include="..\src\tex_calcerror.cpp" />
     <ClCompile Include="..\src\tex_compress.cpp" />
     <ClCompile Include="..\src\tex_decompress.cpp" />
     <ClCompile Include="..\src\thread.cpp" />

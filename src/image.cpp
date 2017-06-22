@@ -117,8 +117,6 @@ void ImageData_SwapRB(byte *data, int width, int height, int pitch, int bpp)
 
 // ImageData_ConvertSRGB
 // convert RGB->sRGB colorspace
-#define linear_to_srgb(c) (((c) < 0.0031308f) ? (c) * 12.92f : 1.055f * (float)pow((c), 1.0f/2.4f) - 0.055f)
-#define srgb_to_linear(c) (((c) <= 0.04045f) ? (c) * (1.0f / 12.92f) : (float)pow(((c) + 0.055f)*(1.0f/1.055f), 2.4f))
 void ImageData_ConvertSRGB(byte *data, int width, int height, int pitch, int bpp, bool srcSRGB, bool dstSRGB)
 {
 	byte *in, *end, *lines;

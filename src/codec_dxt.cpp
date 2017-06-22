@@ -15,8 +15,8 @@ TexBlock  B_DXT3  = { FOURCC('D','X','T','3'), "DXT3", 4, 4, 128 };
 TexBlock  B_DXT4  = { FOURCC('D','X','T','4'), "DXT4", 4, 4, 128 };
 TexBlock  B_DXT5  = { FOURCC('D','X','T','5'), "DXT5", 4, 4, 128 };
 
-TexFormat F_DXT1  = { FOURCC('D','X','T','1'), "DXT1", "DirectX Texture Compression 1",  "dxt1", &B_DXT1, &CODEC_DXT, GL_COMPRESSED_RGB_S3TC_DXT1_EXT,  GL_COMPRESSED_SRGB_S3TC_DXT1_EXT,       GL_RGB,  0, FF_SRGB                                                                       };
-TexFormat F_DXT1A = { FOURCC('D','X','T','1'), "DXT1A","DirectX Texture Compression 1A", "dxt1a",&B_DXT1, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT, GL_RGBA, 0, FF_ALPHA | FF_BINARYALPHA | FF_SRGB                                           };
+TexFormat F_DXT1  = { FOURCC('D','X','T','1'), "DXT1", "DirectX Texture Compression 1",  "dxt1", &B_DXT1, &CODEC_DXT, GL_COMPRESSED_RGB_S3TC_DXT1_EXT,  GL_COMPRESSED_SRGB_S3TC_DXT1_EXT,       GL_RGB,  0, FF_SRGB };
+TexFormat F_DXT1A = { FOURCC('D','X','T','1'), "DXT1A","DirectX Texture Compression 1A", "dxt1a",&B_DXT1, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT, GL_RGBA, 0, FF_ALPHA | FF_PUNCH_THROUGH_ALPHA | FF_SRGB                                           };
 TexFormat F_DXT2  = { FOURCC('D','X','T','2'), "DXT2", "DirectX Texture Compression 2",  "dxt2", &B_DXT2, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT, GL_RGBA, 0, FF_ALPHA | FF_SRGB,                   Swizzle_Premult                         };
 TexFormat F_DXT3  = { FOURCC('D','X','T','3'), "DXT3", "DirectX Texture Compression 3",  "dxt3", &B_DXT3, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT3_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT, GL_RGBA, 0, FF_ALPHA | FF_SRGB                                                            };
 TexFormat F_DXT4  = { FOURCC('D','X','T','4'), "DXT4", "DirectX Texture Compression 4",  "dxt4", &B_DXT4, &CODEC_DXT, GL_COMPRESSED_RGBA_S3TC_DXT5_EXT, GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT, GL_RGBA, 0, FF_ALPHA | FF_SRGB,                   Swizzle_Premult                         };

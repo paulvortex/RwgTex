@@ -188,6 +188,34 @@ Known issues
  Version History + Changelog
 --------------------------------------------------------------------------------
 
+1.8
+------
+- Major improvements for better compression ratio/quality tradeoff (see below).
+- New image parameters to check in file include/exclude lists
+  ([discard], [input], [nomip], [is_normalmap], [scale] et cetera):
+  width, height, srgb (0/1), type=glowmap, type=glossmap.
+- New operators for file include/exclude lists:
+  >= - greater or equal;
+  <= - lesser or equal;
+  !>= - not greater or equal (exclude operator);
+  !<= - not lesser or equal (exclude operator);
+- Improved compression error visualisation (-tek ,-tae options),
+  1) now using sRGB-based perceptural model
+  2) calculates average error, dispersion, round mean square.
+- New "-stat filename" option, which writes CSV file of compression statistics.
+- New compression error parameters to check in file include/exclude lists
+  error - average error (use =, >=, <=, !=, !>=, !<= operators);
+  dispersion - average dispersion;
+  rms - round mean square;
+  This currently works only in [discard] CODEC section.
+  Once given, this parameters lets rwgtex to calculate compression errors
+  and discard compression if image, forcing fallback codec. This can be used
+  to force textures with many compression errors to be stored in uncompressed BGRA.
+- Concantenation of rules in file include/exclude list. Example:
+  type=color
+  &&rms>=10
+  this will make a solid rule (type EQUAL color AND rms GREATER_OR_EQUAL 10).  
+
 1.7
 ------
 - Project moved to MSVS 2015

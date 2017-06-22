@@ -17,7 +17,7 @@ TexBlock  B_EAC2    = { FOURCC('E','A','C','2'), "EAC2",   4, 4, 128 };
 
 TexFormat F_ETC2    = { FOURCC('E','T','C','2'), "ETC2",   "ETC2 RGB",    "etc2rgb",   &B_ETC2,  &CODEC_ETC2, GL_COMPRESSED_RGB8_ETC2,                     GL_COMPRESSED_SRGB8_ETC2,                     GL_RGBA, 0, FF_SRGB };
 TexFormat F_ETC2A   = { FOURCC('E','T','C','A'), "ETC2A",  "ETC2 RGBA",   "etc2rgba",  &B_ETC2A, &CODEC_ETC2, GL_COMPRESSED_RGBA8_ETC2_EAC,                GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC,          GL_RGBA, 0, FF_ALPHA | FF_SRGB };
-TexFormat F_ETC2A1  = { FOURCC('E','T','C','P'), "ETC2A1", "ETC2 RGBA1",  "etc2rgba1", &B_ETC2A1,&CODEC_ETC2, GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2, GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2, GL_RGBA, 0, FF_ALPHA | FF_BINARYALPHA | FF_SRGB };
+TexFormat F_ETC2A1  = { FOURCC('E','T','C','P'), "ETC2A1", "ETC2 RGBA1",  "etc2rgba1", &B_ETC2A1,&CODEC_ETC2, GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2, GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2, GL_RGBA, 0, FF_ALPHA | FF_PUNCH_THROUGH_ALPHA | FF_SRGB };
 TexFormat F_EAC1    = { FOURCC('E','A','C','1'), "EAC1",   "ETC2 R",      "eac1",      &B_EAC1,  &CODEC_ETC2, GL_COMPRESSED_R11_EAC,                       0,                                            GL_RED };
 TexFormat F_EAC2    = { FOURCC('E','A','C','2'), "EAC2",   "ETC2 RG",     "eac2",      &B_EAC2,  &CODEC_ETC2, GL_COMPRESSED_RG11_EAC,                      0,                                            GL_RG };
    

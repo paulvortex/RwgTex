@@ -314,6 +314,9 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\tex_calcerror.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="postbuild.bat">
@@ -497,6 +500,9 @@
     </ClCompile>
     <ClCompile Include="..\libs\etc2comp\EtcCodec\EtcSortedBlockList.cpp">
       <Filter>Libs\Etc2Comp\EtcCodec</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tex_calcerror.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

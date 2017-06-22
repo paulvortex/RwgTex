@@ -68,10 +68,10 @@ void GenerateMipMaps(TexEncodeTask *task, bool sRGB)
 	Image_FreeMaps(image);
 
 	// conversions needed
-	mipLevels = (!tex_noMipmaps && !FS_FileMatchList(task->file, image, tex_noMipFiles) && !(task->format->features & FF_NOMIP)) ? true : false;
+	mipLevels = (!tex_noMipmaps && !FS_FileMatchList(task->file, image, tex_noMipFiles.items) && !(task->format->features & FF_NOMIP)) ? true : false;
 	conversions.ConvertTosRGB = (image->sRGB != sRGB && sRGB == true);
 	conversions.ConvertToLinear = (image->sRGB != sRGB && sRGB == false);
-	conversions.BinaryAlpha = (task->format->features & FF_BINARYALPHA && image->hasAlpha) ? true : false;
+	conversions.BinaryAlpha = (task->format->features & FF_PUNCH_THROUGH_ALPHA && image->hasAlpha) ? true : false;
 	conversions.ColorSwizzle = task->format->colorSwizzle;
 	conversions.SwapColors = ((image->colorSwap == true && !(task->tool->inputflags & (TEXINPUT_BGR|TEXINPUT_BGRA))) || (image->colorSwap == false && !(task->tool->inputflags & (TEXINPUT_RGB|TEXINPUT_RGBA)))) ? true : false;
 	any_conversions = (conversions.BinaryAlpha || conversions.ConvertTosRGB || conversions.ConvertToLinear || conversions.SwapColors || conversions.ColorSwizzle != NULL) ? true : false;
@@ -128,6 +128,55 @@ void GenerateMipMaps(TexEncodeTask *task, bool sRGB)
 /*
 ==========================================================================================
 
+Writing statistics
+
+==========================================================================================
+*/
+
+void InitStats()
+{
+	FILE *f;
+	f = SafeOpenWrite(tex_statsFile);
+	SafePuts(f, "FileName;Event;ImageType;Format;Block;AverageError;Dispersion;RootMeanSquare;\n");
+	fclose(f);
+}
+
+void WriteStats(char *outfile, char *event, TexEncodeTask *task, TexCalcErrors *calc)
+{
+	char buf[8192], num[128];
+
+	FILE *f;
+	f = SafeOpen(tex_statsFile, "a");
+	sprintf_s(buf, sizeof(buf), "\"%s\";\"%s\";\"%s\";\"%s\";\"%s\";", outfile, event,
+		task->image != NULL ? OptionEnumName((int)task->image->datatype, ImageTypes, "unknown", "bad") : "",
+		(task != NULL && task->format != NULL) ? task->format->name : "", (task != NULL && task->format != NULL) ? task->format->block->name : "");
+	// error calc
+	if (calc != NULL)
+	{
+		// average
+		sprintf_s(num, sizeof(num), "%f", calc->average);
+		Conv(num, '.', ',');
+		strcat_s(buf, sizeof(buf), num);
+		strcat_s(buf, sizeof(buf), ";");
+		// dispersion
+		sprintf_s(num, sizeof(num), "%f", calc->dispersion);
+		Conv(num, '.', ',');
+		strcat_s(buf, sizeof(buf), num);
+		strcat_s(buf, sizeof(buf), ";");
+		// rms
+		sprintf_s(num, sizeof(num), "%f", calc->rms);
+		Conv(num, '.', ',');
+		strcat_s(buf, sizeof(buf), num);
+		strcat_s(buf, sizeof(buf), ";");
+	}
+	SafePuts(f, buf);
+	SafePuts(f, "\n");
+	fclose(f);
+}
+
+/*
+==========================================================================================
+
   Compress
 
 ==========================================================================================
@@ -144,7 +193,7 @@ void Compress(TexEncodeTask *task)
 	{
 		for (vector<TexTool*>::iterator i = task->codec->tools.begin(); i < task->codec->tools.end(); i++)
 		{
-			if (FS_FileMatchList(task->file, task->image, (*i)->forceFileList))
+			if (FS_FileMatchList(task->file, task->image, (*i)->forceFileList.items))
 			{
 				task->tool = *i;
 				break;
@@ -159,7 +208,7 @@ void Compress(TexEncodeTask *task)
 	{
 		for (vector<TexFormat*>::iterator i = task->codec->formats.begin(); i < task->codec->formats.end(); i++)
 		{
-			if (FS_FileMatchList(task->file, task->image, (*i)->forceFileList))
+			if (FS_FileMatchList(task->file, task->image, (*i)->forceFileList.items))
 			{
 				task->format = *i;
 				break;
@@ -181,7 +230,7 @@ void Compress(TexEncodeTask *task)
 	sRGB = false;
 	if (tex_sRGB_allow && (task->format->features & (FF_SRGB|FF_SWIZZLE_INTERNAL_SRGB)))
 	{
-		sRGB = (task->image->sRGB  || tex_sRGB_forceconvert || FS_FileMatchList(task->file, task->image, tex_sRGBcolorspace));
+		sRGB = (task->image->sRGB  || tex_sRGB_forceconvert || FS_FileMatchList(task->file, task->image, tex_sRGBcolorspace.items));
 		if (tex_sRGB_autoconvert && !sRGB && (task->image->sRGB == false))
 		{
 			int pitch;
@@ -203,9 +252,9 @@ void Compress(TexEncodeTask *task)
 
 	// apply scalers
 	powerOfTwo = (tex_allowNPOT && !(task->format->features & FF_POT)) ? false : true;
-	if (FS_FileMatchList(task->file, task->image, tex_scale4xFiles) || tex_forceScale4x)
+	if (FS_FileMatchList(task->file, task->image, tex_scale4xFiles.items) || tex_forceScale4x)
 		Image_ScaleBy4(task->image, tex_firstScaler, tex_secondScaler, powerOfTwo);
-	else if (FS_FileMatchList(task->file, task->image, tex_scale2xFiles) || tex_forceScale2x)
+	else if (FS_FileMatchList(task->file, task->image, tex_scale2xFiles.items) || tex_forceScale2x)
 		Image_ScaleBy2(task->image, tex_firstScaler, powerOfTwo);
 
 	// apply dimensions
@@ -236,8 +285,10 @@ void TexCompress_WorkerThread(ThreadData *thread)
 	TexWriteData *WriteData;
 	TexEncodeTask task = { 0 };
 	TexCodec *codec;
-	char *ext;
-	int work;
+	TexCalcErrors *calc;
+	char *ext, outfile[MAX_FPATH];
+	int work, disabled_jumpcount;
+	bool disabled_by_error_control;
 
 	SharedData = (TexCompressData *)thread->data;
 
@@ -262,22 +313,42 @@ void TexCompress_WorkerThread(ThreadData *thread)
 			if (image->bitmap == NULL)
 				Image_Load(task.file, image);
 			if (image->bitmap == NULL)
+			{
+				if (tex_statsFile[0])
+					WriteStats(outfile, "SkipNotLoaded", &task, NULL);
 				continue;
+			}
 			
 			// check if codec accepts task
 			// discarded files get fallback codec
+			
+			disabled_by_error_control = false;
+			disabled_jumpcount = 0;
+tryagain:
 			task.codec = codec;
 			if (!task.codec->forceFormat)
 			{
 				if (task.codec->disabled)
+				{
+					if (tex_statsFile[0])
+						WriteStats(outfile, "CodecDisabled", &task, NULL);
 					continue;
-				if (!task.codec->fAccept(&task) || FS_FileMatchList(task.file, task.image, task.codec->discardList))
+				}
+				if (!task.codec->fAccept(&task) || FS_FileMatchList(task.file, task.image, task.codec->discardList.items) || disabled_by_error_control)
 				{
 					task.codec = task.codec->fallback;
 					if (!task.codec)
+					{
+						if (tex_statsFile[0])
+							WriteStats(outfile, "CodecNoFallback", &task, NULL);
 						continue;
+					}
 					if (task.codec->disabled)
+					{
+						if (tex_statsFile[0])
+							WriteStats(outfile, "CodecFallbackDisabled", &task, NULL);
 						continue;
+					}
 				}
 			}
 
@@ -287,13 +358,13 @@ void TexCompress_WorkerThread(ThreadData *thread)
 
 			// detect special texture types
 			image->datatype = IMAGE_COLOR;
-			if (FS_FileMatchList(task.file, image, tex_normalMapFiles) || tex_forceBestPSNR)
+			if (FS_FileMatchList(task.file, image, tex_normalMapFiles.items) || tex_forceBestPSNR)
 				image->datatype = IMAGE_NORMALMAP;
-			else if (FS_FileMatchList(task.file, image, tex_grayScaleFiles))
+			else if (FS_FileMatchList(task.file, image, tex_grayScaleFiles.items))
 				image->datatype = IMAGE_GRAYSCALE;
-			else if (FS_FileMatchList(task.file, image, tex_glossMapFiles))
+			else if (FS_FileMatchList(task.file, image, tex_glossMapFiles.items))
 				image->datatype = IMAGE_GLOSSMAP;
-			else if (FS_FileMatchList(task.file, image, tex_glowMapFiles))
+			else if (FS_FileMatchList(task.file, image, tex_glowMapFiles.items))
 				image->datatype = IMAGE_GLOWMAP;
 
 			// special texture formats normalmap, gloss stores render-specific data in alpha channel
@@ -310,7 +381,7 @@ void TexCompress_WorkerThread(ThreadData *thread)
 				//Print("Processing %s frame %i %ix%i %i bpp for codec %s\n", task.file->name.c_str(), framenum, frame->width, frame->height, frame->bpp, codec->name);
 				// input stats
 				task.codec->stat_inputDiskMB += (frame->width*frame->height*frame->bpp) / 1048576.0f;
-				if (tex_noMipmaps || FS_FileMatchList(task.file, frame, tex_noMipFiles))
+				if (tex_noMipmaps || FS_FileMatchList(task.file, frame, tex_noMipFiles.items))
 				{
 					task.codec->stat_inputRamMB += (frame->width*frame->height*frame->bpp) / 1048576.0f;
 					task.codec->stat_inputPOTRamMB += (NextPowerOfTwo(frame->width)*NextPowerOfTwo(frame->height)*frame->bpp)/1048576.0f;
@@ -333,45 +404,91 @@ void TexCompress_WorkerThread(ThreadData *thread)
 				task.format = NULL;
 				Compress(&task);
 
+				// make output file path
+				strcpy(outfile, "");
+				sprintf(outfile, "%s%s%s%s%s", tex_generateArchive ? "" : tex_destPath,
+					(!tex_testCompresion && tex_destPathUseCodecDir) ? codec->destDir : "",
+					tex_addPath.c_str(),
+					task.file->path.c_str(),
+					frame->useTexname ? frame->texname : task.file->name.c_str());
+				if (tex_useSuffix & TEXSUFF_FORMAT)
+				{
+					strcat(outfile, task.format->suffix);
+					if (task.image->maps->sRGB)
+						strcat(outfile, "_sRGB");
+				}
+				if (tex_useSuffix & TEXSUFF_TOOL)
+					strcat(outfile, task.tool->suffix);
+				if (tex_useSuffix & TEXSUFF_PROFILE)
+				{
+					strcat(outfile, "-");
+					strcat(outfile, OptionEnumName(tex_profile, tex_profiles));
+				}
+				ext = task.container->extensionName;
+				if (tex_testCompresion)
+					ext = "tga";
+				strcat(outfile, ".");
+				strcat(outfile, ext);
+
+				// calculate compression errors
+				calc = NULL;
+				if (tex_statsFile[0] > 0 || codec->discardList.errorControl)
+				{
+					calc = TexCompressionError(outfile, &task, ERRORMETRIC_AUTO);
+					// check if we need to discard it
+					if (codec->discardList.errorControl)
+					{
+						if (FS_FileMatchList(task.file, task.image, calc, task.codec->discardList.items))
+						{
+							// discard current codec
+							if (disabled_jumpcount > 16)
+								Warning("%s: cannot fallback by error control - infinite loop in codec fallback\n", outfile);
+							else
+							{
+								if (tex_statsFile[0])
+									WriteStats(outfile, "CodecErrorControlDiscard", &task, calc);
+								mem_free(calc);
+								calc = NULL;
+								if (task.stream != NULL)
+									mem_free(task.stream);
+								task.stream = NULL;
+								task.streamLen = 0;
+								disabled_jumpcount++;
+								disabled_by_error_control = true;
+								goto tryagain;
+							}
+						}
+					}
+				}
+
 				// output stats
-				task.codec->stat_outputDiskMB += (float)task.streamLen/1048576.0f;
-				task.codec->stat_outputRamMB += (float)(task.streamLen - task.container->headerSize)/1048576.0f;
+				task.codec->stat_outputDiskMB += (float)task.streamLen / 1048576.0f;
+				task.codec->stat_outputRamMB += (float)(task.streamLen - task.container->headerSize) / 1048576.0f;
 				task.codec->stat_numTextures++;
 				task.codec->stat_numImages++;
 				for (ImageMap *map = frame->maps; map; map = map->next)
 					codec->stat_numImages++;
 
+				// check if we need to decompress
+				if (tex_testCompresion)
+				{
+					byte *oldstream = task.stream;
+					task.stream = TexDecompress(outfile, &task, &task.streamLen);
+					mem_free(oldstream);
+				}
+
+				// write stats
+				if (tex_statsFile[0])
+					WriteStats(outfile, "compressed", &task, calc);
+
+				// do not need this anymore
+				if (calc != NULL)
+					mem_free(calc);
+
 				// save for saving thread
 				WriteData = (TexWriteData *)mem_alloc(sizeof(TexWriteData));
 				memset(WriteData, 0, sizeof(TexWriteData));
-				ext = task.container->extensionName;
-				sprintf(WriteData->outfile, "%s%s%s%s%s", tex_generateArchive ? "" : tex_destPath, 
-					                                    (!tex_testCompresion && tex_destPathUseCodecDir) ? codec->destDir : "", 
-														tex_addPath.c_str(),
-														task.file->path.c_str(), 
-														frame->useTexname ? frame->texname : task.file->name.c_str());
-				if (tex_useSuffix & TEXSUFF_FORMAT)
-				{
-					strcat(WriteData->outfile, task.format->suffix);
-					if (task.image->maps->sRGB)
-						strcat(WriteData->outfile, "_sRGB");
-				}
-				if (tex_useSuffix & TEXSUFF_TOOL)
-					strcat(WriteData->outfile, task.tool->suffix);
-				if (tex_useSuffix & TEXSUFF_PROFILE)
-				{
-					strcat(WriteData->outfile, "-");
-					strcat(WriteData->outfile, OptionEnumName(tex_profile, tex_profiles));
-				}
-				if (tex_testCompresion)
-				{
-					ext = "tga";
-					byte *oldstream = task.stream;
-					task.stream = TexDecompress(WriteData->outfile, &task, &task.streamLen);
-					mem_free(oldstream);
-				}
-				strcat(WriteData->outfile, ".");
-				strcat(WriteData->outfile, ext);
+				strcpy(WriteData->outfile, outfile);
 				WriteData->data = task.stream;
 				WriteData->datasize = task.streamLen;
 				WriteData->next = SharedData->writeData;
@@ -440,7 +557,7 @@ void TexCompress_MainThread(ThreadData *thread)
 	SharedData = (TexCompressData *)thread->data;
 
 	// check if dest path is an archive
-	if (!FS_FileMatchList(tex_destPath, tex_archiveFiles))
+	if (!FS_FileMatchList(tex_destPath, tex_archiveFiles.items))
 	{
 		tex_generateArchive = false;
 		Print("Generating to \"%s\"\n", tex_destPath);
@@ -468,12 +585,12 @@ void TexCompress_MainThread(ThreadData *thread)
 		if (tex_zipInMemory > 0)
 			Print("Keeping ZIP in memory (max size %i MBytes)\n", tex_zipInMemory);
 		// add external files
-		if (tex_zipAddFiles.size())
+		if (tex_zipAddFiles.items.size() > 0)
 		{
 			byte *data;
 			int datasize;
 			char *filename, *outfile;
-			for (FCLIST::iterator file = tex_zipAddFiles.begin(); file < tex_zipAddFiles.end(); file++)
+			for (vector<CompareOption>::iterator file = tex_zipAddFiles.items.begin(); file < tex_zipAddFiles.items.end(); file++)
 			{
 				filename = (char *)file->parm.c_str();
 				outfile = (char *)file->pattern.c_str();
@@ -624,7 +741,9 @@ void TexCompress_Option(const char *section, const char *group, const char *key,
 		else if (!stricmp(key, "signword"))
 			strlcpy(tex_sign, val, sizeof(tex_sign));
 		else if (!stricmp(key, "signversion"))
-			tex_signVersion = FOURCC( strlen(val) < 1 ? 0 : val[0], strlen(val) < 2 ? 0 : val[1], strlen(val) < 3 ? 0 : val[2], strlen(val) < 4 ? 0 : val[3] );
+			tex_signVersion = FOURCC(strlen(val) < 1 ? 0 : val[0], strlen(val) < 2 ? 0 : val[1], strlen(val) < 3 ? 0 : val[2], strlen(val) < 4 ? 0 : val[3]);
+		else if (!stricmp(key, "statsfile"))
+			strlcpy(tex_statsFile, val, sizeof(tex_statsFile));
 		else
 			Warning("%s:%i: unknown key '%s'", filename, linenum, key);
 		return;
@@ -839,6 +958,11 @@ void TexCompress_Load(void)
 		Print("Generating decompressed test files\n");
 		if (tex_testCompresion_keepSize)
 			Print("Keeping original image dimensions\n");
+	}
+	if (strlen(tex_statsFile) > 0)
+	{
+		Print("Writing compression statistics to \"%s\"\n", tex_statsFile);
+		InitStats();
 	}
 
 	// load codecs

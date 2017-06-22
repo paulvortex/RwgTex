@@ -67,6 +67,8 @@ extern int Q_strcasecmp (char *s1, char *s2);
 extern char *ConvSlashU2W (char *start);
 extern char *ConvSlashW2U (char *start);
 char *ConvDot(char *start);
+void Conv(char *start, char code, char with);
+
 //extern void Q_getwd (char *out);
 size_t strlcat(char *dst, const char *src, size_t siz);
 size_t strlcpy(char *dst, const char *src, size_t siz);
@@ -96,6 +98,7 @@ extern bool CheckParm (char *check);
 extern FILE *SafeOpen (char *filename, char mode[]);
 extern void SafeRead (FILE *f, void *buffer, int count);
 extern void SafeWrite (FILE *f, void *buffer, int count);
+void SafePuts(FILE *f, const char *s);
 
 extern int LoadFile (char *filename, byte **bufferptr);
 extern size_t LoadFileUnsafe (char *filename, byte **bufferptr);

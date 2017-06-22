@@ -85,20 +85,105 @@ bool OptionBoolean(const char *val, bool default_value)
 
 // OptionFCList
 // file include/exclude option
-bool OptionFCList(FCLIST *list, const char *key, const char *val)
+void OptionFCList(CompareList *list, const char *key, const char *val)
 {
-	CompareOption O;
+	CompareOperator op;
+	bool appendLast;
+	int len;
 
-	if (stricmp(key, "path") && stricmp(key, "suffix") && stricmp(key, "ext") && stricmp(key, "name") && stricmp(key, "match") && stricmp(key, "bpp") && stricmp(key, "alpha") && stricmp(key, "type") &&
-		stricmp(key, "path!") && stricmp(key, "suffix!") && stricmp(key, "ext!") && stricmp(key, "name!") && stricmp(key, "match!") && stricmp(key, "bpp!") && stricmp(key, "alpha!") && stricmp(key, "type!"))
+	len = strlen(key);
+	op = OPERATOR_EQUAL;
+
+	// check if appending to previous (as AND statement)
+	appendLast = false;
+	if (len > 2)
 	{
-		Warning("Unknown include/exclude list key '%s'", key);
-		return false;
+		if (key[0] == '&' && key[1] == '&')
+		{
+			len -= 2;
+			key += 2;
+			appendLast = true;
+		}
 	}
+
+	// check special operators
+	if (len > 1)
+	{
+		if (key[len - 1] == '!') // !=
+		{
+			op = OPERATOR_NOTEQUAL;
+			len--;
+		}
+		else if (key[len - 1] == '>') // >=, !>=
+		{
+			if (len > 2 && key[len - 2] == '!')
+			{
+				op = OPERATOR_NOTGREATER;
+				len -= 2;
+			}
+			else
+			{
+				op = OPERATOR_GREATER;
+				len--;
+			}
+		}
+		else if (key[len - 1] == '<') // <=, !<=
+		{
+			if (len > 2 && key[len - 2] == '!')
+			{
+				op = OPERATOR_NOTLESSER;
+				len -= 2;
+			}
+			else
+			{
+				op = OPERATOR_LESSER;
+				len--;
+			}
+		}
+	}
+
+	// check key
+	if (strncmp(key, "path", len) != 0 && strncmp(key, "suffix", len) != 0 && strncmp(key, "ext", len) != 0 && strncmp(key, "name", len) != 0 && strncmp(key, "match", len) != 0)
+	{
+		if (strncmp(key, "bpp", len) == 0 || strncmp(key, "alpha", len) == 0 || strncmp(key, "srgb", len) == 0 || strncmp(key, "type", len) == 0 || strncmp(key, "width", len) == 0 || strncmp(key, "height", len) == 0)
+			list->imageControl = true;
+		else if (strncmp(key, "error", len) == 0 || strncmp(key, "dispersion", len) == 0 || strncmp(key, "rms", len) == 0)
+			list->errorControl = true;
+		else
+		{
+			Warning("Unknown include/exclude list key '%s' (len %i)", key, len);
+			return;
+		}
+	}
+
+	// add key
+	CompareOption O;
+	O.op = op;
 	O.parm = key;
 	O.pattern = val;
-	list->push_back(O);
-	return true;
+	if (op != OPERATOR_EQUAL)
+		O.parm.pop_back();
+	if (appendLast)
+	{
+		// append AND
+		if (list->last == NULL)
+		{
+			// new expression
+			Warning("Cannot add AND statement ( %s %s %s ) - no start statement defined, addind as new expression", O.parm.c_str(), OptionEnumName((int)op, CompareOperators), val);
+			list->items.push_back(O);
+			list->last = &list->items[list->items.size() - 1];
+		}
+		else
+		{
+			list->last->and.push_back(O);
+		}
+	}
+	else
+	{
+		// new expression
+		list->items.push_back(O);
+		list->last = &list->items[list->items.size() - 1];
+	}
 }
 
 // OptionInt
@@ -224,7 +309,6 @@ void LoadOptions(char *filename)
 		if (!strnicmp(section, "CODEC:", 6))
 		{
 			TexCompress_CodecOption(codec, group, key, val, filename, linenum);
-			
 			continue;
 		}
 		if (!strnicmp(section, "TOOL:", 5))

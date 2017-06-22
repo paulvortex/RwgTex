@@ -654,6 +654,17 @@ char *ConvDot(char *start)
     }
   return start;
 }
+void Conv(char *start, char code, char with)
+{
+	char *in;
+	in = start;
+	while (*in)
+	{
+		if (*in == code)
+			*in = with;
+		in++;
+	}
+}
 
 /*
 =============================================================================
@@ -762,6 +773,12 @@ void SafeWrite (FILE *f, void *buffer, int count)
 {
   if (fwrite (buffer, 1, count, f) != (size_t)count)
     Error ("File write failure");
+}
+
+void SafePuts(FILE *f, const char *s)
+{
+	if (fputs(s, f) < 0)
+		Error("File write failure");
 }
 
 /*
@@ -950,7 +967,16 @@ void StripFileExtension(char *path, char *dest)
 	while(l >= 0 && path[l] != '.')
 		l--;
 	if (l == 0)
+	{
+		strcpy(dest, "");
 		return;
+	}
+	else if (l < 0)
+	{
+		if (path != dest)
+			strcpy(dest, path);
+		return;
+	}
 	if (path == dest)
 		path[l] = 0;
 	else

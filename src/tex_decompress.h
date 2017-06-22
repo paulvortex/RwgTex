@@ -4,33 +4,6 @@
 
 #include "tex.h"
 
-// available psnr-calculation metrics
-typedef enum
-{
-	ERRORMETRIC_AUTO,
-	ERRORMETRIC_LINEAR,
-	ERRORMETRIC_LUMA,
-	ERRORMETRIC_CHROMA,
-	ERRORMETRIC_HUE,
-	ERRORMETRIC_SATURATION,
-	ERRORMETRIC_PERCEPTURAL,
-	NUM_ERRORMETRICS,
-}TexErrorMetric;
-#ifdef F_TEX_C
-	OptionList tex_error_metrics[] =
-	{
-		{ "auto",        ERRORMETRIC_AUTO },
-		{ "linear",      ERRORMETRIC_LINEAR },
-		{ "luma",        ERRORMETRIC_LUMA },
-		{ "chroma",      ERRORMETRIC_CHROMA },
-		{ "hue",         ERRORMETRIC_HUE },
-		{ "saturation",  ERRORMETRIC_SATURATION },
-		{ "perceptural", ERRORMETRIC_PERCEPTURAL },
-	};
-#else
-	extern OptionList tex_error_metrics[];
-#endif
-
 // file decode task
 typedef struct TexDecodeTask_s
 {
@@ -63,6 +36,11 @@ typedef struct TexDecodeTask_s
 	// error message
 	char              errorMessage[4000];
 } TexDecodeTask;
+
+// util
+void DecodeFromEncode(TexDecodeTask *out, TexEncodeTask *in, char *filename);
+size_t DecompressImage(TexDecodeTask *task);
+void UnswizzleImage(TexDecodeTask *task);
 
 // generic
 bool  TexDecompress(char *filename);

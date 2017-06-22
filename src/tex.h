@@ -17,7 +17,7 @@
 // structures
 // compressed format features
 #define FF_ALPHA                   1   // alpha
-#define FF_BINARYALPHA             2   // 'punch-through' alpha
+#define FF_PUNCH_THROUGH_ALPHA     2   // 'punch-through' alpha
 #define FF_NOMIP                   4   // does not support mipmaps
 #define FF_POT                     8   // should have power-of-two dimensions
 #define FF_SQUARE                  16  // should have width = height
@@ -76,7 +76,7 @@ typedef struct TexFormat_s
 	char                *cmdParm;
 	char                *cmdParmDisabled;
 	char                *forceGroup;
-	FCLIST               forceFileList;
+	CompareList          forceFileList;
 	char                *suffix;
 	TexFormat_s         *baseFormat; // points to base format for swizzled formats (RXGB, YCoGg etc)
 	TexFormat_s         *next;
@@ -105,7 +105,7 @@ typedef struct TexTool_s
 	char              *cmdParm;
 	char              *cmdParmDisabled;
 	char              *forceGroup;
-	FCLIST             forceFileList;
+	CompareList        forceFileList;
 	char              *suffix;
 	char              *featuredCodecs;  // filled by Tex_LinkTools()
 	char              *featuredFormats; // filled by Tex_LinkTools()
@@ -133,7 +133,7 @@ typedef struct TexCodec_s
 	TexFormat         *forceFormat;
 	struct TexCodec_s *fallback;
 	bool               disabled;
-	FCLIST             discardList;
+	CompareList        discardList;
 	char               destDir[MAX_FPATH];
 	double             stat_inputDiskMB;
 	double             stat_inputRamMB;
@@ -171,6 +171,7 @@ typedef struct TexContainer_s
 //
 #include "tex_compress.h"
 #include "tex_decompress.h"
+#include "tex_calcerror.h"
 
 //
 // compression codecs
@@ -279,26 +280,26 @@ extern bool          tex_sRGB_forceconvert;
 extern bool          tex_useSign;
 extern char          tex_sign[1024];
 extern DWORD         tex_signVersion;
-extern FCLIST        tex_includeFiles;
-extern FCLIST        tex_noMipFiles;
-extern FCLIST        tex_normalMapFiles;
-extern FCLIST        tex_grayScaleFiles;
-extern FCLIST        tex_glossMapFiles;
-extern FCLIST        tex_glowMapFiles;
-extern FCLIST        tex_sRGBcolorspace;
+extern CompareList   tex_includeFiles;
+extern CompareList   tex_noMipFiles;
+extern CompareList   tex_normalMapFiles;
+extern CompareList   tex_grayScaleFiles;
+extern CompareList   tex_glossMapFiles;
+extern CompareList   tex_glowMapFiles;
+extern CompareList   tex_sRGBcolorspace;
 extern bool          tex_forceBestPSNR;
 extern bool          tex_detectBinaryAlpha;
 extern byte          tex_binaryAlphaMin;
 extern byte          tex_binaryAlphaMax;
 extern byte          tex_binaryAlphaCenter;
 extern float         tex_binaryAlphaThreshold;
-extern FCLIST        tex_archiveFiles;
+extern CompareList   tex_archiveFiles;
 extern string        tex_addPath;
 extern int           tex_zipInMemory;
 extern int           tex_zipCompression;
-extern FCLIST        tex_zipAddFiles;
-extern FCLIST        tex_scale2xFiles;
-extern FCLIST        tex_scale4xFiles;
+extern CompareList   tex_zipAddFiles;
+extern CompareList   tex_scale2xFiles;
+extern CompareList   tex_scale4xFiles;
 extern ImageScaler   tex_firstScaler;
 extern ImageScaler   tex_secondScaler;
 extern int           tex_useSuffix;
@@ -306,6 +307,7 @@ extern bool          tex_testCompresion;
 extern bool          tex_testCompresion_keepSize;
 extern bool          tex_testCompresionError;
 extern bool          tex_testCompresionAllErrors;
+extern char          tex_statsFile[MAX_FPATH];
 
 extern TexErrorMetric tex_errorMetric;
 extern TexContainer *tex_container;

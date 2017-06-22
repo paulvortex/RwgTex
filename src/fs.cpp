@@ -6,6 +6,8 @@
 //
 ////////////////////////////////
 
+#define F_FS_C
+
 #include "main.h"
 #include "zip.h"
 #include "unzip.h"
@@ -271,153 +273,145 @@ int matchpattern(const char *in, const char *pattern, bool caseinsensitive)
 ==========================================================================================
 */
 
-bool FS_FileMatchList(FS_File *file, void *image, vector<CompareOption> &list)
+bool FS_CheckOption(FS_File *file, LoadedImage *loadedimage, TexCalcErrors *errorcalc, CompareOption *option, CompareOperator op)
+{
+	const char *key;
+	double floatVal;
+	int intVal;
+	bool r, got;
+
+	r = false;
+	got = false;
+
+	#define StringOp(v) { got = true; \
+						 if (op == OPERATOR_NOTEQUAL) r = strnicmp(v, option->pattern.c_str(), strlen(option->pattern.c_str())) != 0; \
+						 else if (op == OPERATOR_EQUAL) r = strnicmp(v, option->pattern.c_str(), strlen(option->pattern.c_str())) == 0; \
+						 else Error("Bad expression for string: %s %s %s\n", option->parm.c_str(), OptionEnumName((int)op, CompareOperators), option->pattern.c_str()); }
+	#define MatchOp(v) { got = true; \
+						 if (op == OPERATOR_NOTEQUAL) r = matchpattern(v, option->pattern.c_str(), true) == 0; \
+						 else if (op == OPERATOR_EQUAL) r = matchpattern(v, option->pattern.c_str(), true) == 1; \
+						 else Error("Bad expression for match: %s %s %s\n", option->parm.c_str(), OptionEnumName((int)op, CompareOperators), option->pattern.c_str()); }
+	#define IntOp(v) { got = true; \
+						 intVal = atoi(option->pattern.c_str()); \
+						 if (op == OPERATOR_NOTEQUAL) r = v != intVal; \
+						 else if (op == OPERATOR_EQUAL) r = v == intVal; \
+						 else if (op == OPERATOR_GREATER) r = v >= intVal; \
+						 else if (op == OPERATOR_NOTGREATER) r = v < intVal; \
+						 else if (op == OPERATOR_LESSER) r = v <= intVal; \
+						 else if (op == OPERATOR_NOTLESSER) r = v > intVal; \
+						 else Error("Bad expression for int: %s %s %s\n", option->parm.c_str(), OptionEnumName((int)op, CompareOperators), option->pattern.c_str()); }
+	#define FloatOp(v) { got = true; \
+						 floatVal = atof(option->pattern.c_str()); \
+						 if (op == OPERATOR_NOTEQUAL) r = v != floatVal; \
+						 else if (op == OPERATOR_EQUAL) r = v == floatVal; \
+						 else if (op == OPERATOR_GREATER) r = v >= floatVal; \
+						 else if (op == OPERATOR_NOTGREATER) r = v < floatVal; \
+						 else if (op == OPERATOR_LESSER) r = v <= floatVal; \
+						 else if (op == OPERATOR_NOTLESSER) r = v > floatVal; \
+						 else Error("Bad expression for float: %s %s %s\n", option->parm.c_str(), OptionEnumName((int)op, CompareOperators), option->pattern.c_str()); }
+	#define EnumOp(v,t,tv) { got = true; \
+                         t need = (t)OptionEnum(option->pattern.c_str(), tv); \
+						 if (op == OPERATOR_NOTEQUAL) r = v != need; \
+						 else if (op == OPERATOR_EQUAL) r =  v == need; \
+						 else Error("Bad expression for enum: %s %s %s\n", option->parm.c_str(), OptionEnumName((int)op, CompareOperators), option->pattern.c_str()); }
+
+	key = option->parm.c_str();
+
+	// file rules
+	if (file != NULL)
+	{
+		if (!stricmp(key, "path"))
+			StringOp(file->fullpath.c_str())
+		else if (!stricmp(key, "suffix"))
+			StringOp(file->suf.c_str())
+		else if (!stricmp(key, "ext"))
+			StringOp(file->ext.c_str())
+		else if (!stricmp(key, "name"))
+			StringOp(file->name.c_str())
+		else if (!stricmp(key, "name"))
+			MatchOp(file->fullpath.c_str())
+	}
+	// image rules
+	if (!got && loadedimage != NULL)
+	{
+		if (!stricmp(key, "bpp"))
+			IntOp(loadedimage->bpp)
+		else if (!stricmp(key, "width"))
+			IntOp(loadedimage->bpp)
+		else if (!stricmp(key, "height"))
+			IntOp(loadedimage->bpp)
+		else if (!stricmp(key, "alpha"))
+			IntOp(loadedimage->hasAlpha ? 1 : 0)
+		else if (!stricmp(key, "srgb"))
+			IntOp(loadedimage->sRGB ? 1 : 0)
+		else if (!stricmp(key, "type"))
+			EnumOp(loadedimage->datatype, ImageType, ImageTypes)
+	}
+	// error calc
+	if (!got && errorcalc != NULL)
+	{
+		if (!stricmp(key, "error"))
+			FloatOp(errorcalc->average)
+		else if (!stricmp(key, "dispersion"))
+			FloatOp(errorcalc->dispersion)
+		else if (!stricmp(key, "rms"))
+			FloatOp(errorcalc->rms)
+	}
+
+	if (r && option->and.size() > 0)
+	{
+		// check all "AND"
+		for (unsigned int i = 0; i < option->and.size(); i++)
+			if (!FS_CheckOption(file, loadedimage, errorcalc, &option->and[i], option->and[i].op))
+				return false;
+	}
+
+	#undef StringOp
+	#undef IntOp
+	#undef FloatOp
+	#undef EnumOp
+
+	return r;
+}
+
+bool FS_FileMatchList(FS_File *file, void *image, void *errorcalc, vector<CompareOption> &list)
 {
 	LoadedImage *loadedimage = (LoadedImage *)image;
+	TexCalcErrors *calcerrors = (TexCalcErrors *)errorcalc;
 
 	// check rules
-	for (vector<CompareOption>::iterator option = list.begin(); option < list.end(); option++)
+	for (unsigned int i = 0; i < list.size(); i++)
 	{
-		// exclude rules
-		if (!stricmp(option->parm.c_str(), "path!"))
+		CompareOption *o = &list[i];
+		if (IsNegativeOp(o->op))
 		{
-			if (!strnicmp(file->fullpath.c_str(), option->pattern.c_str(), strlen(option->pattern.c_str())))
-				return false;
-			continue;
-		}
-		if (!stricmp(option->parm.c_str(), "suffix!"))
-		{
-			if (!strnicmp(file->suf.c_str(), option->pattern.c_str(), strlen(option->pattern.c_str())))
-				return false;
-			continue;
-		}
-		if (!stricmp(option->parm.c_str(), "ext!"))
-		{
-			if (!strnicmp(file->ext.c_str(), option->pattern.c_str(), strlen(option->pattern.c_str())))
-				return false;
-			continue;
-		}
-		if (!stricmp(option->parm.c_str(), "name!"))
-		{
-			if (!strnicmp(file->name.c_str(), option->pattern.c_str(), strlen(option->pattern.c_str())))
-				return false;
-			continue;
-		}
-		if (!stricmp(option->parm.c_str(), "match!"))
-		{
-
-			if (matchpattern(file->fullpath.c_str(), option->pattern.c_str(), true))
-				return false;
-			continue;
-		}
-		// exclude image rules
-		if (loadedimage)
-		{
-			if (!stricmp(option->parm.c_str(), "bpp!"))
+			// exclude rules
+			if (FS_CheckOption(file, loadedimage, calcerrors, o, NegateOp(o->op)))
 			{
-				if (loadedimage->bpp == atoi(option->pattern.c_str()))
-					return false;
-				continue;
+				//Print("Excluded: %s %s %s\n", o->parm.c_str(), OptionEnumName((int)o->op, CompareOperators), o->pattern.c_str());
+				return false;
 			}
-			if (!stricmp(option->parm.c_str(), "alpha!"))
-			{
-				if ((loadedimage->hasAlpha ? 1 : 0) == atoi(option->pattern.c_str()))
-					return false;
-				continue;
-			}
-			if (!stricmp(option->parm.c_str(), "type!"))
-			{
-				if (!stricmp(option->pattern.c_str(), "color"))
-				{
-					if (loadedimage->datatype == IMAGE_COLOR)
-						return false;
-				}
-				else if (!stricmp(option->pattern.c_str(), "normalmap"))
-				{
-					if (loadedimage->datatype == IMAGE_NORMALMAP)
-						return false;
-				}
-				else if (!stricmp(option->pattern.c_str(), "grayscale"))
-				{
-					if (loadedimage->datatype == IMAGE_GRAYSCALE)
-						return false;
-				}
-				continue;
-			}
+			continue;
 		}
 		// include rules
-		if (!stricmp(option->parm.c_str(), "path"))
+		if (FS_CheckOption(file, loadedimage, calcerrors, o, o->op))
 		{
-			if (!strnicmp(file->fullpath.c_str(), option->pattern.c_str(), strlen(option->pattern.c_str())))
-				return true;
-			continue;
-		}
-		if (!stricmp(option->parm.c_str(), "suffix"))
-		{
-			if (!strnicmp(file->suf.c_str(), option->pattern.c_str(), strlen(option->pattern.c_str())))
-				return true;
-			continue;
-		}
-		if (!stricmp(option->parm.c_str(), "ext"))
-		{
-			if (!strnicmp(file->ext.c_str(), option->pattern.c_str(), strlen(option->pattern.c_str())))
-				return true;
-			continue;
-		}
-		if (!stricmp(option->parm.c_str(), "name"))
-		{
-			if (!strnicmp(file->name.c_str(), option->pattern.c_str(), strlen(option->pattern.c_str())))
-				return true;
-			continue;
-		}
-		if (!stricmp(option->parm.c_str(), "match"))
-		{
-			if (matchpattern(file->fullpath.c_str(), option->pattern.c_str(), true))
-				return true;
-			continue;
-		}
-		// include image rules
-		if (loadedimage)
-		{
-			if (!stricmp(option->parm.c_str(), "bpp"))
-			{
-				if (loadedimage->bpp == atoi(option->pattern.c_str()))
-					return true;
-				continue;
-			}
-			if (!stricmp(option->parm.c_str(), "alpha"))
-			{
-				if ((loadedimage->hasAlpha ? 1 : 0) == atoi(option->pattern.c_str()))
-					return true;
-				continue;
-			}
-			if (!stricmp(option->parm.c_str(), "type"))
-			{
-				if (!stricmp(option->pattern.c_str(), "color"))
-				{
-					if (loadedimage->datatype == IMAGE_COLOR)
-						return true;
-				}
-				else if (!stricmp(option->pattern.c_str(), "normalmap"))
-				{
-					if (loadedimage->datatype == IMAGE_NORMALMAP)
-						return true;
-				}
-				else if (!stricmp(option->pattern.c_str(), "grayscale"))
-				{
-					if (loadedimage->datatype == IMAGE_GRAYSCALE)
-						return true;
-				}
-				continue;
-			}
+			//Print("Included: %s %s %s\n", o->parm.c_str(), OptionEnumName((int)o->op, CompareOperators), o->pattern.c_str());
+			return true;
 		}
 	}
+	//Print("Skipped: %s\n", file->fullpath.c_str());
 	return false;
+}
+
+bool FS_FileMatchList(FS_File *file, void *image, vector<CompareOption> &list)
+{
+	return FS_FileMatchList(file, image, NULL, list);
 }
 
 bool FS_FileMatchList(FS_File *file, vector<CompareOption> &list)
 {
-	return FS_FileMatchList(file, NULL, list);
+	return FS_FileMatchList(file, NULL, NULL, list);
 }
 
 bool FS_FileMatchList(char *filename, vector<CompareOption> &list)
@@ -425,7 +419,7 @@ bool FS_FileMatchList(char *filename, vector<CompareOption> &list)
 	FS_File file;
 
 	FS_SetFile(&file, filename);
-	return FS_FileMatchList(&file, NULL, list);
+	return FS_FileMatchList(&file, NULL, NULL, list);
 }
 
 /*
@@ -472,7 +466,7 @@ bool FS_FindFile(char *pattern)
 
 bool AllowFile(FS_File *file)
 {
-	if (!FS_FileMatchList(file, tex_includeFiles))
+	if (!FS_FileMatchList(file, tex_includeFiles.items))
 		return false;
 	return true;
 }
@@ -575,7 +569,7 @@ void FS_ScanPath(char *basepath, const char *singlefile, char *addpath)
 		FS_SetFile(&file, path, n_file.cFileName);
 
 		// add
-		if (FS_FileMatchList(&file, tex_archiveFiles))
+		if (FS_FileMatchList(&file, tex_archiveFiles.items))
 		{
 			AddArchive(file, singlefile ? false : true);
 			continue;

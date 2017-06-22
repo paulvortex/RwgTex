@@ -2,14 +2,14 @@
 #ifndef H_OPTIONS_H
 #define H_OPTIONS_H
 
-#include "fs.h"
-
 // enum
-typedef struct 
+typedef struct
 {
 	char *name;
 	int   val;
 }OptionList;
+
+#include "fs.h"
 
 #define OptionNextEnum(num) num = (OptionList *)((byte *)num + sizeof(OptionList))
 
@@ -22,7 +22,7 @@ char  *OptionEnumName(const int val, OptionList *num, char *def_name);
 char  *OptionEnumName(const int val, OptionList *num, char *def_name, const char *warningname);
 bool   OptionBoolean(const char *val, bool default_value = false);
 int    OptionInt(const char *val);
-bool   OptionFCList(FCLIST *list, const char *key, const char *val);
+void   OptionFCList(CompareList *list, const char *key, const char *val);
 void   LoadOptions(char *filename);
 
 #endif

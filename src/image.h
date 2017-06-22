@@ -27,6 +27,19 @@ typedef enum
 	IMAGE_GLOSSMAP,
 	IMAGE_GLOWMAP
 }ImageType;
+#ifdef F_IMAGE_C
+	OptionList ImageTypes[] =
+	{
+		{ "color", IMAGE_COLOR },
+		{ "normalmap", IMAGE_NORMALMAP },
+		{ "grayscale", IMAGE_GRAYSCALE },
+		{ "glossmap", IMAGE_GLOSSMAP },
+		{ "glowmap", IMAGE_GLOWMAP },
+		{ 0 },
+	};
+#else
+	extern OptionList ImageTypes[];
+#endif
 
 // scalers
 typedef enum
@@ -40,7 +53,7 @@ typedef enum
 	IMAGE_SCALER_SCALE2X,
 	IMAGE_SCALER_SUPER2X,
 	IMAGE_SCALER_XBRZ,
-	IMAGE_SCALER_SBRZ, // scale by 5x then back to 2x
+	IMAGE_SCALER_SBRZ // scale by 5x then back to 2x
 }ImageScaler;
 #ifdef F_IMAGE_C
 	OptionList ImageScalers[] =
@@ -138,6 +151,10 @@ void  Image_StoreUnalignedData(LoadedImage *image, byte *dataptr, size_t datasiz
 void  Image_FreeUnalignedData(byte *dataptr, bool data_allocated);
 void  Image_Unload(LoadedImage *image);
 void  Image_Delete(LoadedImage *image);
+
+// util
+#define linear_to_srgb(c) (((c) < 0.0031308f) ? (c) * 12.92f : 1.055f * (float)pow((c), 1.0f/2.4f) - 0.055f)
+#define srgb_to_linear(c) (((c) <= 0.04045f) ? (c) * (1.0f / 12.92f) : (float)pow(((c) + 0.055f)*(1.0f/1.055f), 2.4f))
 
 // raw data functions
 void ImageData_SwapRB(byte *data, int width, int height, int pitch, int bpp);

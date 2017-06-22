@@ -37,26 +37,26 @@ bool          tex_sRGB_forceconvert;
 bool          tex_useSign;
 char          tex_sign[1024];
 DWORD         tex_signVersion;
-FCLIST        tex_includeFiles;
-FCLIST        tex_noMipFiles;
-FCLIST        tex_normalMapFiles;
-FCLIST        tex_grayScaleFiles;
-FCLIST        tex_glossMapFiles;
-FCLIST        tex_glowMapFiles;
-FCLIST        tex_sRGBcolorspace;
+CompareList   tex_includeFiles;
+CompareList   tex_noMipFiles;
+CompareList   tex_normalMapFiles;
+CompareList   tex_grayScaleFiles;
+CompareList   tex_glossMapFiles;
+CompareList   tex_glowMapFiles;
+CompareList   tex_sRGBcolorspace;
 bool          tex_forceBestPSNR;
 bool          tex_detectBinaryAlpha;
 byte          tex_binaryAlphaMin;
 byte          tex_binaryAlphaMax;
 byte          tex_binaryAlphaCenter;
 float         tex_binaryAlphaThreshold;
-FCLIST        tex_archiveFiles;
+CompareList   tex_archiveFiles;
 string        tex_addPath;
 int           tex_zipInMemory;
 int           tex_zipCompression;
-FCLIST        tex_zipAddFiles;
-FCLIST        tex_scale2xFiles;
-FCLIST        tex_scale4xFiles;
+CompareList   tex_zipAddFiles;
+CompareList   tex_scale2xFiles;
+CompareList   tex_scale4xFiles;
 ImageScaler   tex_firstScaler;
 ImageScaler   tex_secondScaler;
 int           tex_useSuffix;
@@ -64,7 +64,9 @@ bool          tex_testCompresion = false;
 bool          tex_testCompresion_keepSize = false;
 bool          tex_testCompresionError = false;
 bool          tex_testCompresionAllErrors = false;
-TexErrorMetric tex_errorMetric = ERRORMETRIC_AUTO;
+char          tex_statsFile[MAX_FPATH];
+
+TexErrorMetric tex_errorMetric = ERRORMETRIC_PERCEPTURAL;
 TexContainer *tex_container = NULL;
 texprofile    tex_profile;
 
@@ -228,7 +230,7 @@ void RegisterTool(TexTool *tool, TexCodec *codec)
 	sprintf(tool->cmdParmDisabled, "-disable-%s", tool->parmName);
 	tool->forceGroup = (char *)mem_alloc(len + 7);
 	sprintf(tool->forceGroup, "force_%s", tool->parmName);
-	tool->forceFileList.clear();
+	tool->forceFileList.items.clear();
 	tool->suffix = (char *)mem_alloc(len + 2);
 	sprintf(tool->suffix, "_%s", tool->parmName);
 	if (tool->fInit)
@@ -335,7 +337,7 @@ void _RegisterFormat(TexFormat *format, TexTool *tool, TexFormat *baseFormat)
 	if( format->forceGroup == NULL )
 		format->forceGroup = (char *)mem_alloc(len + 7);
 	sprintf(format->forceGroup, "force_%s", format->parmName);
-	format->forceFileList.clear();
+	format->forceFileList.items.clear();
 	if (format->baseFormat != NULL)
 	{
 		if( format->suffix == NULL )
@@ -421,7 +423,7 @@ bool findFormatByFourCCAndAlpha(DWORD fourCC, bool alpha, TexCodec **codec, TexF
 		for (vector<TexFormat*>::iterator fmt = cdc->formats.begin(); fmt < cdc->formats.end(); fmt++)
 		{
 			f = *fmt;
-			if (f->fourCC == fourCC && (!features || (f->features & features)))
+			if (f->fourCC == fourCC && (features == 0 || (f->features & features)))
 			{
 				*codec = cdc;
 				*format = f;
@@ -687,8 +689,7 @@ void CommandLineOptions(void)
 	if (CheckParm("-ta"))     { tex_testCompresion = true; tex_testCompresion_keepSize = false; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL | TEXSUFF_FORMAT; tex_testCompresionAllErrors = true; }
 	if (CheckParm("-tk"))     { tex_testCompresion = true; tex_testCompresion_keepSize = true; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL | TEXSUFF_FORMAT; }
 	if (CheckParm("-tek"))    { tex_testCompresion = true; tex_testCompresion_keepSize = true; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL | TEXSUFF_FORMAT; tex_testCompresionError = true; }
-	if (CheckParm("-tak"))    { tex_testCompresion = true; tex_testCompresion_keepSize = true; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL | TEXSUFF_FORMAT; tex_testCompresionAllErrors = true; }
-
+	if (CheckParm("-tak"))    { tex_testCompresion = true; tex_testCompresion_keepSize = true; if (!tex_useSuffix) tex_useSuffix = TEXSUFF_TOOL | TEXSUFF_FORMAT; tex_testCompresionError = true;  tex_testCompresionAllErrors = true; }
 	// string parameters
 	for (int i = 1; i < myargc; i++) 
 	{
@@ -729,9 +730,10 @@ void CommandLineOptions(void)
 			if (i+2 < myargc)
 			{
 				CompareOption O;
+				O.op = OPERATOR_EQUAL;
 				O.parm = myargv[i+1];
 				O.pattern =  myargv[i+2];
-				tex_zipAddFiles.push_back(O);
+				tex_zipAddFiles.items.push_back(O);
 			}
 			i += 2;
 			continue;
@@ -757,7 +759,15 @@ void CommandLineOptions(void)
 		{
 			i++;
 			if (i < myargc)
-				tex_errorMetric = (TexErrorMetric)OptionEnum(myargv[i], tex_error_metrics, ERRORMETRIC_AUTO);
+				tex_errorMetric = (TexErrorMetric)OptionEnum(myargv[i], tex_error_metrics, ERRORMETRIC_PERCEPTURAL);
+			continue;
+		}
+		// COMMANDLINEPARM: -stats: write statistics to CSV file
+		if (!stricmp(myargv[i], "-stats"))
+		{
+			i++;
+			if (i < myargc)
+				strlcpy(tex_statsFile, myargv[i], sizeof(tex_statsFile));
 			continue;
 		}
 	}
@@ -839,18 +849,18 @@ void Tex_Init(void)
 	tex_binaryAlphaMax = 255;
 	tex_binaryAlphaCenter = 180;
 	tex_binaryAlphaThreshold = 99.0f;
-	tex_includeFiles.clear();
-	tex_noMipFiles.clear();
-	tex_sRGBcolorspace.clear();
-	tex_normalMapFiles.clear();
-	tex_grayScaleFiles.clear();
-	tex_glossMapFiles.clear();
-	tex_glowMapFiles.clear();
+	tex_includeFiles.items.clear();
+	tex_noMipFiles.items.clear();
+	tex_sRGBcolorspace.items.clear();
+	tex_normalMapFiles.items.clear();
+	tex_grayScaleFiles.items.clear();
+	tex_glossMapFiles.items.clear();
+	tex_glowMapFiles.items.clear();
 	tex_gameDir = "id1";
-	tex_archiveFiles.clear();
+	tex_archiveFiles.items.clear();
 	tex_addPath = "";
-	tex_scale2xFiles.clear();
-	tex_scale4xFiles.clear();
+	tex_scale2xFiles.items.clear();
+	tex_scale4xFiles.items.clear();
 	tex_noMipmaps = false;
 	tex_noAvgColor = false;
 	tex_allowNPOT = false;
@@ -866,11 +876,12 @@ void Tex_Init(void)
 	tex_firstScaler = tex_secondScaler = IMAGE_SCALER_SUPER2X;
 	tex_zipInMemory = 0;
 	tex_zipCompression = 8;
-	tex_zipAddFiles.clear();
+	tex_zipAddFiles.items.clear();
 	tex_useSuffix = 0;
 	tex_testCompresion = false;
 	tex_testCompresion_keepSize = false;
 	tex_container = findContainer("DDS", false);
+	strcpy(tex_statsFile, "");
 }
 
 void Tex_Shutdown(void)
@@ -1046,7 +1057,7 @@ int TexMain(int argc, char **argv)
 				ExtractFileName(tex_srcDir, tex_srcFile);
 				ExtractFilePath(tex_srcDir, tex_destPath);
 				strncpy(tex_srcDir, tex_destPath, sizeof(tex_srcDir));
-				if (FS_FileMatchList(tex_srcFile, tex_archiveFiles))
+				if (FS_FileMatchList(tex_srcFile, tex_archiveFiles.items))
 				{
 					tex_destPathUseCodecDir = true;
 					tex_mode = TEXMODE_DROP_DIRECTORY;
